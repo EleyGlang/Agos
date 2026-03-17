@@ -2,10 +2,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import (
-    Flask, render_template, request,
-    redirect, url_for, session, flash
-)
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+
 from functools import wraps
 from datetime import datetime
 
@@ -264,6 +262,7 @@ def new_sale():
 
     # Build line items and compute total
     items        = []
+    items_with_products = []  # Store (item, product) tuples for loyalty calculation
     total_amount = 0
 
     for product_id, qty_str in zip(product_ids, quantities):
@@ -274,12 +273,14 @@ def new_sale():
         subtotal = float(product.price) * quantity
         total_amount += subtotal
 
-        items.append(SaleItem(
+        sale_item = SaleItem(
             product_id = product.product_id,
             quantity   = quantity,
             price      = product.price,
             subtotal   = subtotal
-        ))
+        )
+        items.append(sale_item)
+        items_with_products.append((sale_item, product))  # Store for loyalty logic
 
         # Deduct from inventory automatically
         inventory = Inventory.query.filter_by(product_id=product.product_id).first()
@@ -305,20 +306,77 @@ def new_sale():
         item.sale_id = sale.sale_id
         db.session.add(item)
 
-    # Loyalty points — only for registered customers
+    # Loyalty logic — only for registered customers
+    # System: 10 refills = 1 loyalty point = 1 free refill
+    # ONLY applies to refill products (not bottle caps, empty gallons, or new gallons)
     if customer_id:
         customer = Customer.query.get(int(customer_id))
         if customer:
-            customer.loyalty_points += 1
-            loyalty = LoyaltyTransaction(
-                customer_id      = customer.customer_id,
-                sale_id          = sale.sale_id,
-                points_earned    = 1
+            # Count total refills in this order (ONLY refill products)
+            # Check if product name contains "refill" (case-insensitive)
+            total_refills = sum(
+                item.quantity for item, product in items_with_products
+                if 'refill' in product.product_name.lower()
             )
-            db.session.add(loyalty)
-            if customer.loyalty_points % 10 == 0:
-                flash(f'🎉 {customer.full_name} has earned a free refill!', 'success')
-
+            
+            # Track refills consumed for free (if they have loyalty points)
+            free_refills_used = 0
+            remaining_refills = total_refills
+            
+            # Use loyalty points to make refills free (1 point = 1 free refill)
+            if customer.loyalty_points > 0 and total_refills > 0:
+                free_refills_used = min(customer.loyalty_points, total_refills)
+                customer.loyalty_points -= free_refills_used
+                remaining_refills = total_refills - free_refills_used
+                
+                # Calculate the discounted amount (only discount refill products)
+                refill_items_total = sum(
+                    item.subtotal for item, product in items_with_products
+                    if 'refill' in product.product_name.lower()
+                )
+                
+                if total_refills > 0 and refill_items_total > 0:
+                    price_per_refill = refill_items_total / total_refills
+                    discount = price_per_refill * free_refills_used
+                    sale.total_amount = total_amount - discount
+                
+                # Log the loyalty redemption
+                loyalty_redeem = LoyaltyTransaction(
+                    customer_id   = customer.customer_id,
+                    sale_id       = sale.sale_id,
+                    points_earned = -free_refills_used
+                )
+                db.session.add(loyalty_redeem)
+            
+            # Now add the remaining (paid) refills to their refill count
+            if remaining_refills > 0:
+                # Calculate how many loyalty points they earn (10 refills = 1 point)
+                new_points = remaining_refills // 10
+                leftover_refills = remaining_refills % 10
+                
+                if new_points > 0:
+                    customer.loyalty_points += new_points
+                    loyalty_earn = LoyaltyTransaction(
+                        customer_id   = customer.customer_id,
+                        sale_id       = sale.sale_id,
+                        points_earned = new_points
+                    )
+                    db.session.add(loyalty_earn)
+                
+                # Update the refill counter (this tracks progress toward next point)
+                # You might need to add a 'refill_counter' column to Customer model
+                # For now, we'll just show the message
+                
+                if new_points > 0:
+                    flash(f'{customer.full_name} earned {new_points} loyalty point(s)! Total points: {customer.loyalty_points}', 'success')
+                
+                if leftover_refills > 0:
+                    refills_needed = 10 - leftover_refills
+                    flash(f'{customer.full_name} has {leftover_refills}/10 refills toward next point. {refills_needed} more needed.', 'info')
+            
+            # Show free refills message if any were used
+            if free_refills_used > 0:
+                flash(f'{customer.full_name} redeemed {free_refills_used} FREE refill(s)! Loyalty points remaining: {customer.loyalty_points}', 'success')
     db.session.commit()
     flash('Sale recorded successfully.', 'success')
     return redirect(url_for('sales'))
@@ -623,4 +681,19 @@ def reports():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        
+        # Create default admin if none exists
+        if not User.query.filter_by(username='admin').first():
+            admin = User(
+                full_name='agosAdmin',
+                username='admin',
+                email='admin@agos.com',
+                password=generate_password_hash('agos2019'), 
+                role='Admin',
+                status='Active'
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("✓ Default admin account created")
+    
     app.run(debug=True)

@@ -8,8 +8,8 @@ class User(db.Model):
     full_name = db.Column(db.String(200), nullable=False)
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(200), unique=True, nullable=False)
-    password = db.Column(db.String(50), nullable=False)
-    role = db.Column(db.Enum('Active', 'Operator'), nullable=False)
+    password = db.Column(db.String(255), nullable=False)  # Changed from 50 to 255
+    role = db.Column(db.Enum('Admin', 'Operator'), nullable=False)  # Changed 'Active' to 'Admin'
     status = db.Column(db.Enum('Active', 'Inactive'), default='Active')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
