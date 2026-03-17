@@ -3,223 +3,245 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Operator Dashboard — Agos EP-Bluelife</title>
-  <link rel="stylesheet" href="output.css"/>
+  <title>Operator Dashboard — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 </head>
-<body class="font-body bg-[#f0f8fd] m-0 p-0">
-
+<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Outfit',sans-serif;">
 <div class="flex min-h-screen">
 
   <!-- ══ SIDEBAR ══ -->
   <aside id="sidebar"
-    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col w-[260px] overflow-y-auto
-           bg-gradient-to-b from-[#0b2535] to-[#0f3a54] transition-transform duration-300">
+    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px]"
+    style="background:linear-gradient(180deg,#0b2535 0%,#0f3a54 100%);">
 
     <!-- Brand -->
-    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5 border-b border-[#5bb8e0]/10">
-      <div class="brand-mark">
+    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
         <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
           <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
           <path d="M8 14c1-1.5 2.5-2 3-2s2 .5 3 2" stroke="rgba(255,255,255,.5)" stroke-width="1.2" stroke-linecap="round"/>
         </svg>
       </div>
       <div>
-        <div class="font-display text-xl font-bold text-white leading-tight">Agos</div>
-        <div class="brand-sub">EP-Bluelife System</div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Cormorant Garamond',serif">Agos</div>
+        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
       </div>
     </div>
 
     <!-- User pill -->
-    <div class="flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3
-                bg-white/5 border border-[#5bb8e0]/10">
-      <div id="user-avatar"
-           class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold
-                  text-white flex-shrink-0 bg-gradient-to-br from-[#2d88b8] to-[#5bb8e0]">O</div>
+    <div class="flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3"
+         style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+        {{ session['full_name'][0].upper() }}
+      </div>
       <div>
-        <div id="user-name" class="text-[0.82rem] font-medium leading-tight text-[#cceaf7]/90">Operator</div>
-        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase
-                    px-1.5 py-0.5 rounded mt-0.5 bg-[#2d88b8]/30 text-[#a8d8f0]">Operator</div>
+        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
+        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5"
+             style="background:rgba(45,136,184,0.30);color:#a8d8f0">Operator</div>
       </div>
     </div>
 
     <!-- Nav -->
     <nav class="flex-1 py-2">
-
-      <p class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1 text-[#5bb8e0]/40">Main</p>
-      <a href="#" id="nav-dashboard"
-         onclick="setActive('nav-dashboard','Dashboard','EP-Bluelife Water Refilling Station')"
-         class="nav-lnk flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm
-                transition-all duration-200 font-medium text-white bg-[#2d88b8]/25">
-        <span class="text-base leading-none">🏠</span> Dashboard
+      <div class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1" style="color:rgba(91,184,224,0.40)">Main</div>
+      <a href="{{ url_for('dashboard') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white"
+         style="background:rgba(45,136,184,0.22)">
+        <span>🏠</span> Dashboard
       </a>
 
-      <p class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1 text-[#5bb8e0]/40">Operations</p>
-      <a href="#" id="nav-sales"
-         onclick="setActive('nav-sales','Sales Management','Record and view all walk-in and delivery sales')"
-         class="nav-lnk flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm
-                transition-all duration-200 text-[#cceaf7]/60 hover:bg-white/5 hover:text-[#cceaf7]/90">
-        <span class="text-base leading-none">💧</span> Sales Management
+      <div class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1" style="color:rgba(91,184,224,0.40)">Operations</div>
+      <a href="{{ url_for('sales') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span>💧</span> Sales Management
       </a>
-      <a href="#" id="nav-inventory"
-         onclick="setActive('nav-inventory','Inventory Management','Monitor stock levels and low-stock alerts')"
-         class="nav-lnk flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm
-                transition-all duration-200 text-[#cceaf7]/60 hover:bg-white/5 hover:text-[#cceaf7]/90">
-        <span class="text-base leading-none">📦</span> Inventory Management
+      <a href="{{ url_for('inventory') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span>📦</span> Inventory Management
       </a>
-      <a href="#" id="nav-customers"
-         onclick="setActive('nav-customers','Customer Management','Manage customer records and loyalty points')"
-         class="nav-lnk flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm
-                transition-all duration-200 text-[#cceaf7]/60 hover:bg-white/5 hover:text-[#cceaf7]/90">
-        <span class="text-base leading-none">👥</span> Customer Management
+      <a href="{{ url_for('customers') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span>👥</span> Customer Management
       </a>
-      <a href="#" id="nav-delivery"
-         onclick="setActive('nav-delivery','Delivery Management','Review, confirm, or reject delivery orders')"
-         class="nav-lnk flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm
-                transition-all duration-200 text-[#cceaf7]/60 hover:bg-white/5 hover:text-[#cceaf7]/90">
-        <span class="text-base leading-none">🚚</span> Delivery Management
+      <a href="{{ url_for('deliveries') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span>🚚</span> Delivery Management
       </a>
-
     </nav>
 
-    <!-- Logout -->
-    <div class="flex-shrink-0 p-3 border-t border-[#5bb8e0]/[0.08]">
-      <a href="/logout"
-         class="flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium
-                no-underline transition-all duration-200 font-body
-                bg-[#e05252]/[0.08] border border-[#e05252]/[0.15] text-[#ff9696]/80
-                hover:bg-[#e05252]/[0.16] hover:border-[#e05252]/30 hover:text-[#ffaaaa]">
+    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
+      <a href="{{ url_for('logout') }}"
+         class="flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium no-underline transition-all duration-200"
+         style="background:rgba(224,82,82,0.08);border:1px solid rgba(224,82,82,0.15);color:rgba(255,150,150,0.80)">
         <span>🚪</span> Log Out
       </a>
     </div>
-
   </aside>
 
-  <!-- Mobile overlay -->
-  <div id="overlay" onclick="closeSidebar()"
-       class="hidden fixed inset-0 z-30 bg-[#0d1f2d]/50 backdrop-blur-sm"></div>
+  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-30" style="background:rgba(13,31,45,0.50)"></div>
 
   <!-- ══ MAIN ══ -->
-  <div class="flex flex-col flex-1 min-h-screen ml-[260px]" id="main-wrap">
+  <div class="flex flex-col flex-1 min-h-screen" id="main-wrap" style="margin-left:260px">
 
-    <!-- Topbar -->
-    <header class="sticky top-0 z-30 flex items-center justify-between px-8 py-3.5
-                   bg-[#f5fbff]/90 backdrop-blur-md border-b border-[#2d88b8]/10">
+    <header class="sticky top-0 z-30 flex items-center justify-between px-8 py-3.5"
+            style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()"
-                class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
           </svg>
         </button>
         <div>
-          <div id="page-title" class="font-display text-2xl font-bold text-[#0d1f2d] leading-tight">Dashboard</div>
-          <div id="page-sub" class="text-xs text-[#5a7a8e]">EP-Bluelife Water Refilling Station</div>
+          <div class="text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Cormorant Garamond',serif">Dashboard</div>
+          <div class="text-xs text-[#5a7a8e]">EP-Bluelife Water Refilling Station</div>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div id="topbar-date"
-             class="text-xs text-[#7a99ae] px-3 py-1 rounded-md
-                    bg-[#2d88b8]/[0.07] border border-[#2d88b8]/10"></div>
-        <div id="topbar-avatar"
-             class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold
-                    text-white bg-gradient-to-br from-[#2d88b8] to-[#5bb8e0]">O</div>
+        <div class="text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
+             style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+          {{ session['full_name'][0].upper() }}
+        </div>
       </div>
     </header>
 
-    <!-- Page body -->
     <main class="flex-1 p-8">
 
-      <!-- Welcome banner -->
-      <div class="relative overflow-hidden rounded-2xl px-8 py-6 mb-7 flex items-center justify-between
-                  bg-gradient-to-br from-[#0b3a52] to-[#1a6a8a]">
-        <div class="absolute w-[180px] h-[180px] rounded-full right-[-20px] top-[-30px]
-                    bg-[#5bb8e0]/[0.07] pointer-events-none"></div>
-        <div class="absolute w-[120px] h-[120px] rounded-full right-[80px] bottom-[-40px]
-                    bg-[#2d88b8]/10 pointer-events-none"></div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flex gap-2 items-start rounded-xl px-3.5 py-3 mb-5 text-[0.79rem]
+                        {% if category == 'error' %}text-[#7a5a10]{% else %}text-[#1a5f8a]{% endif %}"
+                 style="{% if category == 'error' %}background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.22);{% else %}background:rgba(0,149,200,0.07);border:1px solid rgba(0,149,200,0.17);{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Welcome banner — teal operator variant -->
+      <div class="relative overflow-hidden rounded-2xl px-8 py-6 mb-7 flex items-center justify-between"
+           style="background:linear-gradient(135deg,#0b3a52 0%,#1a6a8a 100%)">
+        <div class="absolute rounded-full pointer-events-none" style="width:180px;height:180px;right:-20px;top:-30px;background:rgba(91,184,224,0.07)"></div>
+        <div class="absolute rounded-full pointer-events-none" style="width:120px;height:120px;right:80px;bottom:-40px;background:rgba(45,136,184,0.10)"></div>
         <div class="relative z-10">
-          <div class="font-display text-2xl font-bold text-white mb-1">
-            Good morning, <span id="welcome-name">Operator</span>. 👋
+          <div class="text-2xl font-bold text-white mb-1" style="font-family:'Cormorant Garamond',serif">
+            Good day, {{ session['full_name'].split()[0] }}. 👋
           </div>
-          <div class="text-[0.82rem] text-[#b8daef]/60">Ready for today's operations at EP-Bluelife.</div>
+          <div class="text-[0.82rem]" style="color:rgba(184,218,240,0.60)">Ready for today's operations at EP-Bluelife.</div>
         </div>
         <div class="relative z-10 flex flex-col items-end gap-2">
-          <span class="text-[0.7rem] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-md
-                       bg-[#2d88b8]/30 border border-[#5bb8e0]/30 text-[#a8d8f0]">Operator Access</span>
-          <span class="text-xs text-[#b8daef]/45">Sales, delivery &amp; inventory</span>
+          <span class="text-[0.7rem] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-md"
+                style="background:rgba(45,136,184,0.30);border:1px solid rgba(91,184,224,0.30);color:#a8d8f0">Operator Access</span>
+          <span class="text-xs" style="color:rgba(184,218,240,0.45)">Sales, delivery &amp; inventory</span>
         </div>
       </div>
 
-      <!-- Stat cards -->
-      <div class="grid grid-cols-4 gap-5 mb-7">
+      <!-- Stat cards — 4 cards, no profit for operator -->
+      <div class="grid gap-5 mb-7" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr))">
 
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 border border-[#2d88b8]/10
-                    shadow-[0_2px_12px_rgba(13,31,45,0.07)] hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 bg-[#0095c8]/10">💧</div>
+        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
+             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(0,149,200,0.10)">💧</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Today's Sales</div>
-          <div class="font-display text-[2.2rem] font-bold leading-none text-[#0d1f2d]">₱0</div>
-          <div class="text-[0.75rem] text-[#7a99ae]">0 transactions today</div>
+          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">
+            ₱{{ "%.2f"|format(today_sales) }}
+          </div>
+          <div class="text-xs text-[#7a99ae]">Walk-in &amp; delivery</div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 border border-[#2d88b8]/10
-                    shadow-[0_2px_12px_rgba(13,31,45,0.07)] hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 bg-[#2eaa6e]/10">📦</div>
-          <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Gallons in Stock</div>
-          <div class="font-display text-[2.2rem] font-bold leading-none text-[#0d1f2d]">—</div>
-          <div class="text-[0.75rem] text-[#7a99ae]">No inventory recorded</div>
+        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
+             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(46,170,110,0.10)">📦</div>
+          <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Items in Stock</div>
+          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">
+            {{ items_in_stock }}
+          </div>
+          <div class="text-xs text-[#7a99ae]">Across all products</div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 border border-[#2d88b8]/10
-                    shadow-[0_2px_12px_rgba(13,31,45,0.07)] hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 bg-[#d4a843]/10">🚚</div>
+        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
+             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(212,168,67,0.10)">🚚</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Pending Deliveries</div>
-          <div class="font-display text-[2.2rem] font-bold leading-none text-[#0d1f2d]">0</div>
-          <div class="text-[0.75rem] text-[#7a99ae]">No pending orders</div>
+          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">
+            {{ pending_deliveries }}
+          </div>
+          <div class="text-xs text-[#7a99ae]">Awaiting confirmation</div>
         </div>
 
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 border border-[#2d88b8]/10
-                    shadow-[0_2px_12px_rgba(13,31,45,0.07)] hover:-translate-y-0.5 transition-all duration-200">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 bg-[#5bb8e0]/10">👥</div>
+        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
+             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(91,184,224,0.10)">👥</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Total Customers</div>
-          <div class="font-display text-[2.2rem] font-bold leading-none text-[#0d1f2d]">0</div>
-          <div class="text-[0.75rem] text-[#7a99ae]">No customers yet</div>
+          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">
+            {{ total_customers }}
+          </div>
+          <div class="text-xs text-[#7a99ae]">Registered customers</div>
         </div>
 
       </div>
 
       <!-- Main grid -->
-      <div class="grid grid-cols-[2fr_1fr] gap-5 mb-5">
+      <div class="grid gap-5 mb-5" style="grid-template-columns:2fr 1fr">
 
-        <!-- Recent transactions -->
-        <div class="bg-white rounded-2xl overflow-hidden border border-[#2d88b8]/10
-                    shadow-[0_2px_12px_rgba(13,31,45,0.07)]">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-[#2d88b8]/[0.08]">
-            <div class="font-display text-[1.05rem] font-bold text-[#0d1f2d]">Recent Transactions</div>
-            <a href="#" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
+        <!-- Recent sales -->
+        <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Recent Sales</div>
+            <a href="{{ url_for('sales') }}" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
           </div>
           <div class="p-5">
             <table class="w-full border-collapse">
               <thead>
                 <tr>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Customer</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Type</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Amount</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Loyalty</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Status</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Customer</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Type</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Amount</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Loyalty</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td colspan="5" class="text-center py-8 text-xs text-[#a8c4d4]">
-                    No transactions recorded yet.
-                  </td>
-                </tr>
+                {% if recent_sales %}
+                  {% for sale in recent_sales %}
+                  <tr>
+                    <td class="text-[0.82rem] text-[#3a5f78] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      {{ sale.customer.full_name if sale.customer else 'Walk-in' }}
+                    </td>
+                    <td class="text-[0.82rem] text-[#3a5f78] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      <span class="inline-flex items-center text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full
+                                   {% if sale.sale_type == 'Walk-in' %}bg-[rgba(0,149,200,0.10)] text-[#0074a0]{% else %}bg-[rgba(212,168,67,0.12)] text-[#8a6010]{% endif %}">
+                        {{ sale.sale_type }}
+                      </span>
+                    </td>
+                    <td class="text-[0.82rem] font-semibold text-[#0d1f2d] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      ₱{{ "%.2f"|format(sale.total_amount) }}
+                    </td>
+                    <td class="text-[0.82rem] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      {% if sale.customer %}
+                        <span class="text-[0.72rem] font-semibold" style="color:#2eaa6e">
+                          {{ sale.customer.loyalty_points }} pts
+                        </span>
+                      {% else %}
+                        <span class="text-[0.72rem] text-[#a8c4d4]">—</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center py-8 text-xs" style="color:#a8c4d4">No sales recorded yet.</td>
+                  </tr>
+                {% endif %}
               </tbody>
             </table>
           </div>
@@ -229,133 +251,62 @@
         <div class="flex flex-col gap-5">
 
           <!-- Quick actions -->
-          <div class="bg-white rounded-2xl overflow-hidden border border-[#2d88b8]/10
-                      shadow-[0_2px_12px_rgba(13,31,45,0.07)]">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-[#2d88b8]/[0.08]">
-              <div class="font-display text-[1.05rem] font-bold text-[#0d1f2d]">Quick Actions</div>
+          <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+            <div class="flex items-center px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Quick Actions</div>
             </div>
-            <div class="p-5 pt-3 flex flex-col gap-2.5">
-
-              <div onclick="setActive('nav-sales','Sales Management','Record and view all walk-in and delivery sales')"
-                   class="flex items-center gap-3 p-3 rounded-xl cursor-pointer
-                          border border-[#2d88b8]/10 transition-all duration-200
-                          hover:bg-[#2d88b8]/[0.05] hover:border-[#2d88b8]/20 hover:translate-x-1">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base
-                            flex-shrink-0 bg-[#0095c8]/10">💧</div>
+            <div class="p-5 flex flex-col gap-2.5">
+              <a href="{{ url_for('sales') }}"
+                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
+                 style="border:1px solid rgba(45,136,184,0.10)">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style="background:rgba(0,149,200,0.10)">💧</div>
                 <div>
                   <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Record Sale</div>
                   <div class="text-[0.72rem] text-[#7a99ae]">Walk-in or delivery</div>
                 </div>
-              </div>
-
-              <div onclick="setActive('nav-delivery','Delivery Management','Review, confirm, or reject delivery orders')"
-                   class="flex items-center gap-3 p-3 rounded-xl cursor-pointer
-                          border border-[#2d88b8]/10 transition-all duration-200
-                          hover:bg-[#2d88b8]/[0.05] hover:border-[#2d88b8]/20 hover:translate-x-1">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base
-                            flex-shrink-0 bg-[#d4a843]/10">🚚</div>
+              </a>
+              <a href="{{ url_for('deliveries') }}"
+                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
+                 style="border:1px solid rgba(45,136,184,0.10)">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style="background:rgba(212,168,67,0.10)">🚚</div>
                 <div>
                   <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Delivery Orders</div>
                   <div class="text-[0.72rem] text-[#7a99ae]">Confirm or reject</div>
                 </div>
-              </div>
-
-              <div onclick="setActive('nav-customers','Customer Management','Manage customer records and loyalty points')"
-                   class="flex items-center gap-3 p-3 rounded-xl cursor-pointer
-                          border border-[#2d88b8]/10 transition-all duration-200
-                          hover:bg-[#2d88b8]/[0.05] hover:border-[#2d88b8]/20 hover:translate-x-1">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base
-                            flex-shrink-0 bg-[#5bb8e0]/10">👥</div>
+              </a>
+              <a href="{{ url_for('customers') }}"
+                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
+                 style="border:1px solid rgba(45,136,184,0.10)">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style="background:rgba(91,184,224,0.10)">👥</div>
                 <div>
-                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Add Customer</div>
-                  <div class="text-[0.72rem] text-[#7a99ae]">Register new customer</div>
+                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Customers</div>
+                  <div class="text-[0.72rem] text-[#7a99ae]">View &amp; add customers</div>
                 </div>
-              </div>
-
-              <div onclick="setActive('nav-inventory','Inventory Management','Monitor stock levels and low-stock alerts')"
-                   class="flex items-center gap-3 p-3 rounded-xl cursor-pointer
-                          border border-[#2d88b8]/10 transition-all duration-200
-                          hover:bg-[#2d88b8]/[0.05] hover:border-[#2d88b8]/20 hover:translate-x-1">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base
-                            flex-shrink-0 bg-[#2eaa6e]/10">📦</div>
-                <div>
-                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Check Inventory</div>
-                  <div class="text-[0.72rem] text-[#7a99ae]">Stock levels &amp; alerts</div>
-                </div>
-              </div>
-
+              </a>
             </div>
           </div>
 
-          <!-- Alerts -->
-          <div class="bg-white rounded-2xl overflow-hidden border border-[#2d88b8]/10
-                      shadow-[0_2px_12px_rgba(13,31,45,0.07)]">
-            <div class="flex items-center justify-between px-5 py-4 border-b border-[#2d88b8]/[0.08]">
-              <div class="font-display text-[1.05rem] font-bold text-[#0d1f2d]">Alerts</div>
+          <!-- Pending deliveries preview -->
+          <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+            <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Delivery Queue</div>
+              <a href="{{ url_for('deliveries') }}" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
             </div>
-            <div class="p-5 flex flex-col gap-2.5">
-              <div class="flex items-start gap-2.5 px-3.5 py-3 rounded-xl text-[0.8rem]
-                          bg-[#0095c8]/[0.07] border border-[#0095c8]/[0.17] text-[#1a5f8a]">
-                <div class="w-2 h-2 rounded-full bg-[#0095c8] flex-shrink-0 mt-1"></div>
-                <div>System ready. Start by recording a sale or adding customers.</div>
-              </div>
+            <div class="p-5 flex flex-col gap-2">
+              {% if pending_delivery_list %}
+                {% for d in pending_delivery_list %}
+                  <div class="flex items-center justify-between py-2 text-[0.82rem]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                    <span class="text-[#3a5f78] font-medium">{{ d.customer.full_name }}</span>
+                    <span class="text-[0.68rem] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(212,168,67,0.12);color:#8a6010">Pending</span>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div class="text-center py-4 text-xs" style="color:#a8c4d4">No pending deliveries.</div>
+              {% endif %}
             </div>
           </div>
 
         </div>
-      </div>
-
-      <!-- Bottom row -->
-      <div class="grid grid-cols-2 gap-5">
-
-        <!-- Delivery queue -->
-        <div class="bg-white rounded-2xl overflow-hidden border border-[#2d88b8]/10
-                    shadow-[0_2px_12px_rgba(13,31,45,0.07)]">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-[#2d88b8]/[0.08]">
-            <div class="font-display text-[1.05rem] font-bold text-[#0d1f2d]">Delivery Queue</div>
-            <a href="#" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
-          </div>
-          <div class="p-5">
-            <table class="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Customer</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Qty</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Area</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider
-                             text-[#7a99ae] pb-3 border-b border-[#2d88b8]/10">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td colspan="4" class="text-center py-6 text-xs text-[#a8c4d4]">No pending deliveries.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Loyalty tracker -->
-        <div class="bg-white rounded-2xl overflow-hidden border border-[#2d88b8]/10
-                    shadow-[0_2px_12px_rgba(13,31,45,0.07)]">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-[#2d88b8]/[0.08]">
-            <div class="font-display text-[1.05rem] font-bold text-[#0d1f2d]">Loyalty Tracker</div>
-            <a href="#" onclick="setActive('nav-customers','Customer Management','Manage customer records and loyalty points')"
-               class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
-          </div>
-          <div class="p-5">
-            <p class="text-[0.8rem] text-[#5a7a8e] mb-4">
-              Customers earn 1 free refill after every 10 refills.
-            </p>
-            <div class="text-center py-4 text-xs text-[#a8c4d4]">
-              No customers with active loyalty points yet.
-            </div>
-          </div>
-        </div>
-
       </div>
 
     </main>
@@ -366,20 +317,6 @@
   document.getElementById('topbar-date').textContent =
     new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-  function setActive(id, title, sub) {
-    document.querySelectorAll('.nav-lnk').forEach(el => {
-      el.classList.remove('font-medium','text-white','bg-[#2d88b8]/25');
-      el.classList.add('text-[#cceaf7]/60');
-    });
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('font-medium','text-white','bg-[#2d88b8]/25');
-    el.classList.remove('text-[#cceaf7]/60');
-    document.getElementById('page-title').textContent = title;
-    if (sub) document.getElementById('page-sub').textContent = sub;
-    closeSidebar();
-  }
-
   function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('-translate-x-full');
     document.getElementById('overlay').classList.toggle('hidden');
@@ -388,27 +325,15 @@
     document.getElementById('sidebar').classList.add('-translate-x-full');
     document.getElementById('overlay').classList.add('hidden');
   }
-
   function checkWidth() {
-    const mobile = window.innerWidth < 768;
-    document.getElementById('main-wrap').style.marginLeft = mobile ? '0' : '260px';
-    document.getElementById('menu-btn').style.display = mobile ? 'flex' : 'none';
-    if (mobile) document.getElementById('sidebar').classList.add('-translate-x-full');
-    else {
-      document.getElementById('sidebar').classList.remove('-translate-x-full');
-      document.getElementById('overlay').classList.add('hidden');
-    }
+    const isMobile = window.innerWidth < 768;
+    document.getElementById('main-wrap').style.marginLeft = isMobile ? '0' : '260px';
+    document.getElementById('menu-btn').style.display     = isMobile ? 'flex' : 'none';
+    if (isMobile) document.getElementById('sidebar').classList.add('-translate-x-full');
+    else { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
   }
   checkWidth();
   window.addEventListener('resize', checkWidth);
-
-  /* Flask Jinja fills these in production */
-  const fname = '{{ session["fname"] | default("Operator") }}';
-  const initials = fname.charAt(0).toUpperCase();
-  document.getElementById('welcome-name').textContent  = fname;
-  document.getElementById('user-name').textContent     = fname + ' (Operator)';
-  document.getElementById('user-avatar').textContent   = initials;
-  document.getElementById('topbar-avatar').textContent = initials;
 </script>
 </body>
 </html>

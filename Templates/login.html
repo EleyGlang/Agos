@@ -3,209 +3,163 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign In — Agos EP-Bluelife</title>
-  <link rel="stylesheet" href="../src/output.css"/>
+  <title>Login — Agos EP-Bluelife</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 </head>
-<body class="water-bg min-h-screen flex flex-col">
+<body class="min-h-screen flex" style="font-family:'Outfit',sans-serif;background:#f0f8fd;">
 
-  <canvas id="bg-canvas" class="fixed inset-0 z-0 pointer-events-none"></canvas>
+  <!-- Left accent panel -->
+  <div class="hidden lg:flex flex-col justify-center px-14 relative overflow-hidden"
+       style="width:420px;min-width:360px;background:linear-gradient(165deg,#123047 0%,#0d1f2d 100%);">
 
-  <!-- ── AUTH NAV ── -->
-  <nav class="auth-nav">
-    <a href="landing.html" class="auth-back">← Back to Home</a>
-    <a href="landing.html" class="flex items-center gap-3 no-underline cursor-pointer">
-      <div class="brand-mark">
-        <svg viewBox="0 0 22 22" fill="none" width="22" height="22">
+    <!-- Decorative rings -->
+    <div class="absolute rounded-full pointer-events-none" style="width:400px;height:400px;top:-100px;right:-150px;border:1px solid rgba(91,184,224,0.08)"></div>
+    <div class="absolute rounded-full pointer-events-none" style="width:280px;height:280px;bottom:-80px;left:-100px;border:1px solid rgba(91,184,224,0.06)"></div>
+
+    <!-- Brand -->
+    <div class="flex items-center gap-3 mb-10">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 14px rgba(0,149,200,0.30)">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
           <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
           <path d="M8 14c1-1.5 2.5-2 3-2s2 .5 3 2" stroke="rgba(255,255,255,.5)" stroke-width="1.2" stroke-linecap="round"/>
         </svg>
       </div>
       <div>
-        <div class="brand-name">Agos</div>
-        <div class="brand-sub">EP-Bluelife System</div>
+        <div class="text-2xl font-bold text-white leading-tight" style="font-family:'Cormorant Garamond',serif">Agos</div>
+        <div class="text-[0.63rem] font-medium tracking-widest uppercase text-[#5bb8e0]">EP-Bluelife System</div>
       </div>
-    </a>
-    <a href="register.html" class="btn btn-solid text-[0.8rem] py-2 px-4">Request Access</a>
-  </nav>
+    </div>
 
-  <!-- ── AUTH LAYOUT ── -->
-  <div class="flex flex-1 min-h-0">
+    <!-- Headline -->
+    <h1 class="text-3xl font-bold text-white leading-snug mb-3" style="font-family:'Cormorant Garamond',serif">
+      Clean water,<br/><em class="text-[#5bb8e0] not-italic">clean records.</em>
+    </h1>
+    <p class="text-sm leading-relaxed mb-8" style="color:rgba(204,234,247,0.58)">
+      The EP-Bluelife management system keeps your sales, inventory, deliveries, and reports organized — all in one place.
+    </p>
 
-    <!-- LEFT ACCENT PANEL -->
-    <aside class="auth-accent">
-      <div class="auth-ring" style="width:300px;height:300px;top:-80px;right:-110px"></div>
-      <div class="auth-ring" style="width:180px;height:180px;bottom:70px;left:-60px"></div>
-
-      <div class="relative z-10">
-        <!-- Logo -->
-        <div class="flex items-center gap-3 mb-10">
-          <div class="acc-logo-mark w-11 h-11 rounded-xl flex items-center justify-center"
-               style="background: linear-gradient(145deg,#2d88b8,#5bb8e0)">
-            <svg viewBox="0 0 22 22" fill="none" width="24" height="24">
-              <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
-              <path d="M8 14c1-1.5 2.5-2 3-2s2 .5 3 2" stroke="rgba(255,255,255,.5)" stroke-width="1.2" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <div>
-            <div class="font-display text-2xl font-bold text-white leading-tight">Agos</div>
-            <div class="text-[0.62rem] tracking-widest uppercase text-[#5bb8e0]">Management System</div>
-          </div>
-        </div>
-
-        <h2 class="acc-title">Welcome<br/>back to <em>Agos</em></h2>
-        <p class="acc-body">Sign in to manage EP-Bluelife's daily sales, inventory, deliveries, and financial reports.</p>
-
-        <div class="flex flex-col gap-2.5 mb-8">
-          <div class="perk"><div class="perk-dot">✓</div>Real-time inventory monitoring</div>
-          <div class="perk"><div class="perk-dot">✓</div>Sales and delivery tracking</div>
-          <div class="perk"><div class="perk-dot">✓</div>Automated financial reports</div>
-          <div class="perk"><div class="perk-dot">✓</div>Role-based access control</div>
-        </div>
-
-        <div class="acc-divider"></div>
-
-        <div class="acc-station">
-          <span class="text-xl">🏪</span>
-          <div>
-            <strong class="block text-sm font-semibold" style="color:rgba(204,234,247,0.88)">EP-Bluelife Water Refilling Station</strong>
-            <span class="text-[0.72rem]" style="color:rgba(204,234,247,0.42)">Soledad, Sta. Rosa · Internal System</span>
-          </div>
-        </div>
+    <!-- Perks -->
+    <div class="flex flex-col gap-3 mb-8">
+      <div class="flex items-start gap-2.5 text-[0.82rem]" style="color:rgba(204,234,247,0.72)">
+        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[0.58rem] flex-shrink-0 mt-0.5"
+             style="background:rgba(0,149,200,0.20);border:1px solid rgba(0,149,200,0.35);color:#5bb8e0">✓</div>
+        Real-time sales and inventory tracking
       </div>
-    </aside>
+      <div class="flex items-start gap-2.5 text-[0.82rem]" style="color:rgba(204,234,247,0.72)">
+        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[0.58rem] flex-shrink-0 mt-0.5"
+             style="background:rgba(0,149,200,0.20);border:1px solid rgba(0,149,200,0.35);color:#5bb8e0">✓</div>
+        Automatic loyalty point tracking
+      </div>
+      <div class="flex items-start gap-2.5 text-[0.82rem]" style="color:rgba(204,234,247,0.72)">
+        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[0.58rem] flex-shrink-0 mt-0.5"
+             style="background:rgba(0,149,200,0.20);border:1px solid rgba(0,149,200,0.35);color:#5bb8e0">✓</div>
+        Financial reports and profit summary
+      </div>
+    </div>
 
-    <!-- RIGHT FORM PANEL -->
-    <div class="auth-form-panel">
-      <div class="auth-inner">
+    <div class="h-px my-2" style="background:rgba(91,184,224,0.10)"></div>
 
-        <div class="form-head">
-          <h2>Sign In</h2>
-          <p>Access your dashboard using your credentials</p>
-        </div>
-
-        <!-- Role selector -->
-        <div class="role-tabs">
-          <button class="rtab on" id="lt-admin"    onclick="setRole('admin')">🔑 Admin</button>
-          <button class="rtab"    id="lt-operator" onclick="setRole('operator')">👷 Operator</button>
-        </div>
-
-        <!-- Notice -->
-        <div class="notice notice-info">
-          <span class="text-base mt-0.5">ℹ</span>
-          <span id="role-notice">Admin accounts have full system access including user management and all reports.</span>
-        </div>
-
-        <!-- Username -->
-        <div class="fg">
-          <label>Username or Email</label>
-          <div class="fi-wrap">
-            <span class="fi-ico">✉</span>
-            <input type="text" class="fi" placeholder="Enter your username or email" id="l-user"/>
-          </div>
-        </div>
-
-        <!-- Password -->
-        <div class="fg">
-          <label>Password</label>
-          <div class="fi-wrap">
-            <span class="fi-ico">🔒</span>
-            <input type="password" class="fi" placeholder="••••••••" id="l-pass"/>
-          </div>
-        </div>
-
-        <!-- Remember / Forgot -->
-        <div class="flex items-center justify-between mb-5">
-          <label class="flex items-center gap-2 text-sm text-[#5a7a8e] cursor-pointer">
-            <input type="checkbox" class="accent-[#0095c8]"/> Remember me
-          </label>
-          <a href="#" class="text-sm text-[#0095c8] hover:underline">Forgot password?</a>
-        </div>
-
-        <button onclick="doLogin()" class="btn btn-solid btn-block btn-lg">Sign In →</button>
-
-        <p class="text-center mt-5 text-sm text-[#5a7a8e]">
-          Need an account?
-          <a href="register.html" class="text-[#0095c8] font-semibold hover:underline">Request access from Admin</a>
-        </p>
-
+    <!-- Station badge -->
+    <div class="flex items-center gap-3 rounded-xl p-3 mt-6"
+         style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.13)">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
+           style="background:linear-gradient(135deg,#5bb8e0,#0095c8)">💧</div>
+      <div>
+        <div class="text-xs font-semibold text-white">EP-Bluelife Water Refilling Station</div>
+        <div class="text-[0.68rem]" style="color:rgba(204,234,247,0.45)">Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija</div>
       </div>
     </div>
   </div>
 
-  <!-- ── TOAST ── -->
-  <div class="toast" id="toast">
-    <span id="t-ico">⚠️</span>
-    <span id="t-msg"></span>
+  <!-- Right form panel -->
+  <div class="flex-1 flex items-center justify-center p-10 bg-white overflow-y-auto">
+    <div class="w-full max-w-md">
+
+      <!-- Mobile brand -->
+      <div class="flex lg:hidden items-center gap-3 mb-8">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+             style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+          <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+            <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+          </svg>
+        </div>
+        <div class="text-xl font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Agos</div>
+      </div>
+
+      <!-- Form header -->
+      <div class="mb-8">
+        <h2 class="text-4xl font-bold text-[#0d1f2d] mb-1" style="font-family:'Cormorant Garamond',serif">Welcome back</h2>
+        <p class="text-sm text-[#5a7a8e]">Sign in to your account to continue.</p>
+      </div>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flex gap-2 items-start rounded-xl px-3.5 py-3 mb-5 text-[0.79rem] leading-relaxed
+                        {% if category == 'error' %}text-[#7a5a10]{% else %}text-[#1a5f8a]{% endif %}"
+                 style="{% if category == 'error' %}background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.22);{% else %}background:rgba(0,149,200,0.07);border:1px solid rgba(0,149,200,0.17);{% endif %}">
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Login form — no role selector, backend handles it -->
+      <form action="{{ url_for('login') }}" method="POST" class="flex flex-col gap-4">
+
+        <!-- Username -->
+        <div>
+          <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Username</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none w-4 text-center"
+                  style="color:rgba(45,136,184,0.45)">👤</span>
+            <input type="text" name="username" placeholder="Enter your username" required
+                   class="w-full pl-9 pr-4 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                   style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                   onfocus="this.style.background='#fff';this.style.borderColor='#0095c8';this.style.boxShadow='0 0 0 3px rgba(0,149,200,0.10)'"
+                   onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)';this.style.boxShadow='none'"/>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Password</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none w-4 text-center"
+                  style="color:rgba(45,136,184,0.45)">🔒</span>
+            <input type="password" name="password" id="pw" placeholder="Enter your password" required
+                   class="w-full pl-9 pr-10 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                   style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                   onfocus="this.style.background='#fff';this.style.borderColor='#0095c8';this.style.boxShadow='0 0 0 3px rgba(0,149,200,0.10)'"
+                   onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)';this.style.boxShadow='none'"/>
+            <button type="button" onclick="togglePw()"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer"
+                    style="color:rgba(45,136,184,0.50)">👁</button>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+                class="w-full py-3 rounded-full text-white font-semibold text-sm cursor-pointer transition-all duration-200 border-none mt-2"
+                style="background:#0095c8;box-shadow:0 4px 18px rgba(0,149,200,0.28);font-family:'Outfit',sans-serif"
+                onmouseover="this.style.background='#007eb0'"
+                onmouseout="this.style.background='#0095c8'">
+          Sign In
+        </button>
+      </form>
+
+    </div>
   </div>
 
-  <!-- ── SUCCESS OVERLAY ── -->
-  <div class="sc-overlay" id="sc">
-    <div class="sc-check">✓</div>
-    <h3>Welcome back!</h3>
-    <p id="sc-p">Signing you in…</p>
-    <a href="landing.html" class="btn btn-solid btn-lg">Continue to Dashboard →</a>
-  </div>
-
-  <script>
-    /* ── WATER CANVAS ── */
-    const cv = document.getElementById('bg-canvas');
-    const cx = cv.getContext('2d');
-    let W, H;
-    function rsz() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
-    rsz(); addEventListener('resize', rsz);
-    const waves = [
-      { y:.72, a:16, f:.013, s: .008, c:'rgba(204,234,247,0.50)' },
-      { y:.78, a:12, f:.019, s:-.007, c:'rgba(184,218,240,0.38)' },
-      { y:.85, a:20, f:.010, s: .006, c:'rgba(220,242,252,0.55)' },
-    ];
-    let tk = 0;
-    function draw() {
-      cx.clearRect(0,0,W,H);
-      const g = cx.createLinearGradient(0,0,0,H);
-      g.addColorStop(0,'#f5fbff'); g.addColorStop(1,'#d5edf8');
-      cx.fillStyle=g; cx.fillRect(0,0,W,H);
-      waves.forEach(w=>{
-        cx.beginPath(); cx.moveTo(0,H);
-        for(let x=0;x<=W;x+=3){const y=w.y*H+Math.sin(x*w.f+tk*w.s)*w.a+Math.sin(x*w.f*1.7+tk*w.s*1.4)*(w.a*.4);cx.lineTo(x,y);}
-        cx.lineTo(W,H);cx.lineTo(0,H);cx.closePath();cx.fillStyle=w.c;cx.fill();
-      });
-      tk++; requestAnimationFrame(draw);
-    }
-    draw();
-
-    /* ── ROLE TABS ── */
-    let currentRole = 'admin';
-    const notices = {
-      admin:    'Admin accounts have full system access including user management and all reports.',
-      operator: 'Operator accounts can process sales, manage deliveries, inventory, and customer records.',
-    };
-    function setRole(r) {
-      currentRole = r;
-      document.getElementById('lt-admin').classList.toggle('on', r === 'admin');
-      document.getElementById('lt-operator').classList.toggle('on', r === 'operator');
-      document.getElementById('role-notice').textContent = notices[r];
-    }
-
-    /* ── TOAST ── */
-    function showToast(msg, type = 'w') {
-      const el = document.getElementById('toast');
-      document.getElementById('t-msg').textContent = msg;
-      document.getElementById('t-ico').textContent = type==='ok' ? '✅' : type==='e' ? '❌' : '⚠️';
-      el.className = 'toast show' + (type==='e' ? ' t-err' : type==='ok' ? ' t-ok' : '');
-      setTimeout(() => el.classList.remove('show'), 3500);
-    }
-
-    /* ── LOGIN HANDLER ── */
-    function doLogin() {
-      const u = document.getElementById('l-user').value.trim();
-      const p = document.getElementById('l-pass').value;
-      if (!u || !p) { showToast('Please fill in all fields.'); return; }
-      document.getElementById('sc-p').textContent =
-        'Signing you in as ' + (currentRole === 'admin' ? 'Administrator' : 'Operator') + '…';
-      document.getElementById('sc').classList.add('show');
-    }
-  </script>
 </body>
+<script>
+  function togglePw() {
+    const pw = document.getElementById('pw');
+    pw.type = pw.type === 'password' ? 'text' : 'password';
+  }
+</script>
 </html>
