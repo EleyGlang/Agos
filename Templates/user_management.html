@@ -13,7 +13,7 @@
 
   <!-- ══ SIDEBAR (same as admin dashboard) ══ -->
   <aside id="sidebar"
-    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px]"
+    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
     style="background:linear-gradient(180deg,#0d1f2d 0%,#123047 100%);">
     <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
       <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -37,50 +37,82 @@
              style="background:rgba(0,149,200,0.25);color:#5bb8e0">Admin</div>
       </div>
     </div>
+    <!-- Nav -->
     <nav class="flex-1 py-2">
-      <div class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1" style="color:rgba(91,184,224,0.40)">Main</div>
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span>🏠</span> Dashboard</a>
-      <div class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1" style="color:rgba(91,184,224,0.40)">Operations</div>
-      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span>💧</span> Sales Management</a>
-      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span>📦</span> Inventory Management</a>
-      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span>👥</span> Customer Management</a>
-      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span>🚚</span> Delivery Management</a>
-      <div class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1" style="color:rgba(91,184,224,0.40)">Finance</div>
-      <a href="{{ url_for('expenses') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span>💰</span> Expense Management</a>
-      <a href="{{ url_for('reports') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span>📊</span> Reports</a>
-      <div class="text-[0.6rem] font-semibold tracking-[0.14em] uppercase px-5 pt-4 pb-1" style="color:rgba(91,184,224,0.40)">Administration</div>
-      <a href="{{ url_for('create_user') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(0,149,200,0.18)"><span>🔑</span> User Management</a>
+
+      <a href="{{ url_for('dashboard') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium {% if active_page == 'dashboard' %}text-white{% else %}text-[#ccd9ec]{% endif %}"
+         style="{% if active_page == 'dashboard' %}background:rgba(0,149,200,0.18);color:#ffffff{% else %}color:rgba(204,234,247,0.60){% endif %}">
+        <span></span> Dashboard
+      </a>
+
+      <a href="{{ url_for('sales') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span></span> Sales Management
+      </a>
+      <a href="{{ url_for('inventory') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span></span> Inventory Management
+      </a>
+      <a href="{{ url_for('customers') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span></span> Customer Management
+      </a>
+      <a href="{{ url_for('deliveries') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span></span> Delivery Management
+      </a>
+      <a href="{{ url_for('user_management') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 {% if active_page == 'user_management' %}bg-[rgba(0,149,200,0.18)] text-white{% else %}text-[#ccd9ec] hover:bg-[rgba(255,255,255,0.06)]{% endif %}"
+         style="{% if active_page == 'user_management' %}background:rgba(0,149,200,0.18);color:#ffffff{% else %}color:rgba(204,234,247,0.60){% endif %}">
+        <span></span> User Management
+      </a>
+      <a href="{{ url_for('expense_management') }}"
+         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
+         style="color:rgba(204,234,247,0.60)">
+        <span></span> Expense Management
+      </a>
     </nav>
+
     <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <a href="{{ url_for('logout') }}" class="flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium no-underline" style="background:rgba(224,82,82,0.08);border:1px solid rgba(224,82,82,0.15);color:rgba(255,150,150,0.80)"><span>🚪</span> Log Out</a>
+      <button type="button" onclick="openLogoutModal()"
+         class="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200"
+         style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">
+        <span></span> Log Out
+      </button>
     </div>
   </aside>
+
 
   <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-30" style="background:rgba(13,31,45,0.50)"></div>
 
   <!-- ══ MAIN ══ -->
-  <div class="flex flex-col flex-1 min-h-screen" id="main-wrap" style="margin-left:260px">
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]" id="main-wrap">
 
-    <header class="sticky top-0 z-30 flex items-center justify-between px-8 py-3.5"
+    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5"
             style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
       <div class="flex items-center gap-4">
         <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Cormorant Garamond',serif">User Management</div>
-          <div class="text-xs text-[#5a7a8e]">Create and manage operator accounts</div>
+          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Cormorant Garamond',serif">User Management</div>
+          <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">Create and manage operator accounts</div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
              style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
              style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
 
-    <main class="flex-1 p-8">
+    <main class="flex-1 p-4 md:p-6 lg:p-8">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
@@ -91,7 +123,7 @@
         {% endfor %}{% endif %}
       {% endwith %}
 
-      <div class="grid gap-6" style="grid-template-columns:1fr 1.6fr">
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-4 md:gap-6">
 
         <!-- Create user form -->
         <div class="bg-white rounded-2xl overflow-hidden self-start" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
@@ -99,19 +131,20 @@
             <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Create New Account</div>
             <div class="text-xs text-[#7a99ae] mt-0.5">Add an admin or operator to the system</div>
           </div>
-          <div class="p-5">
+          <div class="p-5 overflow-x-auto">
             <form action="{{ url_for('create_user') }}" method="POST" class="flex flex-col gap-4">
 
               <!-- Full name -->
               <div>
                 <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Full Name</label>
                 <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)">👤</span>
-                  <input type="text" name="full_name" placeholder="e.g. Juan Dela Cruz" required
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)"></span>
+                  <input type="text" name="full_name" placeholder="e.g. Josh John Michael Argao" required
                          class="w-full pl-9 pr-4 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
                          onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"
+                         pattern="[A-Za-z ]+" title="Only letters and spaces are allowed"/>
                 </div>
               </div>
 
@@ -119,7 +152,7 @@
               <div>
                 <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Username</label>
                 <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)">@</span>
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)"></span>
                   <input type="text" name="username" placeholder="unique username" required
                          class="w-full pl-9 pr-4 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
@@ -127,31 +160,17 @@
                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
                 </div>
               </div>
-
-              <!-- Email -->
-              <div>
-                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Email</label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)">✉</span>
-                  <input type="email" name="email" placeholder="user@email.com" required
-                         class="w-full pl-9 pr-4 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
-                         style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
-                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
-                </div>
-              </div>
-
               <!-- Password -->
               <div>
                 <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Password</label>
                 <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)">🔒</span>
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)"></span>
                   <input type="password" name="password" id="new-pw" placeholder="Minimum 8 characters" required minlength="8"
                          class="w-full pl-9 pr-10 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
                          onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
-                  <button type="button" onclick="togglePw('new-pw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer" style="color:rgba(45,136,184,0.50)">👁</button>
+                  <button type="button" onclick="togglePw('new-pw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer" style="color:rgba(45,136,184,0.50)"></button>
                 </div>
               </div>
 
@@ -192,7 +211,7 @@
                    class="px-3 py-1.5 rounded-lg text-sm outline-none"
                    style="background:#e8f6fc;border:1px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;width:180px"/>
           </div>
-          <div class="p-5">
+          <div class="p-5 overflow-x-auto">
             <table class="w-full border-collapse" id="users-table">
               <thead>
                 <tr>
@@ -215,7 +234,6 @@
                         </div>
                         <div>
                           <div class="font-medium text-[#0d1f2d]">{{ user.full_name }}</div>
-                          <div class="text-[0.7rem] text-[#7a99ae]">{{ user.email }}</div>
                         </div>
                       </div>
                     </td>
@@ -299,22 +317,107 @@
   }
 
   function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    document.getElementById('overlay').classList.toggle('hidden');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
   }
+  
   function closeSidebar() {
-    document.getElementById('sidebar').classList.add('-translate-x-full');
-    document.getElementById('overlay').classList.add('hidden');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
   }
+  
   function checkWidth() {
     const isMobile = window.innerWidth < 768;
-    document.getElementById('main-wrap').style.marginLeft = isMobile ? '0' : '260px';
-    document.getElementById('menu-btn').style.display     = isMobile ? 'flex' : 'none';
-    if (isMobile) document.getElementById('sidebar').classList.add('-translate-x-full');
-    else { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
+    const sidebar = document.getElementById('sidebar');
+    const menuBtn = document.getElementById('menu-btn');
+    const overlay = document.getElementById('overlay');
+    
+    if (isMobile) {
+      menuBtn.classList.remove('hidden');
+      menuBtn.classList.add('flex');
+      if (!sidebar.classList.contains('-translate-x-full')) {
+        sidebar.classList.add('-translate-x-full');
+      }
+      overlay.classList.add('hidden');
+    } else {
+      menuBtn.classList.add('hidden');
+      menuBtn.classList.remove('flex');
+      sidebar.classList.remove('-translate-x-full');
+      overlay.classList.add('hidden');
+    }
   }
+  
   checkWidth();
   window.addEventListener('resize', checkWidth);
+
+  function openLogoutModal() {
+    document.getElementById('logout-modal').classList.remove('hidden');
+    document.getElementById('logout-modal').classList.add('flex');
+  }
+
+  function closeLogoutModal() {
+    document.getElementById('logout-modal').classList.add('hidden');
+    document.getElementById('logout-modal').classList.remove('flex');
+  }
+
+  function confirmLogout() {
+    window.location.href = "{{ url_for('logout') }}";
+  }
 </script>
+
+<div id="logout-modal" 
+     class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+    
+    <div class="relative p-4 w-full max-w-md">
+        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+            
+            <!-- Modal Content -->
+            <div class="p-8 text-center">
+                
+                <!-- Icon -->
+                <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:linear-gradient(135deg,rgba(0,149,200,0.10),rgba(91,184,224,0.10))">
+                    <svg class="w-8 h-8" style="color:#0095c8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </div>
+                
+                <!-- Title -->
+                <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Cormorant Garamond',serif">
+                    Confirm Logout
+                </h3>
+                
+                <!-- Message -->
+                <p class="mb-6 text-sm leading-relaxed" style="color:#5a7a8e">
+                    Are you sure you want to log out of your account?
+                </p>
+                
+                <!-- Buttons -->
+                <div style="display:flex;align-items:center;gap:1rem;justify-content:center;margin-top:0.5rem">
+                    <!-- Confirm Logout Button -->
+                    <button onclick="confirmLogout()"
+                       style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,149,200,0.25);transition:all 0.2s;white-space:nowrap"
+                       onmouseover="this.style.background='#007eb0';this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(0,149,200,0.30)'"
+                       onmouseout="this.style.background='#0095c8';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,149,200,0.25)'">
+                        Yes, Logout
+                    </button>
+                    
+                    <!-- Cancel Button -->
+                    <button onclick="closeLogoutModal()" type="button"
+                            style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap"
+                            onmouseover="this.style.background='#e8f6fc';this.style.borderColor='#0095c8'"
+                            onmouseout="this.style.background='#f0f8fd';this.style.borderColor='rgba(45,136,184,0.20)'">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

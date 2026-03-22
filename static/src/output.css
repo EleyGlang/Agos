@@ -1480,6 +1480,25 @@
     background: rgba(91,184,224,0.2);
     border-radius: 2px;
   }
+  @media (min-width: 768px) {
+    .md\:translate-x-0 { transform: translate(0,0) !important; }
+    .md\:ml-\[260px\] { margin-left: 260px !important; }
+    .md\:px-8 { padding-inline: 2rem !important; }
+    .md\:py-6 { padding-block: 1.5rem !important; }
+    .md\:p-6 { padding: 1.5rem !important; }
+    .md\:mb-7 { margin-bottom: 1.75rem !important; }
+    .md\:gap-0 { gap: 0 !important; }
+    .md\:gap-3 { gap: 0.75rem !important; }
+    .md\:gap-5 { gap: 1.25rem !important; }
+    .md\:gap-6 { gap: 1.5rem !important; }
+    .md\:flex-row { flex-direction: row !important; }
+    .md\:items-center { align-items: center !important; }
+    .md\:items-end { align-items: flex-end !important; }
+    .md\:text-2xl { font-size: 1.5rem !important; line-height: 2rem !important; }
+    .md\:text-xs { font-size: 0.75rem !important; line-height: 1rem !important; }
+    .md\:text-\[0\.82rem\] { font-size: 0.82rem !important; }
+    .md\:w-48 { width: 12rem !important; }
+  }
   .sidebar-operator {
     background: linear-gradient(180deg, #0b2535 0%, #0f3a54 100%);
   }

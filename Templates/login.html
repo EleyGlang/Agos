@@ -20,47 +20,25 @@
 
     <!-- Brand -->
     <div class="flex items-center gap-3 mb-10">
-      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 14px rgba(0,149,200,0.30)">
-        <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
-          <path d="M8 14c1-1.5 2.5-2 3-2s2 .5 3 2" stroke="rgba(255,255,255,.5)" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
+      <!-- Logo - BIGGER with LESS padding -->
+      <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center p-2 flex-shrink-0" style="box-shadow:0 8px 24px rgba(0,149,200,0.3)">
+        <img src="{{ url_for('static', filename='images/agos_logo.png') }}" alt="Agos Logo" class="w-full h-full object-contain"/>
       </div>
       <div>
         <div class="text-2xl font-bold text-white leading-tight" style="font-family:'Cormorant Garamond',serif">Agos</div>
-        <div class="text-[0.63rem] font-medium tracking-widest uppercase text-[#5bb8e0]">EP-Bluelife System</div>
+        <div class="text-[0.63rem] font-medium tracking-widest uppercase text-[#5bb8e0]">EP-Bluelife Management System</div>
       </div>
     </div>
 
     <!-- Headline -->
     <h1 class="text-3xl font-bold text-white leading-snug mb-3" style="font-family:'Cormorant Garamond',serif">
-      Clean water,<br/><em class="text-[#5bb8e0] not-italic">clean records.</em>
+      Clean water,<br/><em class="text-[#5bb8e0] not-italic">cleaner records.</em>
     </h1>
     <p class="text-sm leading-relaxed mb-8" style="color:rgba(204,234,247,0.58)">
-      The EP-Bluelife management system keeps your sales, inventory, deliveries, and reports organized — all in one place.
+      The EP-Bluelife management system keeps your sales, inventory, deliveries, and reports organized, all in one place.
     </p>
 
-    <!-- Perks -->
-    <div class="flex flex-col gap-3 mb-8">
-      <div class="flex items-start gap-2.5 text-[0.82rem]" style="color:rgba(204,234,247,0.72)">
-        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[0.58rem] flex-shrink-0 mt-0.5"
-             style="background:rgba(0,149,200,0.20);border:1px solid rgba(0,149,200,0.35);color:#5bb8e0">✓</div>
-        Real-time sales and inventory tracking
-      </div>
-      <div class="flex items-start gap-2.5 text-[0.82rem]" style="color:rgba(204,234,247,0.72)">
-        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[0.58rem] flex-shrink-0 mt-0.5"
-             style="background:rgba(0,149,200,0.20);border:1px solid rgba(0,149,200,0.35);color:#5bb8e0">✓</div>
-        Automatic loyalty point tracking
-      </div>
-      <div class="flex items-start gap-2.5 text-[0.82rem]" style="color:rgba(204,234,247,0.72)">
-        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[0.58rem] flex-shrink-0 mt-0.5"
-             style="background:rgba(0,149,200,0.20);border:1px solid rgba(0,149,200,0.35);color:#5bb8e0">✓</div>
-        Financial reports and profit summary
-      </div>
-    </div>
-
-    <div class="h-px my-2" style="background:rgba(91,184,224,0.10)"></div>
+     <div class="h-px my-2" style="background:rgba(91,184,224,0.10)"></div>
 
     <!-- Station badge -->
     <div class="flex items-center gap-3 rounded-xl p-3 mt-6"
@@ -68,8 +46,7 @@
       <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
            style="background:linear-gradient(135deg,#5bb8e0,#0095c8)">💧</div>
       <div>
-        <div class="text-xs font-semibold text-white">EP-Bluelife Water Refilling Station</div>
-        <div class="text-[0.68rem]" style="color:rgba(204,234,247,0.45)">Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija</div>
+      <div class="text-[0.68rem]" style="color:rgba(204,234,247,0.45)">Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija</div>
       </div>
     </div>
   </div>
@@ -115,9 +92,7 @@
         <div>
           <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Username</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none w-4 text-center"
-                  style="color:rgba(45,136,184,0.45)">👤</span>
-            <input type="text" name="username" placeholder="Enter your username" required
+                  <input type="text" name="username" placeholder="Enter your username" required
                    class="w-full pl-9 pr-4 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                    style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
                    onfocus="this.style.background='#fff';this.style.borderColor='#0095c8';this.style.boxShadow='0 0 0 3px rgba(0,149,200,0.10)'"
@@ -129,8 +104,7 @@
         <div>
           <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Password</label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none w-4 text-center"
-                  style="color:rgba(45,136,184,0.45)">🔒</span>
+          
             <input type="password" name="password" id="pw" placeholder="Enter your password" required
                    class="w-full pl-9 pr-10 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                    style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
@@ -138,7 +112,7 @@
                    onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)';this.style.boxShadow='none'"/>
             <button type="button" onclick="togglePw()"
                     class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer"
-                    style="color:rgba(45,136,184,0.50)">👁</button>
+                    style="color:rgba(45,136,184,0.50)"></button>
           </div>
         </div>
 

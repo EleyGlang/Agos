@@ -36,8 +36,8 @@ with app.app_context():
         # Test the password
         from werkzeug.security import check_password_hash
         if check_password_hash(verify.password, 'agos2019'):
-            print("✓ Password verification works!")
+            print("Password verification works!")
         else:
-            print("✗ Password verification FAILED")
+            print("Password verification FAILED")
     else:
-        print("✗ Failed to create admin")
+        print("Failed to create admin")
