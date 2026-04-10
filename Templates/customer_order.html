@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Place Order — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet">
+</head>
+<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
+
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
+    style="background:linear-gradient(180deg,#0d1f2d 0%,#123047 100%);">
+    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
+      </div>
+      <div>
+        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace',serif">Agos</div>
+        <div class="text-[0.6rem] tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3" style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      <div>
+        <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
+        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5" style="background:rgba(0,149,200,0.25);color:#5bb8e0">{{ session['role'] }}</div>
+      </div>
+    </div>
+    <nav class="flex-1 py-2">
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Dashboard</a>
+      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Record Sales</a>
+      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Inventory</a>
+      <a href="{{ url_for('products') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Products</a>
+      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Customers</a>
+      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Deliveries</a>
+      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Users</a>
+      <a href="{{ url_for('expenses') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Expenses</a>
+      <a href="{{ url_for('reports') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(0,149,200,0.18)">Reports</a>
+    </nav>
+    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
+      <button onclick="openLogoutModal()" class="w-full text-left px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none cursor-pointer" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">Log Out</button>
+    </div>
+  </aside>
+
+  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-10" style="background:rgba(13,31,45,0.50)"></div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5"
+            style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
+      <div class="flex items-center gap-4">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Inconsolata',monospace',serif">Place a Delivery Order</div>
+          <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">Select products, set a date, and we'll handle the rest</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
+             style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
+          {{ session['customer_name'][0].upper() }}
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 p-4 md:p-6 lg:p-8">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="flex gap-2 items-start rounded-xl px-3.5 py-3 mb-5 text-[0.79rem] {% if category == 'error' %}text-[#7a5a10]{% else %}text-[#1a5f8a]{% endif %}"
+               style="{% if category == 'error' %}background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.22);{% else %}background:rgba(0,149,200,0.07);border:1px solid rgba(0,149,200,0.17);{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <form id="order-form" action="{{ url_for('customer_order') }}" method="POST">
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-start">
+
+          <!-- ── Left: Order Details ── -->
+          <div class="flex flex-col gap-5">
+
+            <!-- Delivery Info Card -->
+            <div class="bg-white rounded-2xl overflow-hidden"
+                 style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+              <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+                <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Delivery Details</div>
+                <div class="text-xs text-[#7a99ae] mt-0.5">When and where should we deliver?</div>
+              </div>
+              <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                <!-- Delivery Date -->
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">
+                    Delivery Date <span style="color:#d32f2f">*</span>
+                  </label>
+                  <input type="date" name="delivery_date" id="delivery-date" required
+                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                         style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                  <div class="text-[0.68rem] text-[#7a99ae] mt-1">Must be at least 1 day from today</div>
+                </div>
+
+                <!-- Time Preference -->
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Preferred Time</label>
+                  <select name="preferred_time"
+                          class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200 cursor-pointer"
+                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                          onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'">
+                    <option value="Morning (8AM–12PM)">Morning (8AM–12PM)</option>
+                    <option value="Afternoon (12PM–5PM)">Afternoon (12PM–5PM)</option>
+                    <option value="Evening (5PM–8PM)">Evening (5PM–8PM)</option>
+                    <option value="Anytime">Anytime</option>
+                  </select>
+                </div>
+
+                <!-- Delivery Address -->
+                <div class="sm:col-span-2">
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">
+                    Delivery Address <span style="color:#d32f2f">*</span>
+                  </label>
+                  <textarea name="delivery_address" id="delivery-address" rows="2" required
+                            placeholder="e.g. Blk 5 Lot 12 Sampaguita St., Brgy. San Jose, Cabanatuan City"
+                            class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200 resize-none"
+                            style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                            onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                            onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'">{{ customer.address or '' }}</textarea>
+                  <div class="text-[0.68rem] text-[#7a99ae] mt-1">Pre-filled from your account. Edit if different.</div>
+                </div>
+
+                <!-- Notes -->
+                <div class="sm:col-span-2">
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Special Instructions</label>
+                  <textarea name="notes" rows="2"
+                            placeholder="e.g. Leave at the gate, call before delivery, bring exact change…"
+                            class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200 resize-none"
+                            style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                            onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                            onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"></textarea>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Products Card -->
+            <div class="bg-white rounded-2xl overflow-hidden"
+                 style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+              <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+                <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Select Products</div>
+                <div class="text-xs text-[#7a99ae] mt-0.5">Choose what you'd like delivered</div>
+              </div>
+              <div class="p-5">
+
+                <!-- Product grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4" id="products-grid">
+                  {% for product in products %}
+                  <div class="product-card rounded-xl p-4 cursor-pointer transition-all duration-200 select-none"
+                       style="border:1.5px solid rgba(45,136,184,0.15);background:#f8fbfd;"
+                       onclick="toggleProduct({{ product.product_id }}, '{{ product.product_name | replace("'", "\\'") }}', {{ product.price }})"
+                       id="card-{{ product.product_id }}">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                          <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                               style="background:rgba(0,149,200,0.10)">
+                            💧
+                          </div>
+                          <div class="text-[0.85rem] font-semibold text-[#0d1f2d]">{{ product.product_name }}</div>
+                        </div>
+                        <div class="text-[0.80rem] font-bold" style="color:#0095c8">₱{{ "%.2f"|format(product.price) }}</div>
+                        {% if product.unit %}
+                          <div class="text-[0.68rem] text-[#7a99ae] mt-0.5">per {{ product.unit }}</div>
+                        {% endif %}
+                      </div>
+                      <!-- Check indicator -->
+                      <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 product-check"
+                           id="check-{{ product.product_id }}"
+                           style="background:rgba(45,136,184,0.10);border:1.5px solid rgba(45,136,184,0.25)">
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="opacity-0" id="checkmark-{{ product.product_id }}">
+                          <path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    <!-- Quantity control — hidden until selected -->
+                    <div id="qty-ctrl-{{ product.product_id }}" class="hidden mt-3 pt-3" style="border-top:1px solid rgba(45,136,184,0.10)">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[0.72rem] text-[#5a7a8e] font-medium">Quantity</span>
+                        <div class="flex items-center gap-2">
+                          <button type="button"
+                                  onclick="event.stopPropagation();changeQty({{ product.product_id }}, -1)"
+                                  class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold border-none cursor-pointer"
+                                  style="background:rgba(45,136,184,0.15);color:#1a5f8a">−</button>
+                          <span class="text-[0.85rem] font-bold text-[#0d1f2d] w-5 text-center"
+                                id="qty-display-{{ product.product_id }}">1</span>
+                          <button type="button"
+                                  onclick="event.stopPropagation();changeQty({{ product.product_id }}, 1)"
+                                  class="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold border-none cursor-pointer"
+                                  style="background:#0095c8;color:#fff">+</button>
+                        </div>
+                      </div>
+                      <!-- Hidden inputs for form submission -->
+                      <input type="hidden" name="product_id[]" value="{{ product.product_id }}" id="hidden-pid-{{ product.product_id }}" disabled/>
+                      <input type="hidden" name="quantity[]" value="1" id="hidden-qty-{{ product.product_id }}" disabled/>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+
+                {% if not products %}
+                <div class="text-center py-8 text-[0.82rem]" style="color:#a8c4d4">
+                  No products available at the moment.
+                </div>
+                {% endif %}
+
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── Right: Order Summary ── -->
+          <div class="sticky top-24">
+            <div class="bg-white rounded-2xl overflow-hidden"
+                 style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+              <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+                <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Order Summary</div>
+                <div class="text-xs text-[#7a99ae] mt-0.5" id="summary-count">No items selected yet</div>
+              </div>
+
+              <div class="p-5 flex flex-col gap-3">
+
+                <!-- Items list -->
+                <div id="summary-items" class="flex flex-col gap-2 min-h-[80px]">
+                  <div class="flex items-center justify-center h-20 text-[0.75rem]" style="color:#a8c4d4" id="summary-empty">
+                    <div class="text-center">
+                      <div class="text-2xl mb-1">🛒</div>
+                      Tap a product to add it
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Divider -->
+                <div style="border-top:1px solid rgba(45,136,184,0.10)"></div>
+
+                <!-- Loyalty points info -->
+                {% if customer.loyalty_points > 0 %}
+                <div class="rounded-xl p-3 flex items-start gap-2.5"
+                     style="background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.18)">
+                  <span class="text-base flex-shrink-0 mt-0.5">⭐</span>
+                  <div>
+                    <div class="text-[0.75rem] font-semibold" style="color:#8a6010">You have {{ customer.loyalty_points }} loyalty point{{ 's' if customer.loyalty_points != 1 }}</div>
+                    <div class="text-[0.68rem] mt-0.5" style="color:#a07830">Points are applied automatically at checkout for refill discounts.</div>
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Total -->
+                <div class="rounded-xl p-3 flex items-center justify-between"
+                     style="background:rgba(0,149,200,0.06);border:1px solid rgba(0,149,200,0.15)">
+                  <span class="text-[0.82rem] font-semibold text-[#1a5f8a]">Estimated Total</span>
+                  <span class="text-xl font-bold text-[#0d1f2d]" id="order-total" style="font-family:'Inconsolata',monospace',serif">₱0.00</span>
+                </div>
+
+                <div class="text-[0.68rem] text-center" style="color:#a8c4d4">
+                  Final amount may vary based on loyalty discounts
+                </div>
+
+                <!-- Submit -->
+                <button type="button" onclick="openOrderConfirm()"
+                        class="w-full py-3 rounded-full text-white font-semibold text-sm cursor-pointer transition-all duration-200 border-none"
+                        style="background:#0095c8;box-shadow:0 4px 18px rgba(0,149,200,0.25);font-family:'Outfit',sans-serif"
+                        onmouseover="this.style.background='#007eb0'"
+                        onmouseout="this.style.background='#0095c8'">
+                  Review Order →
+                </button>
+
+                <a href="{{ url_for('customer_dashboard') }}"
+                   class="block text-center py-2.5 rounded-full text-[0.82rem] font-medium no-underline transition-all duration-200"
+                   style="background:#f0f8fd;color:#3a5f78;border:1.5px solid rgba(45,136,184,0.20);"
+                   onmouseover="this.style.background='#e8f6fc'"
+                   onmouseout="this.style.background='#f0f8fd'">
+                  Cancel
+                </a>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </form>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══ ORDER REVIEW MODAL ══ -->
+<div id="order-confirm-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center"
+     style="background:rgba(8,28,42,0.65);backdrop-filter:blur(6px)">
+  <div class="w-full max-w-lg mx-auto px-4">
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+
+      <!-- Modal header -->
+      <div class="px-7 py-6" style="background:linear-gradient(160deg,#0b2535 0%,#0e3a54 100%)">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+              <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-white font-bold text-lg" style="font-family:'Inconsolata',monospace',serif">Confirm Your Order</div>
+            <div class="text-[0.68rem] uppercase tracking-widest text-[#5bb8e0]">EP-Bluelife Delivery</div>
+          </div>
+        </div>
+        <div id="modal-datetime" class="text-[0.78rem]" style="color:rgba(168,216,240,0.70)"></div>
+      </div>
+
+      <!-- Modal body -->
+      <div class="px-7 py-6 space-y-4 max-h-[60vh] overflow-y-auto">
+
+        <!-- Delivery info -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-xl p-3" style="background:#f4fbff;border:1px solid rgba(45,136,184,0.15)">
+            <div class="text-[0.65rem] uppercase text-[#7a99ae] mb-0.5">Date</div>
+            <div class="text-[0.82rem] font-semibold text-[#0d1f2d]" id="modal-date">—</div>
+          </div>
+          <div class="rounded-xl p-3" style="background:#f4fbff;border:1px solid rgba(45,136,184,0.15)">
+            <div class="text-[0.65rem] uppercase text-[#7a99ae] mb-0.5">Time</div>
+            <div class="text-[0.82rem] font-semibold text-[#0d1f2d]" id="modal-time">—</div>
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div class="rounded-xl p-3" style="background:#f4fbff;border:1px solid rgba(45,136,184,0.15)">
+          <div class="text-[0.65rem] uppercase text-[#7a99ae] mb-0.5">Delivery Address</div>
+          <div class="text-[0.82rem] font-semibold text-[#0d1f2d]" id="modal-address">—</div>
+        </div>
+
+        <!-- Items -->
+        <div>
+          <div class="text-[0.68rem] uppercase text-[#7a99ae] mb-2">Items</div>
+          <div id="modal-items" class="space-y-2"></div>
+        </div>
+
+        <!-- Notes (if any) -->
+        <div id="modal-notes-wrapper" class="hidden rounded-xl p-3" style="background:#fffbf0;border:1px solid rgba(212,168,67,0.20)">
+          <div class="text-[0.65rem] uppercase text-[#7a99ae] mb-0.5">Special Instructions</div>
+          <div class="text-[0.82rem] text-[#3a5f78]" id="modal-notes">—</div>
+        </div>
+
+        <!-- Total -->
+        <div class="flex justify-between items-center pt-2" style="border-top:1px solid rgba(45,136,184,0.12)">
+          <span class="font-semibold text-[#0d1f2d]">Estimated Total</span>
+          <span id="modal-total" class="text-2xl font-bold" style="font-family:'Inconsolata',monospace',serif;color:#0095c8"></span>
+        </div>
+
+      </div>
+
+      <!-- Modal actions -->
+      <div class="px-7 py-5 flex gap-3" style="border-top:1px solid rgba(45,136,184,0.10)">
+        <button onclick="submitOrder()"
+                class="flex-1 py-3 rounded-xl text-white font-semibold text-sm border-none cursor-pointer transition-all duration-200"
+                style="background:#0095c8;box-shadow:0 4px 14px rgba(0,149,200,0.25)"
+                onmouseover="this.style.background='#007eb0'"
+                onmouseout="this.style.background='#0095c8'">
+          Confirm & Place Order
+        </button>
+        <button onclick="closeOrderConfirm()" type="button"
+                class="flex-1 py-3 rounded-xl font-semibold text-sm cursor-pointer transition-all duration-200"
+                style="background:#f0f8fd;color:#0d1f2d;border:1.5px solid rgba(45,136,184,0.20)"
+                onmouseover="this.style.background='#e8f6fc'"
+                onmouseout="this.style.background='#f0f8fd'">
+          Go Back
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Topbar date ── */
+  document.getElementById('topbar-date').textContent =
+    new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+
+  /* ── Set minimum date to tomorrow ── */
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  document.getElementById('delivery-date').min = tomorrow.toISOString().split('T')[0];
+
+  /* ── Product state ── */
+  const productState = {}; // { productId: { name, price, qty, selected } }
+
+  function toggleProduct(id, name, price) {
+    if (!productState[id]) {
+      productState[id] = { name, price, qty: 1, selected: false };
+    }
+    const state = productState[id];
+    state.selected = !state.selected;
+
+    const card  = document.getElementById('card-' + id);
+    const check = document.getElementById('check-' + id);
+    const mark  = document.getElementById('checkmark-' + id);
+    const ctrl  = document.getElementById('qty-ctrl-' + id);
+    const hidPid = document.getElementById('hidden-pid-' + id);
+    const hidQty = document.getElementById('hidden-qty-' + id);
+
+    if (state.selected) {
+      card.style.borderColor  = '#0095c8';
+      card.style.background   = 'rgba(0,149,200,0.05)';
+      check.style.background  = '#0095c8';
+      check.style.borderColor = '#0095c8';
+      mark.classList.remove('opacity-0');
+      ctrl.classList.remove('hidden');
+      hidPid.disabled = false;
+      hidQty.disabled = false;
+    } else {
+      card.style.borderColor  = 'rgba(45,136,184,0.15)';
+      card.style.background   = '#f8fbfd';
+      check.style.background  = 'rgba(45,136,184,0.10)';
+      check.style.borderColor = 'rgba(45,136,184,0.25)';
+      mark.classList.add('opacity-0');
+      ctrl.classList.add('hidden');
+      hidPid.disabled = true;
+      hidQty.disabled = true;
+    }
+
+    updateSummary();
+  }
+
+  function changeQty(id, delta) {
+    const state = productState[id];
+    if (!state) return;
+    state.qty = Math.max(1, state.qty + delta);
+    document.getElementById('qty-display-' + id).textContent = state.qty;
+    document.getElementById('hidden-qty-' + id).value = state.qty;
+    updateSummary();
+  }
+
+  function updateSummary() {
+    const summaryItems = document.getElementById('summary-items');
+    const summaryEmpty = document.getElementById('summary-empty');
+    const summaryCount = document.getElementById('summary-count');
+    const orderTotal   = document.getElementById('order-total');
+
+    const selected = Object.entries(productState).filter(([,s]) => s.selected);
+
+    if (selected.length === 0) {
+      summaryEmpty.style.display = 'flex';
+      summaryCount.textContent = 'No items selected yet';
+      orderTotal.textContent = '₱0.00';
+      // Remove dynamic rows
+      document.querySelectorAll('.summary-item-row').forEach(el => el.remove());
+      return;
+    }
+
+    summaryEmpty.style.display = 'none';
+    document.querySelectorAll('.summary-item-row').forEach(el => el.remove());
+
+    let total = 0;
+    selected.forEach(([id, s]) => {
+      const subtotal = s.price * s.qty;
+      total += subtotal;
+      const row = document.createElement('div');
+      row.className = 'summary-item-row flex items-center justify-between text-[0.80rem] py-1.5';
+      row.style = 'border-bottom:1px solid rgba(45,136,184,0.07)';
+      row.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span style="background:#0095c8;color:white;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:600">${s.qty}×</span>
+          <span style="color:#3a5f78">${s.name}</span>
+        </div>
+        <span style="font-weight:600;color:#0d1f2d">₱${subtotal.toFixed(2)}</span>
+      `;
+      summaryItems.insertBefore(row, summaryEmpty);
+    });
+
+    summaryCount.textContent = selected.length + ' item' + (selected.length !== 1 ? 's' : '') + ' selected';
+    orderTotal.textContent = '₱' + total.toFixed(2);
+  }
+
+  /* ── Order confirm modal ── */
+  function openOrderConfirm() {
+    const selected = Object.entries(productState).filter(([,s]) => s.selected);
+    if (selected.length === 0) {
+      alert('Please select at least one product.');
+      return;
+    }
+    const dateVal = document.getElementById('delivery-date').value;
+    if (!dateVal) {
+      alert('Please select a delivery date.');
+      return;
+    }
+    const addressVal = document.getElementById('delivery-address').value.trim();
+    if (!addressVal) {
+      alert('Please enter a delivery address.');
+      return;
+    }
+
+    // Populate modal
+    const dateObj = new Date(dateVal + 'T00:00:00');
+    document.getElementById('modal-date').textContent = dateObj.toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    const timeEl = document.querySelector('[name=preferred_time]');
+    document.getElementById('modal-time').textContent = timeEl ? timeEl.value : '—';
+    document.getElementById('modal-address').textContent = addressVal;
+    document.getElementById('modal-datetime').textContent = 'Order placed: ' + new Date().toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+    const notesVal = document.querySelector('[name=notes]').value.trim();
+    const notesWrapper = document.getElementById('modal-notes-wrapper');
+    if (notesVal) {
+      notesWrapper.classList.remove('hidden');
+      document.getElementById('modal-notes').textContent = notesVal;
+    } else {
+      notesWrapper.classList.add('hidden');
+    }
+
+    const itemsContainer = document.getElementById('modal-items');
+    itemsContainer.innerHTML = '';
+    let total = 0;
+    selected.forEach(([id, s]) => {
+      const subtotal = s.price * s.qty;
+      total += subtotal;
+      const row = document.createElement('div');
+      row.style = 'display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:12px;background:#f8fbfd;border:1px solid rgba(45,136,184,0.10)';
+      row.innerHTML = `
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="background:#0095c8;color:white;padding:2px 9px;border-radius:6px;font-size:12px;font-weight:600">${s.qty}×</span>
+          <span style="font-weight:500;color:#1a3a4f;font-size:13px">${s.name}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#7a99ae">₱${s.price.toFixed(2)} ea</div>
+          <div style="font-weight:700;color:#0d1f2d;font-size:13px">₱${subtotal.toFixed(2)}</div>
+        </div>
+      `;
+      itemsContainer.appendChild(row);
+    });
+
+    document.getElementById('modal-total').textContent = '₱' + total.toFixed(2);
+
+    document.getElementById('order-confirm-modal').classList.remove('hidden');
+  }
+
+  function closeOrderConfirm() {
+    document.getElementById('order-confirm-modal').classList.add('hidden');
+  }
+
+  function submitOrder() {
+    document.getElementById('order-form').submit();
+  }
+
+  // Close on backdrop click
+  document.getElementById('order-confirm-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeOrderConfirm();
+  });
+
+  /* ── Sidebar ── */
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    document.getElementById('overlay').classList.toggle('hidden');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('overlay').classList.add('hidden');
+  }
+  function checkWidth() {
+    const isMobile = window.innerWidth < 768;
+    const sidebar = document.getElementById('sidebar');
+    const menuBtn = document.getElementById('menu-btn');
+    if (isMobile) {
+      menuBtn.classList.remove('hidden'); menuBtn.classList.add('flex');
+      if (!sidebar.classList.contains('-translate-x-full')) sidebar.classList.add('-translate-x-full');
+    } else {
+      menuBtn.classList.add('hidden'); menuBtn.classList.remove('flex');
+      sidebar.classList.remove('-translate-x-full');
+    }
+  }
+  checkWidth();
+  window.addEventListener('resize', checkWidth);
+</script>
+
+</body>
+</html>

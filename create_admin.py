@@ -16,7 +16,6 @@ with app.app_context():
     admin = User(
         full_name='agosAdmin',
         username='admin',
-        email='admin@agos.com',
         password=password_hash,
         role='Admin',
         status='Active'

@@ -6,12 +6,12 @@
   <title>Sales Management — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet"/>
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Outfit',sans-serif;">
+<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
 <div class="flex min-h-screen">
 
-  <!-- ══ SIDEBAR (operator variant) ══ -->
+  <!-- ══ SIDEBAR ══ -->
   <aside id="sidebar"
     class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
     style="background:linear-gradient(180deg,#0b2535 0%,#0f3a54 100%);">
@@ -23,7 +23,7 @@
         </svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Cormorant Garamond',serif">Agos</div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace',serif">Agos</div>
         <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
       </div>
     </div>
@@ -65,7 +65,7 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Cormorant Garamond',serif">Sales Management</div>
+          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Inconsolata',monospace',serif">Sales Management</div>
           <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">Record walk-in and delivery sales</div>
         </div>
       </div>
@@ -93,7 +93,7 @@
         <!-- New sale form -->
         <div class="bg-white rounded-2xl overflow-hidden self-start" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Record New Sale</div>
+            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Record New Sale</div>
             <div class="text-xs text-[#7a99ae] mt-0.5">Total is computed automatically</div>
           </div>
           <div class="p-5">
@@ -113,36 +113,40 @@
                 <input type="hidden" name="sale_type" id="sale-type-input" value="Walk-in"/>
               </div>
 
-              <!-- Customer (optional for walk-in) -->
+              <!-- Customer — datalist -->
               <div>
                 <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">
                   Customer <span id="customer-label-hint" class="normal-case text-[#7a99ae] tracking-normal font-normal">(optional for walk-in)</span>
                 </label>
-                <select name="customer_id" id="customer_id"
-                        class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
-                        style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
-                        onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                        onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"
-                        onchange="toggleNewCustomerFields()">
+                <!-- Hidden real select kept for form submission -->
+                <select name="customer_id" id="customer_id" style="display:none">
                   <option value="" id="walkin-option">Walk-In Customer</option>
                   <option value="new">New Customer</option>
                   {% for customer in customers %}
-                    <option value="{{ customer.customer_id }}">
-                      {{ customer.full_name }}
-                      ({{ customer.loyalty_points }} pts)
-                    </option>
+                    <option value="{{ customer.customer_id }}">{{ customer.full_name }} ({{ customer.loyalty_points }} pts)</option>
                   {% endfor %}
                 </select>
+                <!-- Datalist input -->
+                <input type="text" id="customer-search" list="customers-list"
+                       placeholder="Type to search or leave blank for walk-in…"
+                       oninput="syncCustomerSelect(this.value)"
+                       class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                       style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                       onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                       onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                <datalist id="customers-list">
+                  <option value="New Customer">New Customer</option>
+                  {% for customer in customers %}
+                    <option value="{{ customer.full_name }} ({{ customer.loyalty_points }} pts)" data-id="{{ customer.customer_id }}">{{ customer.full_name }}</option>
+                  {% endfor %}
+                </datalist>
               </div>
 
-              <!-- New Customer Fields (Hidden by Default) -->
+              <!-- New Customer Fields -->
               <div id="new-customer-fields" style="display:none;margin-top:0.5rem;padding:1rem;border-radius:0.75rem;border:1.5px solid rgba(45,136,184,0.20);">
-                <div class="text-[0.95rem] font-bold text-[#2e7d32] mb-3" style="font-family:'Cormorant Garamond',serif">New Customer Information</div>
-                
+                <div class="text-[0.95rem] font-bold text-[#2e7d32] mb-3" style="font-family:'Inconsolata',monospace',serif">New Customer Information</div>
                 <div class="mb-3">
-                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">
-                    Full Name <span style="color:#d32f2f">*</span>
-                  </label>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Full Name <span style="color:#d32f2f">*</span></label>
                   <input type="text" name="new_customer_name" id="new_customer_name" placeholder="Enter customer name"
                          class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
@@ -150,7 +154,6 @@
                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"
                          pattern="[A-Za-z ]+" title="Only letters and spaces are allowed"/>
                 </div>
-                
                 <div class="mb-3">
                   <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Contact Number</label>
                   <input type="tel" name="new_customer_number" id="new_customer_number" placeholder="Enter phone number"
@@ -158,9 +161,8 @@
                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
                          onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"
-                         pattern="\d{11}" maxlength="11" inputmode="numeric" title="Enter exactly 11 digits" />
+                         pattern="\d{11}" maxlength="11" inputmode="numeric" title="Enter exactly 11 digits"/>
                 </div>
-                
                 <div class="mb-2">
                   <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Address</label>
                   <textarea name="new_customer_address" id="new_customer_address" placeholder="Enter address" rows="3"
@@ -169,19 +171,19 @@
                             onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
                             onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"></textarea>
                 </div>
-                
-               
               </div>
 
               <!-- Product line items -->
               <div>
                 <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Products</label>
                 <div id="items-container" class="flex flex-col gap-2">
-                  <!-- First line item -->
                   <div class="item-row flex items-center gap-2">
-                    <select name="product_id[]" onchange="updateSubtotal(this)"
-                            class="flex-1 px-3 py-2 rounded-xl text-[0.82rem] text-[#0d1f2d] outline-none"
-                            style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);">
+                    <!-- Datalist-based product input -->
+                    <input type="text" class="product-search flex-1 px-3 py-2 rounded-xl text-[0.82rem] text-[#0d1f2d] outline-none"
+                           list="products-list" placeholder="Select product…"
+                           oninput="syncProductSelect(this)"
+                           style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"/>
+                    <select name="product_id[]" class="product-select" style="display:none" onchange="updateSubtotal(this)">
                       <option value="">Select product</option>
                       {% for product in products %}
                         <option value="{{ product.product_id }}" data-price="{{ product.price }}">
@@ -198,6 +200,11 @@
                             style="background:rgba(224,82,82,0.10);color:#e05252">✕</button>
                   </div>
                 </div>
+                <datalist id="products-list">
+                  {% for product in products %}
+                    <option value="{{ product.product_name }} — ₱{{ '%.2f'|format(product.price) }}" data-id="{{ product.product_id }}" data-price="{{ product.price }}">{{ product.product_name }}</option>
+                  {% endfor %}
+                </datalist>
                 <button type="button" onclick="addItem()"
                         class="mt-2 text-xs font-medium text-[#0095c8] border-none bg-transparent cursor-pointer p-0 hover:underline">
                   + Add another product
@@ -208,16 +215,16 @@
               <div class="rounded-xl p-3 flex items-center justify-between"
                    style="background:rgba(0,149,200,0.06);border:1px solid rgba(0,149,200,0.15)">
                 <span class="text-[0.82rem] font-semibold text-[#1a5f8a]">Total Amount</span>
-                <span class="text-xl font-bold text-[#0d1f2d]" id="total-display" style="font-family:'Cormorant Garamond',serif">₱0.00</span>
+                <span class="text-xl font-bold text-[#0d1f2d]" id="total-display" style="font-family:'Inconsolata',monospace',serif">₱0.00</span>
                 <input type="hidden" name="total_amount" id="total-input" value="0"/>
               </div>
 
-              <button type="submit" onclick="return validateForm()"
+              <button type="button" onclick="openSaleConfirmModal()"
                       class="w-full py-3 rounded-full text-white font-semibold text-sm cursor-pointer transition-all duration-200 border-none"
                       style="background:#0095c8;box-shadow:0 4px 18px rgba(0,149,200,0.28);font-family:'Outfit',sans-serif"
                       onmouseover="this.style.background='#007eb0'"
                       onmouseout="this.style.background='#0095c8'">
-                Confirm Sale
+                Review & Confirm Sale
               </button>
             </form>
           </div>
@@ -227,7 +234,7 @@
         <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
             <div>
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Transaction History</div>
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Transaction History</div>
               <div class="text-xs text-[#7a99ae] mt-0.5">{{ sales|length }} total transaction{{ 's' if sales|length != 1 }}</div>
             </div>
             <input type="text" id="search-sales" placeholder="Search..." oninput="filterSales()"
@@ -288,6 +295,82 @@
   </div>
 </div>
 
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal"
+     class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-md">
+    <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-8 text-center">
+        <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:linear-gradient(135deg,rgba(0,149,200,0.10),rgba(91,184,224,0.10))">
+          <svg class="w-8 h-8" style="color:#0095c8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </div>
+        <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Inconsolata',monospace',serif">Confirm Logout</h3>
+        <p class="mb-6 text-sm leading-relaxed" style="color:#5a7a8e">Are you sure you want to log out of your account?</p>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center;margin-top:0.5rem">
+          <button onclick="confirmLogout()"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,149,200,0.25);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#007eb0';this.style.transform='translateY(-1px)'"
+                  onmouseout="this.style.background='#0095c8';this.style.transform='translateY(0)'">Yes, Logout</button>
+          <button onclick="closeLogoutModal()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#e8f6fc';this.style.borderColor='#0095c8'"
+                  onmouseout="this.style.background='#f0f8fd';this.style.borderColor='rgba(45,136,184,0.20)'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SALE CONFIRM MODAL ══ -->
+<div id="sale-confirm-modal"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center"
+     style="background:rgba(8,28,42,0.65);backdrop-filter:blur(6px)">
+  <div class="w-full max-w-2xl mx-auto px-4">
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden w-full">
+      <div class="px-8 py-7" style="background:linear-gradient(160deg,#0b2535 0%,#0e3a54 100%)">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white"/></svg>
+          </div>
+          <div>
+            <div class="text-white font-semibold text-lg" style="font-family:'Inconsolata',monospace',serif">EP-Bluelife</div>
+            <div class="text-xs uppercase tracking-widest text-[#5bb8e0]">Water Refilling Station</div>
+          </div>
+        </div>
+        <div class="text-white text-2xl font-bold" style="font-family:'Inconsolata',monospace',serif">Sale Summary</div>
+        <div id="receipt-datetime" class="text-sm mt-1" style="color:rgba(168,216,240,0.75)"></div>
+      </div>
+      <div class="px-8 py-7 space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="rounded-xl p-4" style="background:#f4fbff;border:1px solid rgba(45,136,184,0.15)">
+            <div class="text-xs uppercase text-[#7a99ae] mb-1">Type</div>
+            <div id="receipt-sale-type" class="font-semibold text-[#0d1f2d]"></div>
+          </div>
+          <div class="rounded-xl p-4" style="background:#f4fbff;border:1px solid rgba(45,136,184,0.15)">
+            <div class="text-xs uppercase text-[#7a99ae] mb-1">Customer</div>
+            <div id="receipt-customer" class="font-semibold text-[#0d1f2d] truncate"></div>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs uppercase text-[#7a99ae] mb-3">Items</div>
+          <div id="receipt-items" class="space-y-2"></div>
+        </div>
+        <div class="flex justify-between items-center border-t pt-4" style="border-color:rgba(45,136,184,0.15)">
+          <span class="font-semibold text-[#0d1f2d]">Total</span>
+          <span id="receipt-total" class="text-2xl font-bold" style="font-family:'Inconsolata',monospace',serif;color:#0095c8"></span>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button onclick="submitSaleForm()" class="flex-1 py-3 rounded-xl text-white font-semibold border-none cursor-pointer" style="background:#0095c8">Confirm Sale</button>
+          <button onclick="closeSaleConfirmModal()" class="flex-1 py-3 rounded-xl font-semibold cursor-pointer" style="background:#f0f8fd;border:1px solid rgba(45,136,184,0.25)">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   document.getElementById('topbar-date').textContent =
     new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
@@ -297,80 +380,87 @@
     document.getElementById('sale-type-input').value = type;
     const walkin   = document.getElementById('tab-walkin');
     const delivery = document.getElementById('tab-delivery');
-    const walkinOption = document.getElementById('walkin-option');
-    const customerSelect = document.getElementById('customer_id');
     const labelHint = document.getElementById('customer-label-hint');
+    const customerSearch = document.getElementById('customer-search');
 
     if (type === 'Walk-in') {
       walkin.style.background   = '#0095c8'; walkin.style.color   = '#fff';
       delivery.style.background = 'transparent'; delivery.style.color = '#5a7a8e';
-      walkinOption.style.display = 'block';
       labelHint.textContent = '(optional for walk-in)';
-      // Reset to walk-in if currently selected
-      if (customerSelect.value === '') {
-        customerSelect.value = '';
-      }
     } else {
       delivery.style.background = '#0095c8'; delivery.style.color   = '#fff';
       walkin.style.background   = 'transparent'; walkin.style.color   = '#5a7a8e';
-      walkinOption.style.display = 'none';
       labelHint.textContent = '(required for delivery)';
-      // Force selection of customer or new customer
-      if (customerSelect.value === '') {
-        customerSelect.value = 'new';
-        toggleNewCustomerFields();
+      if (!document.getElementById('customer_id').value) {
+        customerSearch.value = 'New Customer';
+        syncCustomerSelect('New Customer');
       }
     }
   }
 
-  /* ── Toggle New Customer Fields ── */
+  /* ── Sync datalist → hidden select for customers ── */
+  function syncCustomerSelect(val) {
+    const sel = document.getElementById('customer_id');
+    const opts = Array.from(sel.options);
+    if (!val) { sel.value = ''; toggleNewCustomerFields(); return; }
+    if (val === 'New Customer') { sel.value = 'new'; toggleNewCustomerFields(); return; }
+    // Try to match by name
+    const matched = opts.find(o => o.text.trim().startsWith(val.split(' (')[0]));
+    sel.value = matched ? matched.value : '';
+    toggleNewCustomerFields();
+  }
+
   function toggleNewCustomerFields() {
-    const customerSelect = document.getElementById('customer_id');
-    const newCustomerFields = document.getElementById('new-customer-fields');
+    const val = document.getElementById('customer_id').value;
+    const block = document.getElementById('new-customer-fields');
     const nameField = document.getElementById('new_customer_name');
-    
-    if (customerSelect.value === 'new') {
-      newCustomerFields.style.display = 'block';
-      nameField.required = true;
+    if (val === 'new') {
+      block.style.display = 'block'; nameField.required = true;
     } else {
-      newCustomerFields.style.display = 'none';
-      nameField.required = false;
-      // Clear fields
+      block.style.display = 'none'; nameField.required = false;
       document.getElementById('new_customer_name').value = '';
       document.getElementById('new_customer_number').value = '';
       document.getElementById('new_customer_address').value = '';
     }
   }
 
+  /* ── Sync datalist → hidden select for products ── */
+  function syncProductSelect(input) {
+    const row = input.closest('.item-row');
+    const sel = row.querySelector('.product-select');
+    const val = input.value;
+    const opts = Array.from(sel.options);
+    const name = val.split(' — ')[0].trim();
+    const matched = opts.find(o => o.text.trim().startsWith(name));
+    sel.value = matched ? matched.value : '';
+    updateSubtotal(sel);
+  }
+
   /* ── Line items ── */
   function addItem() {
     const container = document.getElementById('items-container');
-    const first     = container.querySelector('.item-row');
-    const clone     = first.cloneNode(true);
-    // Reset clone values
-    clone.querySelector('select').value = '';
+    const first = container.querySelector('.item-row');
+    const clone = first.cloneNode(true);
+    clone.querySelector('.product-search').value = '';
+    clone.querySelector('.product-select').value = '';
     clone.querySelector('input[type=number]').value = 1;
     container.appendChild(clone);
   }
 
   function removeItem(btn) {
     const rows = document.querySelectorAll('.item-row');
-    if (rows.length > 1) {
-      btn.closest('.item-row').remove();
-      computeTotal();
-    }
+    if (rows.length > 1) { btn.closest('.item-row').remove(); computeTotal(); }
   }
 
-  /* ── Auto-compute total ── */
   function updateSubtotal(el) { computeTotal(); }
 
   function computeTotal() {
     let total = 0;
     document.querySelectorAll('.item-row').forEach(row => {
-      const select = row.querySelector('select');
-      const qty    = parseFloat(row.querySelector('input[type=number]').value) || 0;
-      const opt    = select.options[select.selectedIndex];
-      const price  = opt ? parseFloat(opt.dataset.price || 0) : 0;
+      const sel   = row.querySelector('.product-select');
+      const qty   = parseFloat(row.querySelector('input[type=number]').value) || 0;
+      const opt   = sel.options[sel.selectedIndex];
+      const price = opt ? parseFloat(opt.dataset.price || 0) : 0;
       total += price * qty;
     });
     document.getElementById('total-display').textContent = '₱' + total.toFixed(2);
@@ -380,47 +470,69 @@
   /* ── Form validation ── */
   function validateForm() {
     const saleType = document.getElementById('sale-type-input').value;
-    const customerSelect = document.getElementById('customer_id');
-    const newCustomerSection = document.getElementById('new-customer-fields');
-    const newCustomerNumber = document.getElementById('new_customer_number');
-
-    // For delivery sales, customer is required
-    if (saleType === 'Delivery' && !customerSelect.value) {
-      alert('Please select a customer or create a new customer for delivery sales.');
-      return false;
+    const customerSel = document.getElementById('customer_id');
+    if (saleType === 'Delivery' && !customerSel.value) {
+      alert('Please select a customer for delivery sales.'); return false;
     }
-
-    // Validate new customer full name / phone number (if new customer fields visible)
-    if (customerSelect.value === 'new') {
+    if (customerSel.value === 'new') {
       const name = document.getElementById('new_customer_name').value.trim();
-      const phone = newCustomerNumber.value.trim();
-
-      if (!name || !/^[A-Za-z ]+$/.test(name)) {
-        alert('Customer name must contain only letters and spaces.');
-        document.getElementById('new_customer_name').focus();
-        return false;
-      }
-
-      if (phone && !/^\d{11}$/.test(phone)) {
-        alert('Contact Number must be exactly 11 digits.');
-        newCustomerNumber.focus();
-        return false;
-      }
+      const phone = document.getElementById('new_customer_number').value.trim();
+      if (!name || !/^[A-Za-z ]+$/.test(name)) { alert('Customer name must contain only letters and spaces.'); return false; }
+      if (phone && !/^\d{11}$/.test(phone)) { alert('Contact Number must be exactly 11 digits.'); return false; }
     }
-
-    const rows = document.querySelectorAll('.item-row');
-    for (const row of rows) {
-      if (!row.querySelector('select').value) {
-        alert('Please select a product for each line item.');
-        return false;
-      }
+    for (const row of document.querySelectorAll('.item-row')) {
+      if (!row.querySelector('.product-select').value) { alert('Please select a product for each line item.'); return false; }
     }
-    if (parseFloat(document.getElementById('total-input').value) <= 0) {
-      alert('Total amount must be greater than zero.');
-      return false;
-    }
+    if (parseFloat(document.getElementById('total-input').value) <= 0) { alert('Total amount must be greater than zero.'); return false; }
     return true;
   }
+
+  /* ── Sale Confirm Modal ── */
+  function openSaleConfirmModal() {
+    if (!validateForm()) return;
+    const saleType = document.getElementById('sale-type-input').value;
+    document.getElementById('receipt-sale-type').textContent = saleType;
+    const customerSearch = document.getElementById('customer-search');
+    const customerSel = document.getElementById('customer_id');
+    let customerLabel = 'Walk-In';
+    if (customerSel.value === 'new') {
+      const n = document.getElementById('new_customer_name').value.trim();
+      customerLabel = n ? n + ' (New)' : 'New Customer';
+    } else if (customerSel.value) {
+      customerLabel = customerSearch.value.replace(/\s*\(.*pts\)/, '').trim();
+    }
+    document.getElementById('receipt-customer').textContent = customerLabel;
+    const itemsContainer = document.getElementById('receipt-items');
+    itemsContainer.innerHTML = '';
+    let total = 0;
+    document.querySelectorAll('.item-row').forEach(row => {
+      const sel = row.querySelector('.product-select');
+      const qty = parseInt(row.querySelector('input[type=number]').value) || 0;
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return;
+      const name = opt.text.split(' — ')[0];
+      const price = parseFloat(opt.dataset.price || 0);
+      const subtotal = price * qty;
+      total += subtotal;
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:14px;background:#f8fbfd;border:1px solid rgba(45,136,184,0.12)';
+      item.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><span style="background:#0095c8;color:white;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600">${qty}×</span><span style="font-weight:500;color:#1a3a4f">${name}</span></div><div style="text-align:right"><div style="font-size:12px;color:#7a99ae">₱${price.toFixed(2)}</div><div style="font-weight:700;color:#0d1f2d">₱${subtotal.toFixed(2)}</div></div>`;
+      itemsContainer.appendChild(item);
+    });
+    document.getElementById('receipt-total').textContent = '₱' + total.toFixed(2);
+    document.getElementById('receipt-datetime').textContent = new Date().toLocaleString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('sale-confirm-modal').classList.remove('hidden');
+  }
+
+  function closeSaleConfirmModal() {
+    document.getElementById('sale-confirm-modal').classList.add('hidden');
+  }
+
+  function submitSaleForm() { document.getElementById('sale-form').submit(); }
+
+  document.getElementById('sale-confirm-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeSaleConfirmModal();
+  });
 
   /* ── Search ── */
   function filterSales() {
@@ -432,42 +544,25 @@
 
   /* ── Sidebar ── */
   function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    document.getElementById('overlay').classList.toggle('hidden');
   }
-  
   function closeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    sidebar.classList.add('-translate-x-full');
-    overlay.classList.add('hidden');
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('overlay').classList.add('hidden');
   }
-  
   function checkWidth() {
     const isMobile = window.innerWidth < 768;
     const sidebar = document.getElementById('sidebar');
     const menuBtn = document.getElementById('menu-btn');
-    const overlay = document.getElementById('overlay');
-    
     if (isMobile) {
-      // Mobile: show menu button, hide sidebar by default
-      menuBtn.classList.remove('hidden');
-      menuBtn.classList.add('flex');
-      if (!sidebar.classList.contains('-translate-x-full')) {
-        sidebar.classList.add('-translate-x-full');
-      }
-      overlay.classList.add('hidden');
+      menuBtn.classList.remove('hidden'); menuBtn.classList.add('flex');
+      if (!sidebar.classList.contains('-translate-x-full')) sidebar.classList.add('-translate-x-full');
     } else {
-      // Desktop: hide menu button, show sidebar
-      menuBtn.classList.add('hidden');
-      menuBtn.classList.remove('flex');
+      menuBtn.classList.add('hidden'); menuBtn.classList.remove('flex');
       sidebar.classList.remove('-translate-x-full');
-      overlay.classList.add('hidden');
     }
   }
-  
   checkWidth();
   window.addEventListener('resize', checkWidth);
 
@@ -475,66 +570,11 @@
     document.getElementById('logout-modal').classList.remove('hidden');
     document.getElementById('logout-modal').classList.add('flex');
   }
-
   function closeLogoutModal() {
     document.getElementById('logout-modal').classList.add('hidden');
     document.getElementById('logout-modal').classList.remove('flex');
   }
-
-  function confirmLogout() {
-    window.location.href = "{{ url_for('logout') }}";
-  }
+  function confirmLogout() { window.location.href = "{{ url_for('logout') }}"; }
 </script>
-
-<div id="logout-modal" 
-     class="hidden fixed inset-0 z-50 justify-center items-center"
-     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
-    
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
-            
-            <!-- Modal Content -->
-            <div class="p-8 text-center">
-                
-                <!-- Icon -->
-                <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:linear-gradient(135deg,rgba(0,149,200,0.10),rgba(91,184,224,0.10))">
-                    <svg class="w-8 h-8" style="color:#0095c8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                    </svg>
-                </div>
-                
-                <!-- Title -->
-                <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Cormorant Garamond',serif">
-                    Confirm Logout
-                </h3>
-                
-                <!-- Message -->
-                <p class="mb-6 text-sm leading-relaxed" style="color:#5a7a8e">
-                    Are you sure you want to log out of your account?
-                </p>
-                
-                <!-- Buttons -->
-                <div style="display:flex;align-items:center;gap:1rem;justify-content:center;margin-top:0.5rem">
-                    <!-- Confirm Logout Button -->
-                    <button onclick="confirmLogout()"
-                       style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,149,200,0.25);transition:all 0.2s;white-space:nowrap"
-                       onmouseover="this.style.background='#007eb0';this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(0,149,200,0.30)'"
-                       onmouseout="this.style.background='#0095c8';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,149,200,0.25)'">
-                        Yes, Logout
-                    </button>
-                    
-                    <!-- Cancel Button -->
-                    <button onclick="closeLogoutModal()" type="button"
-                            style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap"
-                            onmouseover="this.style.background='#e8f6fc';this.style.borderColor='#0095c8'"
-                            onmouseout="this.style.background='#f0f8fd';this.style.borderColor='rgba(45,136,184,0.20)'">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 </body>
 </html>

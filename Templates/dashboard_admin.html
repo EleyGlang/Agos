@@ -6,101 +6,47 @@
   <title>Admin Dashboard — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet">
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Outfit',sans-serif;">
+<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
 <div class="flex min-h-screen">
 
-  <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar"
-    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
     style="background:linear-gradient(180deg,#0d1f2d 0%,#123047 100%);">
-
-    <!-- Brand -->
     <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
-          <path d="M8 14c1-1.5 2.5-2 3-2s2 .5 3 2" stroke="rgba(255,255,255,.5)" stroke-width="1.2" stroke-linecap="round"/>
-        </svg>
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Cormorant Garamond',serif">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace',serif">Agos</div>
+        <div class="text-[0.6rem] tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
       </div>
     </div>
-
-    <!-- User pill -->
-    <div class="flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3"
-         style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-           style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
-        {{ session['full_name'][0].upper() }}
-      </div>
+    <div class="flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3" style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       <div>
-        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5"
-             style="background:rgba(0,149,200,0.25);color:#5bb8e0">Admin</div>
+        <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
+        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5" style="background:rgba(0,149,200,0.25);color:#5bb8e0">{{ session['role'] }}</div>
       </div>
     </div>
-
-     <!-- Nav -->
     <nav class="flex-1 py-2">
-
-      <a href="{{ url_for('dashboard') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium {% if active_page == 'dashboard' %}text-white{% else %}text-[#ccd9ec]{% endif %}"
-         style="{% if active_page == 'dashboard' %}background:rgba(0,149,200,0.18);color:#ffffff{% else %}color:rgba(204,234,247,0.60){% endif %}">
-        <span></span> Dashboard
-      </a>
-
-      <a href="{{ url_for('sales') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Sales Management
-      </a>
-      <a href="{{ url_for('inventory') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Inventory Management
-      </a>
-      <a href="{{ url_for('customers') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Customer Management
-      </a>
-      <a href="{{ url_for('deliveries') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Delivery Management
-      </a>
-      <a href="{{ url_for('user_management') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 {% if active_page == 'user_management' %}bg-[rgba(0,149,200,0.18)] text-white{% else %}text-[#ccd9ec] hover:bg-[rgba(255,255,255,0.06)]{% endif %}"
-         style="{% if active_page == 'user_management' %}background:rgba(0,149,200,0.18);color:#ffffff{% else %}color:rgba(204,234,247,0.60){% endif %}">
-        <span></span> User Management
-      </a>
-      <a href="{{ url_for('expense_management') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Expense Management
-      </a>
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Dashboard</a>
+      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Record Sales</a>
+      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Inventory</a>
+      <a href="{{ url_for('products') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Products</a>
+      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Customers</a>
+      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Deliveries</a>
+      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Users</a>
+      <a href="{{ url_for('expenses') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Expenses</a>
+      <a href="{{ url_for('reports') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(0,149,200,0.18)">Reports</a>
     </nav>
-
     <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <button type="button" onclick="openLogoutModal()"
-         class="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200"
-         style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">
-        <span></span> Log Out
-      </button>
+      <button onclick="openLogoutModal()" class="w-full text-left px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none cursor-pointer" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">Log Out</button>
     </div>
   </aside>
 
-
-
-  <!-- Mobile overlay -->
-  <div id="overlay" onclick="closeSidebar()"
-       class="hidden fixed inset-0 z-30" style="background:rgba(13,31,45,0.50)"></div>
+  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-10" style="background:rgba(13,31,45,0.50)"></div>
 
   <!-- ══ MAIN ══ -->
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]" id="main-wrap">
@@ -115,7 +61,7 @@
           </svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Cormorant Garamond',serif">Dashboard</div>
+          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Inconsolata',monospace',serif">Dashboard</div>
           <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">EP-Bluelife Water Refilling Station</div>
         </div>
       </div>
@@ -150,15 +96,14 @@
         <div class="absolute rounded-full pointer-events-none" style="width:180px;height:180px;right:-20px;top:-30px;background:rgba(91,184,224,0.08)"></div>
         <div class="absolute rounded-full pointer-events-none" style="width:120px;height:120px;right:80px;bottom:-40px;background:rgba(0,149,200,0.10)"></div>
         <div class="relative z-10">
-          <div class="text-xl md:text-2xl font-bold text-white mb-1" style="font-family:'Cormorant Garamond',serif">
-            Good day, {{ session['full_name'].split()[0] }}. 👋
+          <div class="text-xl md:text-2xl font-bold text-white mb-1" style="font-family:'Inconsolata',monospace',serif">
+            Good day, {{ session['full_name'].split()[0] }}. 
           </div>
           <div class="text-[0.75rem] md:text-[0.82rem]" style="color:rgba(204,234,247,0.65)">Here's what's happening at EP-Bluelife today.</div>
         </div>
         <div class="relative z-10 flex flex-col items-start md:items-end gap-2">
           <span class="text-[0.7rem] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-md"
                 style="background:rgba(0,149,200,0.25);border:1px solid rgba(0,149,200,0.40);color:#5bb8e0">Admin Access</span>
-        s
         </div>
       </div>
 
@@ -169,7 +114,7 @@
              style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(0,149,200,0.10)">💧</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Today's Sales</div>
-          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">
+          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
             ₱{{ "%.2f"|format(today_sales) }}
           </div>
           <div class="text-xs text-[#7a99ae]">Walk-in &amp; delivery</div>
@@ -179,7 +124,7 @@
              style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(212,168,67,0.10)">🚚</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Pending Deliveries</div>
-          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">
+          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
             {{ pending_deliveries }}
           </div>
           <div class="text-xs text-[#7a99ae]">Awaiting confirmation</div>
@@ -189,7 +134,7 @@
              style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(91,184,224,0.10)">👥</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Total Customers</div>
-          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">
+          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
             {{ total_customers }}
           </div>
           <div class="text-xs text-[#7a99ae]">Registered customers</div>
@@ -199,7 +144,7 @@
              style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(224,82,82,0.10)">📦</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Low Stock Items</div>
-          <div class="text-[2.2rem] font-bold leading-none" style="font-family:'Cormorant Garamond',serif;color:{% if low_stock_items > 0 %}#e05252{% else %}#0d1f2d{% endif %}">
+          <div class="text-[2.2rem] font-bold leading-none" style="font-family:'Inconsolata',monospace',serif;color:{% if low_stock_items > 0 %}#e05252{% else %}#0d1f2d{% endif %}">
             {{ low_stock_items }}
           </div>
           <div class="text-xs text-[#7a99ae]">Below minimum stock</div>
@@ -209,7 +154,7 @@
              style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(46,170,110,0.10)">💰</div>
           <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Net Profit (Month)</div>
-          <div class="text-[2.2rem] font-bold leading-none" style="font-family:'Cormorant Garamond',serif;color:{% if net_profit >= 0 %}#2eaa6e{% else %}#e05252{% endif %}">
+          <div class="text-[2.2rem] font-bold leading-none" style="font-family:'Inconsolata',monospace',serif;color:{% if net_profit >= 0 %}#2eaa6e{% else %}#e05252{% endif %}">
             ₱{{ "%.2f"|format(net_profit) }}
           </div>
           <div class="text-xs text-[#7a99ae]">Revenue minus expenses</div>
@@ -223,7 +168,7 @@
         <!-- Recent sales -->
         <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Recent Sales</div>
+            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Recent Sales</div>
             <a href="{{ url_for('sales') }}" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
           </div>
           <div class="p-5 overflow-x-auto">
@@ -274,7 +219,7 @@
           <!-- Expense snapshot -->
           <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
             <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">This Month</div>
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">This Month</div>
               <a href="{{ url_for('reports') }}" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">Reports →</a>
             </div>
             <div class="p-5 flex flex-col">
@@ -405,7 +350,7 @@
                 </div>
                 
                 <!-- Title -->
-                <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Cormorant Garamond',serif">
+                <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Inconsolata',monospace',serif">
                     Confirm Logout
                 </h3>
                 

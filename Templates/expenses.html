@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Expense Management — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet"/>
+</head>
+<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
+<div class="flex min-h-screen">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar"
+    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
+    style="background:linear-gradient(180deg,#0b2535 0%,#0f3a54 100%);">
+    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+        </svg>
+      </div>
+      <div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace',serif">Agos</div>
+        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3"
+         style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      <div>
+        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
+        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5"
+             style="background:rgba(45,136,184,0.30);color:#a8d8f0">{{ session['role'] }}</div>
+      </div>
+    </div>
+    <nav class="flex-1 py-2">
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Dashboard</a>
+      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(45,136,184,0.22)"><span></span> Sales Management</a>
+      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Inventory Management</a>
+      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Customer Management</a>
+      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Delivery Management</a>
+      {% if session.get('role') == 'Admin' %}
+      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> User Management</a>
+      <a href="{{ url_for('expense_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Expense Management</a>
+      {% endif %}
+    </nav>
+    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
+      <button type="button" onclick="openLogoutModal()" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)"><span> </span> Log Out</button>
+    </div>
+  </aside>
+
+  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-30" style="background:rgba(13,31,45,0.50)"></div>
+
+  <!-- ══ MAIN ══ -->
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]" id="main-wrap">
+
+    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5"
+            style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
+      <div class="flex items-center gap-4">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Inconsolata',monospace',serif">Expense Management</div>
+          <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">Track and categorize business expenses</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
+             style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-4 md:p-6 lg:p-8">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="flex gap-2 items-start rounded-xl px-3.5 py-3 mb-5 text-[0.79rem] {% if category == 'error' %}text-[#7a5a10]{% else %}text-[#1a5f8a]{% endif %}"
+               style="{% if category == 'error' %}background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.22);{% else %}background:rgba(0,149,200,0.07);border:1px solid rgba(0,149,200,0.17);{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
+
+        <!-- ── Record Expense Form ── -->
+        <div class="bg-white rounded-2xl overflow-hidden self-start"
+             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Record Expense</div>
+            <div class="text-xs text-[#7a99ae] mt-0.5">Log a new business expense</div>
+          </div>
+          <div class="p-5">
+            <form id="expense-form" action="{{ url_for('expenses') }}" method="POST" class="flex flex-col gap-4">
+
+              <!-- Category — datalist (allows typing custom or picking from list) -->
+              <div>
+                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Category <span style="color:#d32f2f">*</span></label>
+                <input type="text" name="category" id="expense-category" required
+                       list="expense-categories-list"
+                       placeholder="Select or type a category…"
+                       class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                       style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                       onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                       onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                <datalist id="expense-categories-list">
+                  <option value="Utilities">Utilities</option>
+                  <option value="Supplies">Supplies</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Salaries">Salaries</option>
+                  <option value="Rent">Rent</option>
+                  <option value="Transportation">Transportation</option>
+                  <option value="Other">Other</option>
+                </datalist>
+              </div>
+
+              <div>
+                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Description <span style="color:#d32f2f">*</span></label>
+                <input type="text" name="description" id="expense-desc" required placeholder="e.g. Monthly electric bill"
+                       class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                       style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                       onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                       onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+              </div>
+
+              <div>
+                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Amount (₱) <span style="color:#d32f2f">*</span></label>
+                <input type="number" name="amount" id="expense-amount" min="0.01" step="0.01" required placeholder="0.00"
+                       class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                       style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                       onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                       onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+              </div>
+
+              <div>
+                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Date <span style="color:#d32f2f">*</span></label>
+                <input type="date" name="expense_date" required id="expense-date-input"
+                       class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                       style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                       onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                       onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+              </div>
+
+              <!-- Trigger confirm modal -->
+              <button type="button" onclick="openExpenseConfirm()"
+                      class="w-full py-3 rounded-full text-white font-semibold text-sm cursor-pointer transition-all duration-200 border-none"
+                      style="background:#0095c8;box-shadow:0 4px 18px rgba(0,149,200,0.28);font-family:'Outfit',sans-serif"
+                      onmouseover="this.style.background='#007eb0'"
+                      onmouseout="this.style.background='#0095c8'">
+                Review & Record Expense
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- ── Expense History ── -->
+        <div class="bg-white rounded-2xl overflow-hidden"
+             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+            <div>
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Expense History</div>
+              <div class="text-xs text-[#7a99ae] mt-0.5">{{ expenses | length }} record{{ 's' if expenses | length != 1 }}</div>
+            </div>
+            <input type="text" id="search-expenses" placeholder="Search..." oninput="filterExpenses()"
+                   class="px-3 py-1.5 rounded-lg text-sm outline-none w-32 sm:w-40"
+                   style="background:#e8f6fc;border:1px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif"/>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse min-w-[560px]">
+              <thead>
+                <tr>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">#</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Category</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Description</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Amount</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Date</th>
+                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if expenses %}
+                  {% for expense in expenses %}
+                  <tr class="expense-row transition-colors duration-150 hover:bg-[rgba(0,149,200,0.03)]">
+                    <td class="px-5 py-3 text-[0.75rem] text-[#7a99ae]" style="border-bottom:1px solid rgba(45,136,184,0.06)">{{ loop.index }}</td>
+                    <td class="px-5 py-3" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      <span class="inline-flex items-center text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full"
+                            style="background:rgba(45,136,184,0.10);color:#1a5f8a">{{ expense.category }}</span>
+                    </td>
+                    <td class="px-5 py-3 text-[0.82rem] text-[#3a5f78]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      {{ expense.description }}
+                    </td>
+                    <td class="px-5 py-3 text-[0.82rem] font-semibold text-[#0d1f2d]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      ₱{{ "%.2f"|format(expense.amount) }}
+                    </td>
+                    <td class="px-5 py-3 text-[0.82rem] text-[#5a7a8e]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
+                    </td>
+                    <td class="px-5 py-3" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                      <!-- Hidden form; confirmed via modal -->
+                      <form id="delete-expense-form-{{ expense.expense_id }}" action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}" method="POST" style="display:none"></form>
+                      <button type="button"
+                              onclick="openDeleteExpenseModal({{ expense.expense_id }}, '{{ expense.description | replace("'", "\\'") }}')"
+                              class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer transition-all duration-200"
+                              style="background:rgba(224,82,82,0.08);color:#c0392b;font-family:'Outfit',sans-serif"
+                              onmouseover="this.style.background='rgba(224,82,82,0.18)'"
+                              onmouseout="this.style.background='rgba(224,82,82,0.08)'">
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="6" class="text-center py-10 text-xs" style="color:#a8c4d4">No expenses recorded yet.</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══ EXPENSE RECORD CONFIRM MODAL ══ -->
+<div id="expense-confirm-modal"
+     class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-7 text-center">
+        <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:rgba(45,136,184,0.08)">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#1a5f8a" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h3 class="mb-1 text-xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Record This Expense?</h3>
+        <div id="expense-confirm-details" class="text-sm mb-5 text-left rounded-xl p-3 mt-3" style="background:#f4fbff;border:1px solid rgba(45,136,184,0.15);color:#3a5f78"></div>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center">
+          <button onclick="submitExpenseForm()"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#007eb0'"
+                  onmouseout="this.style.background='#0095c8'">Yes, Record</button>
+          <button onclick="closeExpenseConfirm()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#e8f6fc'"
+                  onmouseout="this.style.background='#f0f8fd'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE EXPENSE CONFIRM MODAL ══ -->
+<div id="delete-expense-modal"
+     class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-7 text-center">
+        <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:rgba(224,82,82,0.08)">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#c0392b" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+        </div>
+        <h3 class="mb-1 text-xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Delete Expense?</h3>
+        <p class="text-sm mb-5" id="delete-expense-message" style="color:#5a7a8e"></p>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center">
+          <button id="delete-expense-confirm-btn"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#c0392b;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#a93226'"
+                  onmouseout="this.style.background='#c0392b'">Yes, Delete</button>
+          <button onclick="closeDeleteExpenseModal()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#e8f6fc'"
+                  onmouseout="this.style.background='#f0f8fd'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-md">
+    <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-8 text-center">
+        <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:linear-gradient(135deg,rgba(0,149,200,0.10),rgba(91,184,224,0.10))">
+          <svg class="w-8 h-8" style="color:#0095c8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </div>
+        <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Inconsolata',monospace',serif">Confirm Logout</h3>
+        <p class="mb-6 text-sm leading-relaxed" style="color:#5a7a8e">Are you sure you want to log out of your account?</p>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center;margin-top:0.5rem">
+          <button onclick="confirmLogout()"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,149,200,0.25);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#007eb0'"
+                  onmouseout="this.style.background='#0095c8'">Yes, Logout</button>
+          <button onclick="closeLogoutModal()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif"
+                  onmouseover="this.style.background='#e8f6fc'"
+                  onmouseout="this.style.background='#f0f8fd'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('topbar-date').textContent =
+    new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+  document.getElementById('expense-date-input').value = new Date().toISOString().split('T')[0];
+
+  /* ── Expense Record Confirm ── */
+  function openExpenseConfirm() {
+    const cat = document.getElementById('expense-category').value.trim();
+    const desc = document.getElementById('expense-desc').value.trim();
+    const amount = document.getElementById('expense-amount').value;
+    const date = document.getElementById('expense-date-input').value;
+    if (!cat || !desc || !amount || !date) { alert('Please fill in all required fields.'); return; }
+    document.getElementById('expense-confirm-details').innerHTML =
+      `<div class="mb-1"><strong>Category:</strong> ${cat}</div>
+       <div class="mb-1"><strong>Description:</strong> ${desc}</div>
+       <div class="mb-1"><strong>Amount:</strong> ₱${parseFloat(amount).toFixed(2)}</div>
+       <div><strong>Date:</strong> ${date}</div>`;
+    document.getElementById('expense-confirm-modal').classList.remove('hidden');
+    document.getElementById('expense-confirm-modal').classList.add('flex');
+  }
+
+  function closeExpenseConfirm() {
+    document.getElementById('expense-confirm-modal').classList.add('hidden');
+    document.getElementById('expense-confirm-modal').classList.remove('flex');
+  }
+
+  function submitExpenseForm() { document.getElementById('expense-form').submit(); }
+
+  /* ── Delete Expense Confirm ── */
+  function openDeleteExpenseModal(id, desc) {
+    document.getElementById('delete-expense-message').textContent =
+      `You're about to delete "${desc}". This action cannot be undone.`;
+    document.getElementById('delete-expense-confirm-btn').onclick = function() {
+      document.getElementById('delete-expense-form-' + id).submit();
+    };
+    document.getElementById('delete-expense-modal').classList.remove('hidden');
+    document.getElementById('delete-expense-modal').classList.add('flex');
+  }
+
+  function closeDeleteExpenseModal() {
+    document.getElementById('delete-expense-modal').classList.add('hidden');
+    document.getElementById('delete-expense-modal').classList.remove('flex');
+  }
+
+  function filterExpenses() {
+    const q = document.getElementById('search-expenses').value.toLowerCase();
+    document.querySelectorAll('.expense-row').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    document.getElementById('overlay').classList.toggle('hidden');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('overlay').classList.add('hidden');
+  }
+  function checkWidth() {
+    const isMobile = window.innerWidth < 768;
+    const sidebar = document.getElementById('sidebar');
+    const menuBtn = document.getElementById('menu-btn');
+    if (isMobile) {
+      menuBtn.classList.remove('hidden'); menuBtn.classList.add('flex');
+      if (!sidebar.classList.contains('-translate-x-full')) sidebar.classList.add('-translate-x-full');
+    } else {
+      menuBtn.classList.add('hidden'); menuBtn.classList.remove('flex');
+      sidebar.classList.remove('-translate-x-full');
+    }
+  }
+  checkWidth();
+  window.addEventListener('resize', checkWidth);
+
+  function openLogoutModal() {
+    document.getElementById('logout-modal').classList.remove('hidden');
+    document.getElementById('logout-modal').classList.add('flex');
+  }
+  function closeLogoutModal() {
+    document.getElementById('logout-modal').classList.add('hidden');
+    document.getElementById('logout-modal').classList.remove('flex');
+  }
+  function confirmLogout() { window.location.href = "{{ url_for('logout') }}"; }
+</script>
+</body>
+</html>

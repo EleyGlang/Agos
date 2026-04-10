@@ -6,15 +6,15 @@
   <title>User Management — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet"/>
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Outfit',sans-serif;">
+<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
 <div class="flex min-h-screen">
 
-  <!-- ══ SIDEBAR (same as admin dashboard) ══ -->
+   <!-- ══ SIDEBAR ══ -->
   <aside id="sidebar"
     class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
-    style="background:linear-gradient(180deg,#0d1f2d 0%,#123047 100%);">
+    style="background:linear-gradient(180deg,#0b2535 0%,#0f3a54 100%);">
     <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
       <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
            style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
@@ -23,73 +23,37 @@
         </svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Cormorant Garamond',serif">Agos</div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace',serif">Agos</div>
         <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
       </div>
     </div>
     <div class="flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3"
          style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
       <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-           style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       <div>
         <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
         <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5"
-             style="background:rgba(0,149,200,0.25);color:#5bb8e0">Admin</div>
+             style="background:rgba(45,136,184,0.30);color:#a8d8f0">{{ session['role'] }}</div>
       </div>
     </div>
-    <!-- Nav -->
     <nav class="flex-1 py-2">
-
-      <a href="{{ url_for('dashboard') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium {% if active_page == 'dashboard' %}text-white{% else %}text-[#ccd9ec]{% endif %}"
-         style="{% if active_page == 'dashboard' %}background:rgba(0,149,200,0.18);color:#ffffff{% else %}color:rgba(204,234,247,0.60){% endif %}">
-        <span></span> Dashboard
-      </a>
-
-      <a href="{{ url_for('sales') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Sales Management
-      </a>
-      <a href="{{ url_for('inventory') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Inventory Management
-      </a>
-      <a href="{{ url_for('customers') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Customer Management
-      </a>
-      <a href="{{ url_for('deliveries') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Delivery Management
-      </a>
-      <a href="{{ url_for('user_management') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 {% if active_page == 'user_management' %}bg-[rgba(0,149,200,0.18)] text-white{% else %}text-[#ccd9ec] hover:bg-[rgba(255,255,255,0.06)]{% endif %}"
-         style="{% if active_page == 'user_management' %}background:rgba(0,149,200,0.18);color:#ffffff{% else %}color:rgba(204,234,247,0.60){% endif %}">
-        <span></span> User Management
-      </a>
-      <a href="{{ url_for('expense_management') }}"
-         class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]"
-         style="color:rgba(204,234,247,0.60)">
-        <span></span> Expense Management
-      </a>
+      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Dashboard</a>
+      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(45,136,184,0.22)"><span></span> Sales Management</a>
+      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Inventory Management</a>
+      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Customer Management</a>
+      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Delivery Management</a>
+      {% if session.get('role') == 'Admin' %}
+      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> User Management</a>
+      <a href="{{ url_for('expense_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Expense Management</a>
+      {% endif %}
     </nav>
-
     <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <button type="button" onclick="openLogoutModal()"
-         class="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200"
-         style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">
-        <span></span> Log Out
-      </button>
+      <button type="button" onclick="openLogoutModal()" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)"><span> </span> Log Out</button>
     </div>
   </aside>
 
-
   <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-30" style="background:rgba(13,31,45,0.50)"></div>
-
   <!-- ══ MAIN ══ -->
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]" id="main-wrap">
 
@@ -100,15 +64,20 @@
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Cormorant Garamond',serif">User Management</div>
-          <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">Create and manage operator accounts</div>
+          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Inconsolata',monospace',serif">User Management</div>
+          <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">
+            {% if is_super_admin %}Full system access — all accounts visible{% else %}Manage operator accounts{% endif %}
+          </div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
         <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
              style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
+        <!-- Super Admin gets a purple avatar -->
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
-             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+             style="background:linear-gradient(135deg,{% if is_super_admin %}#7c3aed,#a855f7{% else %}#0095c8,#5bb8e0{% endif %})">
+          {{ session['full_name'][0].upper() }}
+        </div>
       </div>
     </header>
 
@@ -123,90 +92,153 @@
         {% endfor %}{% endif %}
       {% endwith %}
 
+      <!-- ── Super Admin banner ── -->
+      {% if is_super_admin %}
+      <div class="relative overflow-hidden rounded-2xl px-6 py-4 mb-6 flex items-center gap-4"
+           style="background:linear-gradient(135deg,#2d1654 0%,#4c1d95 100%);border:1px solid rgba(167,139,250,0.25)">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+             style="background:rgba(167,139,250,0.20)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="text-white font-bold text-sm">Super Admin Mode</div>
+          <div class="text-[0.72rem]" style="color:rgba(216,180,254,0.70)">You have full system access. You can create Admin accounts, reset passwords, and delete users.</div>
+        </div>
+      </div>
+      {% endif %}
+
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_1.6fr] gap-4 md:gap-6">
 
-        <!-- Create user form -->
-        <div class="bg-white rounded-2xl overflow-hidden self-start" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">Create New Account</div>
-            <div class="text-xs text-[#7a99ae] mt-0.5">Add an admin or operator to the system</div>
-          </div>
-          <div class="p-5 overflow-x-auto">
-            <form action="{{ url_for('create_user') }}" method="POST" class="flex flex-col gap-4">
+        <!-- ══ LEFT COLUMN ══ -->
+        <div class="flex flex-col gap-4">
 
-              <!-- Full name -->
-              <div>
-                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Full Name</label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)"></span>
-                  <input type="text" name="full_name" placeholder="e.g. Josh John Michael Argao" required
-                         class="w-full pl-9 pr-4 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+          <!-- Create Account Form -->
+          <div class="bg-white rounded-2xl overflow-hidden self-start"
+               style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+            <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Create New Account</div>
+              <div class="text-xs text-[#7a99ae] mt-0.5">
+                {% if is_super_admin %}Create Operator or Admin accounts{% else %}Add an Operator to the system{% endif %}
+              </div>
+            </div>
+            <div class="p-5">
+              <form id="create-user-form" action="{{ url_for('create_user') }}" method="POST" class="flex flex-col gap-4">
+
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Full Name</label>
+                  <input type="text" name="full_name" id="new-full-name" placeholder="e.g. Juan dela Cruz" required
+                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
                          onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"
                          pattern="[A-Za-z ]+" title="Only letters and spaces are allowed"/>
                 </div>
-              </div>
 
-              <!-- Username -->
-              <div>
-                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Username</label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)"></span>
-                  <input type="text" name="username" placeholder="unique username" required
-                         class="w-full pl-9 pr-4 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Username</label>
+                  <input type="text" name="username" id="new-username" placeholder="unique username" required
+                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
                          onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
                 </div>
-              </div>
-              <!-- Password -->
-              <div>
-                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Password</label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style="color:rgba(45,136,184,0.45)"></span>
-                  <input type="password" name="password" id="new-pw" placeholder="Minimum 8 characters" required minlength="8"
-                         class="w-full pl-9 pr-10 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
-                         style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
-                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
-                  <button type="button" onclick="togglePw('new-pw')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer" style="color:rgba(45,136,184,0.50)"></button>
-                </div>
-              </div>
 
-              <!-- Role -->
-              <div>
-                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Role</label>
-                <div class="flex rounded-xl overflow-hidden" style="border:1.5px solid rgba(45,136,184,0.18)">
-                  <button type="button" id="role-admin" onclick="setRole('Admin')"
-                          class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200"
-                          style="background:#0095c8;color:#fff;font-family:'Outfit',sans-serif">Admin</button>
-                  <button type="button" id="role-operator" onclick="setRole('Operator')"
-                          class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200 text-[#5a7a8e]"
-                          style="background:transparent;font-family:'Outfit',sans-serif">Operator</button>
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Password</label>
+                  <div class="relative">
+                    <input type="password" name="password" id="new-pw" placeholder="Minimum 8 characters" required minlength="8"
+                           class="w-full pr-10 px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                           style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                           onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                           onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                    <button type="button" onclick="togglePw('new-pw')"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer"
+                            style="color:rgba(45,136,184,0.50)">👁</button>
+                  </div>
                 </div>
-                <input type="hidden" name="role" id="role-value" value="Admin"/>
-              </div>
 
-              <button type="submit"
-                      class="w-full py-3 rounded-full text-white font-semibold text-sm cursor-pointer transition-all duration-200 border-none mt-2"
-                      style="background:#0095c8;box-shadow:0 4px 18px rgba(0,149,200,0.28);font-family:'Outfit',sans-serif"
-                      onmouseover="this.style.background='#007eb0'"
-                      onmouseout="this.style.background='#0095c8'">
-                Create Account
-              </button>
-            </form>
+                <!-- Role selector — Operator only for Admin, both for Super Admin -->
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Role</label>
+                  <select name="role"
+                          class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none transition-all duration-200"
+                          style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                          onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                          onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'">
+                    <option value="Operator">Operator</option>
+                    {% if is_super_admin %}
+                    <option value="Admin">Admin</option>
+                    {% endif %}
+                  </select>
+                </div>
+
+                <button type="button" onclick="openCreateUserConfirm()"
+                        class="w-full py-3 rounded-full text-white font-semibold text-sm cursor-pointer transition-all duration-200 border-none mt-2"
+                        style="background:#0095c8;box-shadow:0 4px 18px rgba(0,149,200,0.28);font-family:'Outfit',sans-serif"
+                        onmouseover="this.style.background='#007eb0'"
+                        onmouseout="this.style.background='#0095c8'">
+                  Create Account
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
 
-        <!-- Users table -->
-        <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+          <!-- Change Own Password -->
+          <div class="bg-white rounded-2xl overflow-hidden"
+               style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+            <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Change My Password</div>
+              <div class="text-xs text-[#7a99ae] mt-0.5">Update your own login password</div>
+            </div>
+            <div class="p-5">
+              <form action="{{ url_for('change_password') }}" method="POST" class="flex flex-col gap-4">
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Current Password</label>
+                  <input type="password" name="current_password" required placeholder="Your current password"
+                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none"
+                         style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                </div>
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">New Password</label>
+                  <input type="password" name="new_password" required minlength="8" placeholder="Minimum 8 characters"
+                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none"
+                         style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                </div>
+                <div>
+                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Confirm New Password</label>
+                  <input type="password" name="confirm_password" required minlength="8" placeholder="Repeat new password"
+                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none"
+                         style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                </div>
+                <button type="submit"
+                        class="w-full py-2.5 rounded-full text-white font-semibold text-sm cursor-pointer border-none"
+                        style="background:#2d88b8;font-family:'Outfit',sans-serif"
+                        onmouseover="this.style.background='#1a6a9a'"
+                        onmouseout="this.style.background='#2d88b8'">
+                  Update Password
+                </button>
+              </form>
+            </div>
+          </div>
+
+        </div><!-- end left column -->
+
+        <!-- ══ RIGHT COLUMN: Users Table ══ -->
+        <div class="bg-white rounded-2xl overflow-hidden"
+             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
           <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
             <div>
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Cormorant Garamond',serif">All Accounts</div>
-              <div class="text-xs text-[#7a99ae] mt-0.5">{{ users|length }} user{{ 's' if users|length != 1 }}</div>
+              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">All Accounts</div>
+              <div class="text-xs text-[#7a99ae] mt-0.5">{{ users|length }} account{{ 's' if users|length != 1 }}</div>
             </div>
-            <!-- Search bar -->
             <input type="text" id="search" placeholder="Search users..." oninput="filterUsers()"
                    class="px-3 py-1.5 rounded-lg text-sm outline-none"
                    style="background:#e8f6fc;border:1px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;width:180px"/>
@@ -229,20 +261,21 @@
                     <td class="py-3 text-[0.82rem]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
                       <div class="flex items-center gap-2.5">
                         <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-                             style="background:linear-gradient(135deg,{% if user.role == 'Admin' %}#0095c8,#5bb8e0{% else %}#2d88b8,#5bb8e0{% endif %})">
+                             style="background:linear-gradient(135deg,{% if user.role == 'Super Admin' %}#7c3aed,#a855f7{% elif user.role == 'Admin' %}#0095c8,#5bb8e0{% else %}#2d88b8,#5bb8e0{% endif %})">
                           {{ user.full_name[0].upper() }}
                         </div>
-                        <div>
-                          <div class="font-medium text-[#0d1f2d]">{{ user.full_name }}</div>
-                        </div>
+                        <div class="font-medium text-[#0d1f2d]">{{ user.full_name }}</div>
+                        {% if user.user_id == session['user_id'] %}
+                          <span class="text-[0.62rem] px-1.5 py-0.5 rounded" style="background:rgba(0,149,200,0.10);color:#0095c8">You</span>
+                        {% endif %}
                       </div>
                     </td>
                     <td class="py-3 text-[0.82rem] text-[#3a5f78]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
                       @{{ user.username }}
                     </td>
                     <td class="py-3" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      <span class="inline-flex items-center text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full
-                                   {% if user.role == 'Admin' %}bg-[rgba(0,149,200,0.10)] text-[#0074a0]{% else %}bg-[rgba(45,136,184,0.10)] text-[#1a5f8a]{% endif %}">
+                      <span class="inline-flex items-center text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full"
+                            style="{% if user.role == 'Super Admin' %}background:rgba(124,58,237,0.15);color:#7c3aed{% elif user.role == 'Admin' %}background:rgba(0,149,200,0.10);color:#0074a0{% else %}background:rgba(45,136,184,0.10);color:#1a5f8a{% endif %}">
                         {{ user.role }}
                       </span>
                     </td>
@@ -253,21 +286,47 @@
                       </span>
                     </td>
                     <td class="py-3" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      <!-- Only show actions for other users — prevent self-deletion -->
-                      {% if user.user_id != session['user_id'] %}
-                        <div class="flex items-center gap-2">
-                          <!-- Toggle status -->
-                          <form action="{{ url_for('toggle_user_status', user_id=user.user_id) }}" method="POST" style="margin:0">
-                            <button type="submit"
+                      <div class="flex items-center gap-1.5 flex-wrap">
+
+                        <!-- Toggle Active/Inactive -->
+                        {% if user.user_id != session['user_id'] and user.role != 'Super Admin' %}
+                          {% if is_super_admin or user.role == 'Operator' %}
+                            <form id="toggle-form-{{ user.user_id }}" action="{{ url_for('toggle_user_status', user_id=user.user_id) }}" method="POST" style="display:none"></form>
+                            <button type="button"
+                                    onclick="openToggleStatusModal({{ user.user_id }}, '{{ user.full_name }}', '{{ user.status }}')"
                                     class="text-[0.72rem] font-medium px-2.5 py-1 rounded-lg border-none cursor-pointer transition-all duration-200"
                                     style="{% if user.status == 'Active' %}background:rgba(224,82,82,0.10);color:#b03030;{% else %}background:rgba(46,170,110,0.10);color:#1e8a55;{% endif %}">
                               {% if user.status == 'Active' %}Deactivate{% else %}Activate{% endif %}
                             </button>
-                          </form>
-                        </div>
-                      {% else %}
-                        <span class="text-[0.72rem] text-[#a8c4d4]">You</span>
-                      {% endif %}
+                          {% endif %}
+                        {% endif %}
+
+                        <!-- Reset Password (Super Admin only) -->
+                        {% if is_super_admin and user.role != 'Super Admin' %}
+                          <button type="button"
+                                  onclick="openResetPasswordModal({{ user.user_id }}, '{{ user.full_name }}')"
+                                  class="text-[0.72rem] font-medium px-2.5 py-1 rounded-lg border-none cursor-pointer transition-all duration-200"
+                                  style="background:rgba(212,168,67,0.12);color:#8a6010;">
+                            Reset PW
+                          </button>
+                        {% endif %}
+
+                        <!-- Delete (Super Admin only, not yourself, not another SA) -->
+                        {% if is_super_admin and user.user_id != session['user_id'] and user.role != 'Super Admin' %}
+                          <form id="delete-user-form-{{ user.user_id }}" action="{{ url_for('delete_user', user_id=user.user_id) }}" method="POST" style="display:none"></form>
+                          <button type="button"
+                                  onclick="openDeleteUserModal({{ user.user_id }}, '{{ user.full_name }}')"
+                                  class="text-[0.72rem] font-medium px-2.5 py-1 rounded-lg border-none cursor-pointer transition-all duration-200"
+                                  style="background:rgba(224,82,82,0.10);color:#c0392b;">
+                            Delete
+                          </button>
+                        {% endif %}
+
+                        {% if user.user_id == session['user_id'] or user.role == 'Super Admin' %}
+                          <span class="text-[0.72rem] text-[#a8c4d4]">—</span>
+                        {% endif %}
+
+                      </div>
                     </td>
                   </tr>
                   {% endfor %}
@@ -286,22 +345,131 @@
   </div>
 </div>
 
+<!-- ══ CREATE USER CONFIRM MODAL ══ -->
+<div id="create-user-modal" class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-7 text-center">
+        <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:rgba(0,149,200,0.10)">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#0095c8" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+        </div>
+        <h3 class="mb-1 text-xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Create New Account?</h3>
+        <p class="text-sm mb-5" id="create-user-summary" style="color:#5a7a8e"></p>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center">
+          <button onclick="submitCreateUserForm()"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Yes, Create</button>
+          <button onclick="closeCreateUserModal()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOGGLE STATUS MODAL ══ -->
+<div id="toggle-status-modal" class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-7 text-center">
+        <div id="toggle-modal-icon" style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:rgba(224,82,82,0.08)"></div>
+        <h3 class="mb-1 text-xl font-bold text-[#0d1f2d]" id="toggle-modal-title" style="font-family:'Inconsolata',monospace',serif">Deactivate User?</h3>
+        <p class="text-sm mb-5" id="toggle-modal-message" style="color:#5a7a8e"></p>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center">
+          <button id="toggle-modal-confirm-btn"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#b03030;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Yes, Confirm</button>
+          <button onclick="closeToggleStatusModal()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESET PASSWORD MODAL (Super Admin only) ══ -->
+<div id="reset-pw-modal" class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="px-6 py-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">
+        <div class="text-[1.1rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Reset Password</div>
+        <div class="text-xs text-[#7a99ae] mt-0.5" id="reset-pw-subtitle"></div>
+      </div>
+      <form id="reset-pw-form" method="POST" class="p-6 flex flex-col gap-4">
+        <div>
+          <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">New Password</label>
+          <input type="password" id="reset-pw-input" name="new_password" required minlength="8"
+                 placeholder="Minimum 8 characters"
+                 class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] text-[#0d1f2d] outline-none"
+                 style="font-family:'Outfit',sans-serif;background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);"
+                 onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
+                 onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+        </div>
+        <div class="flex gap-3">
+          <button type="submit"
+                  style="flex:1;padding:0.625rem 1rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;transition:all 0.2s;font-family:'Outfit',sans-serif">Reset</button>
+          <button type="button" onclick="closeResetPasswordModal()"
+                  style="flex:1;padding:0.625rem 1rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;font-family:'Outfit',sans-serif">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE USER MODAL (Super Admin only) ══ -->
+<div id="delete-user-modal" class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-sm">
+    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-7 text-center">
+        <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:rgba(224,82,82,0.08)">
+          <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#c0392b" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+        </div>
+        <h3 class="mb-1 text-xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Delete Account?</h3>
+        <p class="text-sm mb-5" id="delete-user-message" style="color:#5a7a8e"></p>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center">
+          <button id="delete-user-confirm-btn"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#c0392b;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Yes, Delete</button>
+          <button onclick="closeDeleteUserModal()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="hidden fixed inset-0 z-50 justify-center items-center"
+     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+  <div class="relative p-4 w-full max-w-md">
+    <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div class="p-8 text-center">
+        <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:linear-gradient(135deg,rgba(0,149,200,0.10),rgba(91,184,224,0.10))">
+          <svg class="w-8 h-8" style="color:#0095c8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </div>
+        <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Inconsolata',monospace',serif">Confirm Logout</h3>
+        <p class="mb-6 text-sm leading-relaxed" style="color:#5a7a8e">Are you sure you want to log out of your account?</p>
+        <div style="display:flex;align-items:center;gap:1rem;justify-content:center;margin-top:0.5rem">
+          <button onclick="confirmLogout()"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,149,200,0.25);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Yes, Logout</button>
+          <button onclick="closeLogoutModal()" type="button"
+                  style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap;font-family:'Outfit',sans-serif">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   document.getElementById('topbar-date').textContent =
     new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
-
-  function setRole(role) {
-    document.getElementById('role-value').value = role;
-    const adminBtn    = document.getElementById('role-admin');
-    const operatorBtn = document.getElementById('role-operator');
-    if (role === 'Admin') {
-      adminBtn.style.background    = '#0095c8'; adminBtn.style.color    = '#fff';
-      operatorBtn.style.background = 'transparent'; operatorBtn.style.color = '#5a7a8e';
-    } else {
-      operatorBtn.style.background = '#0095c8'; operatorBtn.style.color    = '#fff';
-      adminBtn.style.background    = 'transparent'; adminBtn.style.color    = '#5a7a8e';
-    }
-  }
 
   function togglePw(id) {
     const el = document.getElementById(id);
@@ -309,48 +477,103 @@
   }
 
   function filterUsers() {
-    const q     = document.getElementById('search').value.toLowerCase();
-    const rows  = document.querySelectorAll('.user-row');
-    rows.forEach(row => {
+    const q = document.getElementById('search').value.toLowerCase();
+    document.querySelectorAll('.user-row').forEach(row => {
       row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
     });
   }
 
+  /* ── Create User Confirm ── */
+  function openCreateUserConfirm() {
+    const name     = document.getElementById('new-full-name').value.trim();
+    const username = document.getElementById('new-username').value.trim();
+    const pw       = document.getElementById('new-pw').value;
+    const role     = document.querySelector('[name=role]').value;
+    if (!name || !username || !pw) { alert('Please fill in all fields.'); return; }
+    document.getElementById('create-user-summary').textContent =
+      `Create a "${role}" account for "${name}" with username "@${username}"?`;
+    document.getElementById('create-user-modal').classList.remove('hidden');
+    document.getElementById('create-user-modal').classList.add('flex');
+  }
+  function closeCreateUserModal() {
+    document.getElementById('create-user-modal').classList.add('hidden');
+    document.getElementById('create-user-modal').classList.remove('flex');
+  }
+  function submitCreateUserForm() { document.getElementById('create-user-form').submit(); }
+
+  /* ── Toggle Status ── */
+  function openToggleStatusModal(id, name, currentStatus) {
+    const isActive = currentStatus === 'Active';
+    const color    = isActive ? '#b03030' : '#1e8a55';
+    document.getElementById('toggle-modal-icon').style.background =
+      isActive ? 'rgba(224,82,82,0.08)' : 'rgba(46,170,110,0.10)';
+    document.getElementById('toggle-modal-title').textContent =
+      isActive ? 'Deactivate User?' : 'Activate User?';
+    document.getElementById('toggle-modal-message').textContent =
+      `You're about to ${isActive ? 'deactivate' : 'activate'} the account for "${name}". ${isActive ? 'They will lose access to the system.' : 'They will regain access.'}`;
+    const btn = document.getElementById('toggle-modal-confirm-btn');
+    btn.style.background = color;
+    btn.textContent = isActive ? 'Yes, Deactivate' : 'Yes, Activate';
+    btn.onmouseover = function() { this.style.background = isActive ? '#8e1f1f' : '#176b42'; };
+    btn.onmouseout  = function() { this.style.background = color; };
+    btn.onclick = function() { document.getElementById('toggle-form-' + id).submit(); };
+    document.getElementById('toggle-status-modal').classList.remove('hidden');
+    document.getElementById('toggle-status-modal').classList.add('flex');
+  }
+  function closeToggleStatusModal() {
+    document.getElementById('toggle-status-modal').classList.add('hidden');
+    document.getElementById('toggle-status-modal').classList.remove('flex');
+  }
+
+  /* ── Reset Password (Super Admin only) ── */
+  function openResetPasswordModal(id, name) {
+    document.getElementById('reset-pw-form').action = `/admin/users/${id}/reset-password`;
+    document.getElementById('reset-pw-subtitle').textContent = `Resetting password for ${name}`;
+    document.getElementById('reset-pw-input').value = '';
+    document.getElementById('reset-pw-modal').classList.remove('hidden');
+    document.getElementById('reset-pw-modal').classList.add('flex');
+  }
+  function closeResetPasswordModal() {
+    document.getElementById('reset-pw-modal').classList.add('hidden');
+    document.getElementById('reset-pw-modal').classList.remove('flex');
+  }
+
+  /* ── Delete User (Super Admin only) ── */
+  function openDeleteUserModal(id, name) {
+    document.getElementById('delete-user-message').textContent =
+      `You're about to permanently delete the account for "${name}". This cannot be undone.`;
+    document.getElementById('delete-user-confirm-btn').onclick = function() {
+      document.getElementById('delete-user-form-' + id).submit();
+    };
+    document.getElementById('delete-user-modal').classList.remove('hidden');
+    document.getElementById('delete-user-modal').classList.add('flex');
+  }
+  function closeDeleteUserModal() {
+    document.getElementById('delete-user-modal').classList.add('hidden');
+    document.getElementById('delete-user-modal').classList.remove('flex');
+  }
+
+  /* ── Sidebar ── */
   function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    document.getElementById('overlay').classList.toggle('hidden');
   }
-  
   function closeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    sidebar.classList.add('-translate-x-full');
-    overlay.classList.add('hidden');
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('overlay').classList.add('hidden');
   }
-  
   function checkWidth() {
     const isMobile = window.innerWidth < 768;
-    const sidebar = document.getElementById('sidebar');
-    const menuBtn = document.getElementById('menu-btn');
-    const overlay = document.getElementById('overlay');
-    
+    const sidebar  = document.getElementById('sidebar');
+    const menuBtn  = document.getElementById('menu-btn');
     if (isMobile) {
-      menuBtn.classList.remove('hidden');
-      menuBtn.classList.add('flex');
-      if (!sidebar.classList.contains('-translate-x-full')) {
-        sidebar.classList.add('-translate-x-full');
-      }
-      overlay.classList.add('hidden');
+      menuBtn.classList.remove('hidden'); menuBtn.classList.add('flex');
+      if (!sidebar.classList.contains('-translate-x-full')) sidebar.classList.add('-translate-x-full');
     } else {
-      menuBtn.classList.add('hidden');
-      menuBtn.classList.remove('flex');
+      menuBtn.classList.add('hidden'); menuBtn.classList.remove('flex');
       sidebar.classList.remove('-translate-x-full');
-      overlay.classList.add('hidden');
     }
   }
-  
   checkWidth();
   window.addEventListener('resize', checkWidth);
 
@@ -358,66 +581,11 @@
     document.getElementById('logout-modal').classList.remove('hidden');
     document.getElementById('logout-modal').classList.add('flex');
   }
-
   function closeLogoutModal() {
     document.getElementById('logout-modal').classList.add('hidden');
     document.getElementById('logout-modal').classList.remove('flex');
   }
-
-  function confirmLogout() {
-    window.location.href = "{{ url_for('logout') }}";
-  }
+  function confirmLogout() { window.location.href = "{{ url_for('logout') }}"; }
 </script>
-
-<div id="logout-modal" 
-     class="hidden fixed inset-0 z-50 justify-center items-center"
-     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
-    
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
-            
-            <!-- Modal Content -->
-            <div class="p-8 text-center">
-                
-                <!-- Icon -->
-                <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:linear-gradient(135deg,rgba(0,149,200,0.10),rgba(91,184,224,0.10))">
-                    <svg class="w-8 h-8" style="color:#0095c8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                    </svg>
-                </div>
-                
-                <!-- Title -->
-                <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Cormorant Garamond',serif">
-                    Confirm Logout
-                </h3>
-                
-                <!-- Message -->
-                <p class="mb-6 text-sm leading-relaxed" style="color:#5a7a8e">
-                    Are you sure you want to log out of your account?
-                </p>
-                
-                <!-- Buttons -->
-                <div style="display:flex;align-items:center;gap:1rem;justify-content:center;margin-top:0.5rem">
-                    <!-- Confirm Logout Button -->
-                    <button onclick="confirmLogout()"
-                       style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,149,200,0.25);transition:all 0.2s;white-space:nowrap"
-                       onmouseover="this.style.background='#007eb0';this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(0,149,200,0.30)'"
-                       onmouseout="this.style.background='#0095c8';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,149,200,0.25)'">
-                        Yes, Logout
-                    </button>
-                    
-                    <!-- Cancel Button -->
-                    <button onclick="closeLogoutModal()" type="button"
-                            style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap"
-                            onmouseover="this.style.background='#e8f6fc';this.style.borderColor='#0095c8'"
-                            onmouseout="this.style.background='#f0f8fd';this.style.borderColor='rgba(45,136,184,0.20)'">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 </body>
 </html>
