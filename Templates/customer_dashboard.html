@@ -5,298 +5,243 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Dashboard — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    .kpi-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;padding:1.1rem 1.25rem;transition:transform .2s,background .25s;display:flex;flex-direction:column;gap:.2rem}
+    .kpi-card:hover{transform:translateY(-2px)}
+    .kpi-icon{width:2.25rem;height:2.25rem;border-radius:.625rem;display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.35rem}
+    .kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);font-family:'Outfit',sans-serif}
+    .kpi-value{font-size:1.75rem;font-weight:800;line-height:1.1;color:var(--text-primary);font-family:'Inconsolata',monospace}
+    .kpi-sub{font-size:.68rem;color:var(--text-muted)}
+    .chart-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;overflow:hidden;transition:background .25s,border-color .25s}
+    .chart-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border-section);display:flex;align-items:center;justify-content:space-between}
+    .chart-title{font-size:.95rem;font-weight:700;color:var(--text-primary);font-family:'Inconsolata',monospace}
+    .chart-sub{font-size:.68rem;color:var(--text-muted);margin-top:.1rem}
+    canvas{max-height:240px}
+    .loyalty-ring{position:relative;display:flex;align-items:center;justify-content:center}
+    .pb-track{height:8px;border-radius:999px;background:var(--accent-softer);overflow:hidden;margin-top:.3rem}
+    .pb-fill{height:100%;border-radius:999px}
+  </style>
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
-
+<body class="agos-body m-0 p-0">
+{% set active_page = 'customer_dashboard' %}
 <div class="flex min-h-screen">
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
-    style="background:linear-gradient(180deg,#0d1f2d 0%,#123047 100%);">
-    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
-      </div>
-      <div>
-        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace',serif">Agos</div>
-        <div class="text-[0.6rem] tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
-      </div>
-    </div>
-    <div class="flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3" style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      <div>
-        <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5" style="background:rgba(0,149,200,0.25);color:#5bb8e0">{{ session['role'] }}</div>
-      </div>
-    </div>
-    <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Dashboard</a>
-      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Record Sales</a>
-      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Inventory</a>
-      <a href="{{ url_for('products') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Products</a>
-      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Customers</a>
-      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Deliveries</a>
-      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Users</a>
-      <a href="{{ url_for('expenses') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Expenses</a>
-      <a href="{{ url_for('reports') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(0,149,200,0.18)">Reports</a>
-    </nav>
-    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <button onclick="openLogoutModal()" class="w-full text-left px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none cursor-pointer" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">Log Out</button>
-    </div>
-  </aside>
+  {% include '_sidebar_customer.html' %}
 
-  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-10" style="background:rgba(13,31,45,0.50)"></div>
-
-  <!-- ══ MAIN ══ -->
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
-
-    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5"
-            style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Inconsolata',monospace',serif">Dashboard</div>
-          <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">EP-Bluelife Water Refilling Station</div>
+          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">My Dashboard</div>
+          <div class="text-xs" style="color:var(--text-muted)">EP-Bluelife Water Refilling Station</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
-        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
-             style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
-             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
-          {{ session['customer_name'][0].upper() }}
-        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['customer_name'][0].upper() }}</div>
       </div>
     </header>
 
-    <main class="flex-1 p-4 md:p-6 lg:p-8">
+    <main class="flex-1 p-4 md:p-5 lg:p-7 flex flex-col gap-5">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
-          <div class="flex gap-2 items-start rounded-xl px-3.5 py-3 mb-5 text-[0.79rem] {% if category == 'error' %}text-[#7a5a10]{% else %}text-[#1a5f8a]{% endif %}"
-               style="{% if category == 'error' %}background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.22);{% else %}background:rgba(0,149,200,0.07);border:1px solid rgba(0,149,200,0.17);{% endif %}">
-            {{ message }}
-          </div>
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
         {% endfor %}{% endif %}
       {% endwith %}
 
       <!-- Welcome banner -->
-      <div class="relative overflow-hidden rounded-2xl px-4 md:px-8 py-5 md:py-6 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
-           style="background:linear-gradient(135deg,#0b3a52 0%,#1a6a8a 100%)">
-        <div class="absolute rounded-full pointer-events-none" style="width:180px;height:180px;right:-20px;top:-30px;background:rgba(91,184,224,0.07)"></div>
-        <div class="absolute rounded-full pointer-events-none" style="width:120px;height:120px;right:80px;bottom:-40px;background:rgba(45,136,184,0.10)"></div>
+      <div class="agos-welcome-banner relative overflow-hidden rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="absolute rounded-full pointer-events-none" style="width:180px;height:180px;right:-20px;top:-40px;background:rgba(91,184,224,0.07)"></div>
         <div class="relative z-10">
-          <div class="text-xl md:text-2xl font-bold text-white mb-1" style="font-family:'Inconsolata',monospace',serif">
-            Welcome back, {{ session['customer_name'].split()[0] }}! 👋
-          </div>
-          <div class="text-[0.75rem] md:text-[0.82rem]" style="color:rgba(184,218,240,0.65)">
-            Stay hydrated — your clean water is just an order away.
-          </div>
+          <div class="text-xl md:text-2xl font-bold text-white mb-1" style="font-family:'Inconsolata',monospace">Welcome back, {{ session['customer_name'].split()[0] }}! 👋</div>
+          <div class="text-[0.78rem]" style="color:rgba(184,218,240,0.65)">Stay hydrated — your clean water is just an order away.</div>
         </div>
-        <div class="relative z-10 flex-shrink-0">
-          <a href="{{ url_for('customer_order') }}"
-             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-semibold no-underline transition-all duration-200"
-             style="background:rgba(0,149,200,0.70);border:1px solid rgba(91,184,224,0.40)"
-             onmouseover="this.style.background='rgba(0,149,200,0.90)'"
-             onmouseout="this.style.background='rgba(0,149,200,0.70)'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            Order Now
-          </a>
+        <div class="relative z-10">
+          <a href="{{ url_for('customer_order') }}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-semibold no-underline" style="background:rgba(0,149,200,0.65);border:1px solid rgba(91,184,224,0.40)">🛒 Order Now</a>
         </div>
       </div>
 
-      <!-- Stat cards -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(0,149,200,0.10)">🚚</div>
-          <div class="text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Total Orders</div>
-          <div class="text-[2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">{{ total_orders }}</div>
-          <div class="text-xs text-[#7a99ae]">All time</div>
+      <!-- KPI strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:var(--accent-soft)">🚚</div>
+          <div class="kpi-label">Total Orders</div>
+          <div class="kpi-value">{{ total_orders }}</div>
+          <div class="kpi-sub">All time</div>
         </div>
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(212,168,67,0.10)">⏳</div>
-          <div class="text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Pending</div>
-          <div class="text-[2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">{{ pending_orders }}</div>
-          <div class="text-xs text-[#7a99ae]">Awaiting delivery</div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:var(--warning-bg)">⏳</div>
+          <div class="kpi-label">Pending</div>
+          <div class="kpi-value" style="color:{% if pending_orders > 0 %}var(--warning-text){% else %}var(--success-text){% endif %}">{{ pending_orders }}</div>
+          <div class="kpi-sub">Awaiting delivery</div>
         </div>
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(46,170,110,0.10)">✅</div>
-          <div class="text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Delivered</div>
-          <div class="text-[2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">{{ delivered_orders }}</div>
-          <div class="text-xs text-[#7a99ae]">Completed</div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:var(--success-bg)">✅</div>
+          <div class="kpi-label">Delivered</div>
+          <div class="kpi-value">{{ delivered_orders }}</div>
+          <div class="kpi-sub">Completed</div>
         </div>
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(212,168,67,0.10)">⭐</div>
-          <div class="text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Loyalty Pts</div>
-          <div class="text-[2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">{{ customer.loyalty_points }}</div>
-          <div class="text-xs text-[#7a99ae]">Redeemable pts</div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:var(--warning-bg)">⭐</div>
+          <div class="kpi-label">Loyalty Pts</div>
+          <div class="kpi-value" style="color:var(--warning-text)">{{ customer.loyalty_points }}</div>
+          <div class="kpi-sub">Redeemable</div>
         </div>
-
       </div>
 
-      <!-- Bottom grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-5">
+      <!-- Charts row: order history + order status donut -->
+      <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title">Order History — Last 6 Months</div><div class="chart-sub">Number of orders placed per month</div></div></div>
+          <div class="p-4"><canvas id="custOrderHistory"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title">Order Status</div><div class="chart-sub">Current status breakdown</div></div></div>
+          <div class="p-4 flex flex-col items-center gap-4">
+            <canvas id="custStatusDonut" style="max-height:170px;max-width:170px"></canvas>
+            <div class="w-full flex flex-col gap-2">
+              <div class="flex justify-between text-[0.78rem]"><div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#2eaa6e"></span><span style="color:var(--text-secondary)">Delivered</span></div><span class="font-bold" style="color:var(--text-primary)">{{ delivered_orders }}</span></div>
+              <div class="flex justify-between text-[0.78rem]"><div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#d4a843"></span><span style="color:var(--text-secondary)">Pending</span></div><span class="font-bold" style="color:var(--text-primary)">{{ pending_orders }}</span></div>
+              <div class="flex justify-between text-[0.78rem]"><div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#e05252"></span><span style="color:var(--text-secondary)">Cancelled</span></div><span class="font-bold" style="color:var(--text-primary)">{{ cancelled_orders | default(0) }}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom: Spending trend + loyalty card + recent orders -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        <!-- Spending per month bar -->
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title">Monthly Spending</div><div class="chart-sub">Your total spend per month</div></div></div>
+          <div class="p-4"><canvas id="custSpend"></canvas></div>
+        </div>
+
+        <!-- Loyalty card -->
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">Loyalty Rewards</div></div>
+          <div class="p-5 flex flex-col gap-4">
+            <!-- Ring progress -->
+            <div class="flex items-center gap-4">
+              <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+                <canvas id="loyaltyRing" width="80" height="80"></canvas>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
+                  <span class="text-lg font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary);line-height:1">{{ customer.loyalty_points }}</span>
+                  <span class="text-[0.58rem]" style="color:var(--text-muted)">pts</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-[0.82rem] font-semibold mb-1" style="color:var(--text-primary)">{{ customer.loyalty_points }} point{{ 's' if customer.loyalty_points != 1 }}</div>
+                <div class="text-[0.72rem] leading-relaxed" style="color:var(--text-muted)">Earn 1 point per 10 refills. Auto-applied at checkout.</div>
+              </div>
+            </div>
+            {% set next_reward = 10 - (customer.loyalty_points % 10) if customer.loyalty_points % 10 != 0 else 10 %}
+            <div>
+              <div class="flex justify-between text-[0.72rem] mb-1" style="color:var(--text-muted)">
+                <span>Progress to next free refill</span><span>{{ 10 - next_reward }}/10</span>
+              </div>
+              <div class="pb-track"><div class="pb-fill" style="width:{{ ((10 - next_reward) / 10 * 100)|round }}%;background:linear-gradient(90deg,#d4a843,#f0c040)"></div></div>
+              <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">{{ next_reward }} more order{{ 's' if next_reward != 1 }} to earn your next free refill</div>
+            </div>
+            {% if customer.loyalty_points > 0 %}
+            <div class="rounded-xl p-2.5 text-[0.72rem]" style="background:var(--warning-bg);color:var(--warning-text);border:1px solid rgba(212,168,67,0.18)">
+              🎁 You can redeem {{ customer.loyalty_points }} free refill{{ 's' if customer.loyalty_points != 1 }} now!
+            </div>
+            {% endif %}
+          </div>
+        </div>
 
         <!-- Recent orders -->
-        <div class="bg-white rounded-2xl overflow-hidden"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Recent Orders</div>
-            <a href="{{ url_for('customer_deliveries') }}" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full border-collapse min-w-[400px]">
-              <thead>
-                <tr>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Date</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Items</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Total</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% if recent_orders %}
-                  {% for order in recent_orders %}
-                  <tr class="transition-colors duration-150 hover:bg-[rgba(0,149,200,0.03)]">
-                    <td class="px-5 py-3 text-[0.80rem] text-[#3a5f78]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      {{ order.delivery_date.strftime('%b %d, %Y') }}
-                    </td>
-                    <td class="px-5 py-3 text-[0.75rem] text-[#5a7a8e]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      {% for item in order.delivery_items %}
-                        {{ item.quantity }}× {{ item.product.product_name }}{% if not loop.last %}, {% endif %}
-                      {% endfor %}
-                    </td>
-                    <td class="px-5 py-3 text-[0.82rem] font-semibold text-[#0d1f2d]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      ₱{{ "%.2f"|format(order.total_amount) }}
-                    </td>
-                    <td class="px-5 py-3" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      <span class="inline-flex items-center text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full
-                        {% if order.status == 'Delivered' %}bg-[rgba(46,170,110,0.12)] text-[#1e8a55]
-                        {% elif order.status == 'Pending' %}bg-[rgba(212,168,67,0.12)] text-[#8a6010]
-                        {% else %}bg-[rgba(224,82,82,0.10)] text-[#c0392b]{% endif %}">
-                        {{ order.status }}
-                      </span>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td colspan="4" class="text-center py-10 text-xs" style="color:#a8c4d4">
-                      No orders yet. <a href="{{ url_for('customer_order') }}" class="text-[#0095c8] no-underline hover:underline">Place your first order →</a>
-                    </td>
-                  </tr>
-                {% endif %}
-              </tbody>
-            </table>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">Recent Orders</div><a href="{{ url_for('customer_deliveries') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a></div>
+          <div class="p-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+            {% if recent_orders %}
+              {% for order in recent_orders[:6] %}
+              <div class="py-2" style="border-bottom:1px solid var(--border-section)">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[0.76rem] font-semibold" style="color:var(--text-primary)">{{ order.delivery_date.strftime('%b %d, %Y') }}</span>
+                  <span class="agos-badge {% if order.status == 'Delivered' %}agos-badge-success{% elif order.status == 'Pending' %}agos-badge-warning{% else %}agos-badge-danger{% endif %} text-[0.64rem]">{{ order.status }}</span>
+                </div>
+                <div class="text-[0.7rem]" style="color:var(--text-muted)">
+                  {% for item in order.delivery_items %}{{ item.quantity }}× {{ item.product.product_name }}{% if not loop.last %}, {% endif %}{% endfor %}
+                </div>
+                <div class="text-[0.74rem] font-semibold mt-0.5" style="color:var(--accent)">₱{{ "%.2f"|format(order.total_amount) }}</div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-8 text-xs" style="color:var(--text-faint)">
+                No orders yet.<br><a href="{{ url_for('customer_order') }}" style="color:var(--accent)">Place your first order →</a>
+              </div>
+            {% endif %}
           </div>
         </div>
 
-        <!-- Right: Loyalty info + Quick actions -->
-        <div class="flex flex-col gap-5">
-
-          <!-- Loyalty card -->
-          <div class="bg-white rounded-2xl overflow-hidden"
-               style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-            <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Loyalty Rewards</div>
-            </div>
-            <div class="p-5">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                     style="background:rgba(212,168,67,0.10)">⭐</div>
-                <div>
-                  <div class="text-[1.6rem] font-bold text-[#0d1f2d] leading-none" style="font-family:'Inconsolata',monospace',serif">{{ customer.loyalty_points }}</div>
-                  <div class="text-xs text-[#7a99ae]">points available</div>
-                </div>
-              </div>
-              <div class="text-[0.75rem] leading-relaxed" style="color:#5a7a8e">
-                Earn <strong>1 point</strong> for every 10 refills. Points are automatically redeemed for free refills on your next order.
-              </div>
-              {% if customer.loyalty_points > 0 %}
-              <div class="mt-3 rounded-xl p-2.5 text-[0.72rem] font-medium"
-                   style="background:rgba(212,168,67,0.07);color:#8a6010;border:1px solid rgba(212,168,67,0.18)">
-                🎁 You can redeem {{ customer.loyalty_points }} free refill{{ 's' if customer.loyalty_points != 1 }} on your next order!
-              </div>
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Quick actions -->
-          <div class="bg-white rounded-2xl overflow-hidden"
-               style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-            <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Quick Actions</div>
-            </div>
-            <div class="p-4 flex flex-col gap-2">
-              <a href="{{ url_for('customer_order') }}"
-                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
-                 style="border:1px solid rgba(45,136,184,0.10)">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                     style="background:rgba(0,149,200,0.10)">🛒</div>
-                <div>
-                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Place New Order</div>
-                  <div class="text-[0.72rem] text-[#7a99ae]">Schedule a delivery</div>
-                </div>
-              </a>
-              <a href="{{ url_for('customer_deliveries') }}"
-                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
-                 style="border:1px solid rgba(45,136,184,0.10)">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-                     style="background:rgba(46,170,110,0.10)">📋</div>
-                <div>
-                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">View All Deliveries</div>
-                  <div class="text-[0.72rem] text-[#7a99ae]">Track your orders</div>
-                </div>
-              </a>
-            </div>
-          </div>
-
-        </div>
       </div>
-
     </main>
   </div>
 </div>
 
+<!-- LOGOUT MODAL -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md"><div class="agos-modal-box p-8 text-center">
+    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+    </div>
+    <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+    <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+    <div class="flex items-center gap-4 justify-center">
+      <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+      <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+    </div>
+  </div></div>
+</div>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.getElementById('topbar-date').textContent =
-    new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+const OH_LABELS  = {{ order_history_labels  | tojson }};
+const OH_VALUES  = {{ order_history_values  | tojson }};
+const SP_LABELS  = {{ spend_labels  | tojson }};
+const SP_VALUES  = {{ spend_values  | tojson }};
+const DELIVERED  = {{ delivered_orders  | default(0) }};
+const PENDING    = {{ pending_orders    | default(0) }};
+const CANCELLED  = {{ cancelled_orders | default(0) }};
+const LOYALTY    = {{ customer.loyalty_points | default(0) }};
 
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    document.getElementById('overlay').classList.toggle('hidden');
+let _c={};
+function gc(){ const d=document.documentElement.getAttribute('data-theme')==='dark'; return {grid:d?'rgba(45,136,184,0.12)':'rgba(45,136,184,0.07)',tick:d?'#5a8aaa':'#7a99ae'}; }
+
+function build(){
+  Chart.defaults.font.family="'Outfit',sans-serif"; Chart.defaults.font.size=11;
+  Object.values(_c).forEach(c=>c.destroy()); _c={};
+  const c=gc();
+
+  _c.oh = new Chart('custOrderHistory',{type:'bar',data:{labels:OH_LABELS,datasets:[{label:'Orders',data:OH_VALUES,backgroundColor:'rgba(0,149,200,0.70)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.parsed.y+' orders'}}},scales:{x:{grid:{display:false},ticks:{color:c.tick}},y:{grid:{color:c.grid},ticks:{color:c.tick,stepSize:1},beginAtZero:true}}}});
+
+  _c.st = new Chart('custStatusDonut',{type:'doughnut',data:{labels:['Delivered','Pending','Cancelled'],datasets:[{data:[DELIVERED,PENDING,CANCELLED],backgroundColor:['#2eaa6e','#d4a843','#e05252'],borderWidth:0,hoverOffset:6}]},options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.parsed+' orders'}}}}});
+
+  _c.sp = new Chart('custSpend',{type:'bar',data:{labels:SP_LABELS,datasets:[{label:'Spent (₱)',data:SP_VALUES,backgroundColor:'rgba(91,184,224,0.70)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>' ₱'+x.parsed.y.toFixed(2)}}},scales:{x:{grid:{display:false},ticks:{color:c.tick}},y:{grid:{color:c.grid},ticks:{color:c.tick,callback:v=>'₱'+v},beginAtZero:true}}}});
+
+  // Loyalty ring
+  const loyCanvas = document.getElementById('loyaltyRing');
+  if(loyCanvas){
+    const isDark = document.documentElement.getAttribute('data-theme')==='dark';
+    const lCtx = loyCanvas.getContext('2d');
+    if(_c._loyRing) _c._loyRing.destroy();
+    const progress = Math.min((LOYALTY % 10) / 10, 1);
+    _c._loyRing = new Chart(lCtx,{type:'doughnut',data:{datasets:[{data:[progress,1-progress],backgroundColor:[isDark?'#d4a843':'#d4a843',isDark?'rgba(45,136,184,0.15)':'rgba(45,136,184,0.08)'],borderWidth:0}]},options:{cutout:'75%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:800}}});
   }
-  function closeSidebar() {
-    document.getElementById('sidebar').classList.add('-translate-x-full');
-    document.getElementById('overlay').classList.add('hidden');
-  }
-  function checkWidth() {
-    const isMobile = window.innerWidth < 768;
-    const sidebar = document.getElementById('sidebar');
-    const menuBtn = document.getElementById('menu-btn');
-    if (isMobile) {
-      menuBtn.classList.remove('hidden'); menuBtn.classList.add('flex');
-      if (!sidebar.classList.contains('-translate-x-full')) sidebar.classList.add('-translate-x-full');
-    } else {
-      menuBtn.classList.add('hidden'); menuBtn.classList.remove('flex');
-      sidebar.classList.remove('-translate-x-full');
-    }
-  }
-  checkWidth();
-  window.addEventListener('resize', checkWidth);
+}
+
+document.addEventListener('DOMContentLoaded', build);
+const _oT=window.toggleTheme; window.toggleTheme=function(){ _oT(); setTimeout(build,280); };
 </script>
-
 </body>
 </html>

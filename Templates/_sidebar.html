@@ -1,0 +1,199 @@
+{#
+  _sidebar.html — Agos Unified Sidebar
+  =====================================
+  Include in every admin/operator page with:
+      {% include '_sidebar.html' %}
+
+  Requires in the calling template:
+    - session['full_name'], session['role']
+    - active_page variable (string matching nav item keys below)
+    - url_for('logout') accessible
+#}
+
+<!-- UNIFIED SIDEBAR -->
+<aside id="sidebar"
+  class="agos-sidebar fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto w-[260px] md:translate-x-0 -translate-x-full"
+  style="transition: transform 0.3s ease;">
+
+  <!-- ── Brand ── -->
+  <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+         style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+        <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+      </svg>
+    </div>
+    <div>
+      <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+      <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+    </div>
+  </div>
+
+  <!-- ── User Card ── -->
+  <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+         style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+      {{ session['full_name'][0].upper() }}
+    </div>
+    <div class="min-w-0">
+      <div class="text-[0.82rem] font-medium leading-tight truncate" style="color:rgba(204,234,247,0.90)">
+        {{ session['full_name'] }}
+      </div>
+      <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
+    </div>
+  </div>
+
+  <!-- ── Navigation ── -->
+  <nav class="flex-1 py-2 overflow-y-auto">
+
+    <!-- Dashboard -->
+    <a href="{{ url_for('dashboard') }}"
+       class="agos-sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      Dashboard
+    </a>
+
+    <!-- Sales -->
+    <a href="{{ url_for('sales') }}"
+       class="agos-sidebar-link {% if active_page == 'sales' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      Sales Management
+    </a>
+
+    <!-- Inventory -->
+    <a href="{{ url_for('inventory') }}"
+       class="agos-sidebar-link {% if active_page == 'inventory' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+      </svg>
+      Inventory
+    </a>
+
+    <!-- Products (Admin only) -->
+    {% if session.get('role') in ('Super Admin', 'Admin') %}
+    <a href="{{ url_for('products') }}"
+       class="agos-sidebar-link {% if active_page == 'products' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <path d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/>
+        <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+      </svg>
+      Products
+    </a>
+    {% endif %}
+
+    <!-- Customers -->
+    <a href="{{ url_for('customers') }}"
+       class="agos-sidebar-link {% if active_page == 'customers' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+      Customers
+    </a>
+
+    <!-- Deliveries -->
+    <a href="{{ url_for('deliveries') }}"
+       class="agos-sidebar-link {% if active_page == 'deliveries' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <rect x="1" y="3" width="15" height="13"/>
+        <path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      Deliveries
+    </a>
+
+    <!-- Admin-only section divider -->
+    {% if session.get('role') in ('Super Admin', 'Admin') %}
+    <div class="mx-3 my-2 opacity-20" style="border-top: 1px solid rgba(91,184,224,0.5)"></div>
+    <div class="mx-4 mb-1 text-[0.6rem] font-bold uppercase tracking-widest" style="color:rgba(91,184,224,0.40)">Admin</div>
+
+    <!-- User Management -->
+    <a href="{{ url_for('user_management') }}"
+       class="agos-sidebar-link {% if active_page == 'user_management' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      User Management
+    </a>
+
+    <!-- Expenses -->
+    <a href="{{ url_for('expenses') }}"
+       class="agos-sidebar-link {% if active_page == 'expenses' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+      </svg>
+      Expenses
+    </a>
+
+    <!-- Reports -->
+    <a href="{{ url_for('reports') }}"
+       class="agos-sidebar-link {% if active_page == 'reports' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Reports
+    </a>
+
+    {% endif %}
+
+    <!-- Super Admin only -->
+    {% if session.get('role') == 'Super Admin' %}
+    <a href="{{ url_for('activity_log') }}"
+       class="agos-sidebar-link {% if active_page == 'activity_log' %}active{% endif %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10,9 9,9 8,9"/>
+      </svg>
+      Activity Log
+    </a>
+    {% endif %}
+
+  </nav>
+
+  <!-- ── Footer: Theme Toggle + Logout ── -->
+  <div class="agos-sidebar-footer flex-shrink-0 p-3 flex flex-col gap-2">
+
+    <!-- Dark/Light toggle -->
+    <div class="flex items-center justify-between px-1 py-1">
+      <div class="flex items-center gap-2">
+        <span style="font-size:0.85rem">☀️</span>
+        <span class="text-[0.7rem] font-medium" style="color:rgba(160,210,240,0.55)">Theme</span>
+      </div>
+      <label class="agos-theme-toggle" title="Toggle dark/light mode">
+        <input type="checkbox"
+               class="agos-theme-checkbox"
+               onchange="toggleTheme()"/>
+        <span class="agos-theme-track"></span>
+      </label>
+      <span style="font-size:0.85rem">🌙</span>
+    </div>
+
+    <button onclick="openLogoutModal()" class="agos-logout-btn flex items-center gap-2.5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+      </svg>
+      Log Out
+    </button>
+  </div>
+
+</aside>
+
+<!-- Sidebar Overlay (mobile) -->
+<div id="overlay" onclick="closeSidebar()" class="agos-overlay hidden fixed inset-0 z-30"></div>
+
+<!-- Store logout URL for JS -->
+<span data-logout-url="{{ url_for('logout') }}" style="display:none"></span>

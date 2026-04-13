@@ -1,0 +1,96 @@
+{#
+  _sidebar_customer.html — Agos Customer Sidebar
+  Include in: customer_dashboard.html, customer_order.html, dashboard_customer.html
+  Requires: session['customer_name'], active_page variable set in the parent template
+#}
+
+<aside id="sidebar"
+  class="agos-sidebar fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto w-[260px] md:translate-x-0 -translate-x-full"
+  style="transition:transform 0.3s ease;">
+
+  <!-- Brand -->
+  <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+         style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+        <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+      </svg>
+    </div>
+    <div>
+      <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+      <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
+    </div>
+  </div>
+
+  <!-- User card -->
+  <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+         style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+      {{ session['customer_name'][0].upper() }}
+    </div>
+    <div class="min-w-0">
+      <div class="text-[0.82rem] font-medium leading-tight truncate" style="color:rgba(204,234,247,0.90)">
+        {{ session['customer_name'] }}
+      </div>
+      <span class="agos-sidebar-role-badge">Customer</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 py-2">
+    <a href="{{ url_for('customer_dashboard') }}"
+       class="agos-sidebar-link {% if active_page == 'customer_dashboard' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      My Dashboard
+    </a>
+    <a href="{{ url_for('customer_order') }}"
+       class="agos-sidebar-link {% if active_page == 'customer_order' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+      </svg>
+      Place Order
+    </a>
+    <a href="{{ url_for('customer_deliveries') }}"
+       class="agos-sidebar-link {% if active_page == 'customer_deliveries' %}active{% endif %}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <rect x="1" y="3" width="15" height="13"/>
+        <path d="M16 8h4l3 3v5h-7V8z"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      My Deliveries
+    </a>
+  </nav>
+
+  <!-- Footer: theme toggle + logout -->
+  <div class="agos-sidebar-footer flex-shrink-0 p-3 flex flex-col gap-2">
+    <!-- Dark / Light toggle row -->
+    <div class="flex items-center justify-between px-2 py-1.5 rounded-xl" style="background:rgba(255,255,255,0.04)">
+      <div class="flex items-center gap-2">
+        <span style="font-size:0.82rem;line-height:1">☀️</span>
+        <span class="text-[0.69rem] font-medium" style="color:var(--sidebar-link)">Theme</span>
+      </div>
+      <label class="agos-theme-toggle" title="Toggle dark/light mode">
+        <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+        <span class="agos-theme-track"></span>
+      </label>
+      <span style="font-size:0.82rem;line-height:1">🌙</span>
+    </div>
+    <!-- Logout -->
+    <button onclick="openLogoutModal()" class="agos-logout-btn flex items-center gap-2.5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+      </svg>
+      Log Out
+    </button>
+  </div>
+
+</aside>
+
+<!-- Mobile overlay -->
+<div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
+<!-- Logout URL carrier for agos-theme.js confirmLogout() -->
+<span data-logout-url="{{ url_for('customer_logout') }}" style="display:none"></span>

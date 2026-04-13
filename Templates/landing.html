@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agos — EP-Bluelife Water Refilling Station</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Landing page specific styles ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* ── HERO SECTION ── */
+    .hero {
+      min-height: 100vh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Animated water background */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    [data-theme="light"] .hero-bg { background: linear-gradient(160deg, #0a2a40 0%, #0d3d5a 40%, #1a6a8a 100%); }
+    [data-theme="dark"]  .hero-bg { background: linear-gradient(160deg, #030c14 0%, #061825 40%, #0a2a40 100%); }
+
+    /* Animated water ripple orbs */
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      animation: floatOrb 8s ease-in-out infinite;
+    }
+    .hero-orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(0,149,200,0.18) 0%, transparent 70%);
+      top: -150px; right: -100px;
+      animation-delay: 0s;
+    }
+    .hero-orb-2 {
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(91,184,224,0.12) 0%, transparent 70%);
+      bottom: -50px; left: -80px;
+      animation-delay: -3s;
+    }
+    .hero-orb-3 {
+      width: 250px; height: 250px;
+      background: radial-gradient(circle, rgba(45,136,184,0.15) 0%, transparent 70%);
+      top: 40%; left: 40%;
+      animation-delay: -5s;
+    }
+
+    /* Water wave at bottom of hero */
+    .hero-wave {
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 100%;
+      z-index: 2;
+    }
+
+    @keyframes floatOrb {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(20px, -30px) scale(1.05); }
+      66%       { transform: translate(-15px, 20px) scale(0.97); }
+    }
+
+    /* Water drop particles */
+    .drop {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(91,184,224,0.5);
+      border-radius: 50%;
+      animation: rain linear infinite;
+    }
+
+    @keyframes rain {
+      0%   { transform: translateY(-10px); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(100vh); opacity: 0; }
+    }
+
+    /* ── NAVBAR ── */
+    .nav {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-logo-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.75rem;
+      background: linear-gradient(145deg, #2d88b8, #0095c8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,149,200,0.40);
+    }
+
+    .nav-title {
+      font-family: 'Inconsolata', monospace;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .nav-sub {
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(91,184,224,0.75);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-theme-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s;
+      color: #fff;
+    }
+
+    .nav-theme-btn:hover { background: rgba(255,255,255,0.18); }
+
+    .nav-btn-staff {
+      padding: 0.5rem 1.25rem;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.20);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .nav-btn-staff:hover { background: rgba(255,255,255,0.22); }
+
+    .nav-btn-customer {
+      padding: 0.5rem 1.25rem;
+      border-radius: 9999px;
+      background: #0095c8;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(0,149,200,0.35);
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-btn-customer:hover { background: #007eb0; transform: translateY(-1px); }
+
+    /* ── HERO CONTENT ── */
+    .hero-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1.5rem 8rem;
+      position: relative;
+      z-index: 5;
+    }
+
+    /* Animated water drop icon */
+    .hero-drop {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      animation: dropPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes dropPulse {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(0,149,200,0.50)); }
+      50%       { transform: scale(1.08); filter: drop-shadow(0 0 35px rgba(0,149,200,0.75)); }
+    }
+
+    .hero-drop-ring {
+      width: 6rem;
+      height: 6rem;
+      border-radius: 50%;
+      background: rgba(0,149,200,0.15);
+      border: 1px solid rgba(0,149,200,0.40);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-tagline {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(91,184,224,0.80);
+      margin-bottom: 1rem;
+    }
+
+    .hero-headline {
+      font-family: 'Inconsolata', monospace;
+      font-size: clamp(2.5rem, 7vw, 5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      color: #ffffff;
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-headline-accent {
+      color: #5bb8e0;
+      display: block;
+    }
+
+    .hero-desc {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: rgba(204,234,247,0.65);
+      max-width: 540px;
+      margin: 0 auto 2.5rem;
+    }
+
+    .hero-cta-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .cta-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 2rem;
+      border-radius: 9999px;
+      background: #0095c8;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      box-shadow: 0 8px 28px rgba(0,149,200,0.45);
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .cta-primary:hover {
+      background: #007eb0;
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(0,149,200,0.55);
+    }
+
+    .cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.875rem 2rem;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.10);
+      border: 1.5px solid rgba(255,255,255,0.25);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .cta-secondary:hover {
+      background: rgba(255,255,255,0.18);
+      transform: translateY(-2px);
+    }
+
+    /* Scroll hint */
+    .hero-scroll {
+      position: absolute;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50%       { transform: translateX(-50%) translateY(8px); }
+    }
+
+    .hero-scroll-text {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(91,184,224,0.55);
+    }
+
+    .hero-scroll-arrow {
+      width: 1.5rem;
+      height: 1.5rem;
+      border-right: 2px solid rgba(91,184,224,0.40);
+      border-bottom: 2px solid rgba(91,184,224,0.40);
+      transform: rotate(45deg);
+    }
+
+    /* ── FEATURES SECTION ── */
+    .features-section {
+      padding: 5rem 1.5rem;
+      background: var(--bg-page);
+      transition: background 0.3s;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      text-align: center;
+      font-family: 'Inconsolata', monospace;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .section-desc {
+      text-align: center;
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto 3.5rem;
+      line-height: 1.7;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 1.25rem;
+      padding: 1.75rem;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.25s, box-shadow 0.25s, background 0.3s, border-color 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 32px rgba(0,149,200,0.12);
+    }
+
+    .feature-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 0.875rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-family: 'Inconsolata', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-desc {
+      font-size: 0.875rem;
+      line-height: 1.65;
+      color: var(--text-muted);
+    }
+
+    /* ── PORTALS SECTION ── */
+    .portals-section {
+      padding: 5rem 1.5rem;
+      transition: background 0.3s;
+    }
+
+    [data-theme="light"] .portals-section { background: #f8fcff; }
+    [data-theme="dark"]  .portals-section { background: #080f17; }
+
+    .portals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 640px) {
+      .portals-grid { grid-template-columns: 1fr; }
+    }
+
+    .portal-card {
+      border-radius: 1.5rem;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s;
+    }
+
+    .portal-card:hover { transform: translateY(-6px); }
+
+    .portal-card-staff {
+      background: linear-gradient(145deg, #0b2535, #0e3a54);
+      border: 1px solid rgba(45,136,184,0.25);
+    }
+
+    .portal-card-customer {
+      background: linear-gradient(145deg, #0a3040, #0d4a6a);
+      border: 1px solid rgba(0,149,200,0.30);
+    }
+
+    [data-theme="dark"] .portal-card-staff   { background: linear-gradient(145deg, #040c15, #061825); }
+    [data-theme="dark"] .portal-card-customer { background: linear-gradient(145deg, #050e18, #082030); }
+
+    .portal-icon {
+      width: 4rem;
+      height: 4rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.75rem;
+      margin: 0 auto 1.25rem;
+    }
+
+    .portal-title {
+      font-family: 'Inconsolata', monospace;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.625rem;
+    }
+
+    .portal-desc {
+      font-size: 0.88rem;
+      line-height: 1.65;
+      color: rgba(184,218,240,0.60);
+      margin-bottom: 1.75rem;
+    }
+
+    .portal-perks {
+      list-style: none;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .portal-perks li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: rgba(184,218,240,0.75);
+      padding: 0.3rem 0;
+    }
+
+    .portal-perks li::before {
+      content: '✓';
+      width: 1.25rem;
+      height: 1.25rem;
+      background: rgba(0,149,200,0.20);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #5bb8e0;
+      flex-shrink: 0;
+    }
+
+    .portal-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.875rem 1.5rem;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .portal-btn-staff {
+      background: rgba(45,136,184,0.25);
+      border: 1.5px solid rgba(91,184,224,0.35);
+      color: #ffffff;
+    }
+    .portal-btn-staff:hover { background: rgba(45,136,184,0.40); }
+
+    .portal-btn-customer {
+      background: #0095c8;
+      border: none;
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(0,149,200,0.35);
+    }
+    .portal-btn-customer:hover { background: #007eb0; box-shadow: 0 8px 26px rgba(0,149,200,0.45); }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      padding: 3.5rem 1.5rem;
+      background: linear-gradient(135deg, #0a2a40, #0d3d5a);
+    }
+
+    [data-theme="dark"] .stats-strip { background: linear-gradient(135deg, #030c14, #040e1a); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Inconsolata', monospace;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #5bb8e0;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: rgba(184,218,240,0.55);
+      text-transform: uppercase;
+    }
+
+    /* ── FOOTER ── */
+    .landing-footer {
+      padding: 2rem 1.5rem;
+      text-align: center;
+      border-top: 1px solid var(--border-card);
+      background: var(--bg-page);
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .footer-brand {
+      font-family: 'Inconsolata', monospace;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 0.375rem;
+    }
+
+    .footer-text {
+      font-size: 0.8rem;
+      color: var(--text-faint);
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 480px) {
+      .nav { padding: 1rem; }
+      .nav-btn-staff { display: none; }
+      .hero-content { padding-bottom: 7rem; }
+      .hero-headline { font-size: 2.2rem; }
+      .cta-primary, .cta-secondary { padding: 0.75rem 1.5rem; font-size: 0.875rem; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ══════════════════════════════════
+     HERO
+══════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+    <!-- Rain drops -->
+    <script>
+      for (let i = 0; i < 20; i++) {
+        const d = document.createElement('div');
+        d.className = 'drop';
+        d.style.cssText = `left:${Math.random()*100}%;top:-10px;width:${Math.random()*3+2}px;height:${Math.random()*3+2}px;animation-duration:${Math.random()*4+4}s;animation-delay:${Math.random()*5}s;opacity:${Math.random()*0.5+0.2}`;
+        document.currentScript.parentNode.appendChild(d);
+      }
+    </script>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <div class="nav-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+        </svg>
+      </div>
+      <div>
+        <div class="nav-title">Agos</div>
+        <div class="nav-sub">EP-Bluelife System</div>
+      </div>
+    </div>
+    <div class="nav-actions">
+
+  <a href="{{ url_for('login') }}" class="nav-btn-staff">
+    Login
+  </a>
+</div>
+  </nav>
+
+  <!-- Hero Content -->
+  <div class="hero-content">
+    <div class="hero-drop">
+      <div class="hero-drop-ring">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+          <path d="M22 4C22 4 8 18 8 27a14 14 0 0028 0C36 18 22 4 22 4z" fill="rgba(91,184,224,0.90)"/>
+          <path d="M22 10C22 10 12 20 12 27a10 10 0 0020 0C32 20 22 10 22 10z" fill="rgba(255,255,255,0.20)"/>
+        </svg>
+      </div>
+    </div>
+
+    <p class="hero-tagline">EP-Bluelife Water Refilling Station</p>
+
+    <h1 class="hero-headline">
+      Clean Water,
+      <span class="hero-headline-accent">Cleaner Records.</span>
+    </h1>
+
+    <p class="hero-desc">
+      Agos is the all-in-one management system for EP-Bluelife — handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.
+    </p>
+
+   
+  <!-- Scroll hint -->
+  <div class="hero-scroll">
+    <span class="hero-scroll-text">Explore</span>
+    <div class="hero-scroll-arrow"></div>
+  </div>
+
+  <!-- Wave transition -->
+  <svg class="hero-wave" viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <path id="wave-path" d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"/>
+  </svg>
+</section>
+
+<!-- ══════════════════════════════════
+     FEATURES
+══════════════════════════════════ -->
+<section class="features-section">
+  <div class="section-label">What Agos Does</div>
+  <h2 class="section-title">Everything in One Place</h2>
+  <p class="section-desc">Built specifically for EP-Bluelife — from recording a single gallon sale to running monthly financial reports.</p>
+
+  <div class="features-grid">
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(0,149,200,0.10)">💧</div>
+      <div class="feature-title">Sales Management</div>
+      <div class="feature-desc">Record walk-in and delivery sales instantly. Auto-computes totals and deducts from inventory in real time.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(46,170,110,0.10)">📦</div>
+      <div class="feature-title">Inventory Control</div>
+      <div class="feature-desc">Track stock levels, get low-stock alerts, and manually adjust inventory with a full audit trail.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(212,168,67,0.10)">🚚</div>
+      <div class="feature-title">Delivery Orders</div>
+      <div class="feature-desc">Customers can place delivery requests online. Staff confirms, routes, and marks deliveries in seconds.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(167,139,250,0.12)">⭐</div>
+      <div class="feature-title">Loyalty Rewards</div>
+      <div class="feature-desc">Automatically earn points on refills. Redeem for free deliveries — no manual tracking needed.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(224,82,82,0.10)">📊</div>
+      <div class="feature-title">Financial Reports</div>
+      <div class="feature-desc">Monthly revenue vs. expenses, net profit, top products, and expense category breakdowns at a glance.</div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(45,136,184,0.10)">🔐</div>
+      <div class="feature-title">Role-Based Access</div>
+      <div class="feature-desc">Super Admin, Admin, Operator, and Customer — each sees only what they need with a full activity log.</div>
+    </div>
+
+  </div>
+</section>
+
+
+
+<!-- ══════════════════════════════════
+     FOOTER
+══════════════════════════════════ -->
+<footer class="landing-footer">
+  <div class="footer-brand">Agos — EP-Bluelife System</div>
+  <p class="footer-text">Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija &nbsp;·&nbsp; Built for EP-Bluelife Water Refilling Station</p>
+</footer>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+  // Landing page uses its own simplified theme toggle
+  // (no sidebar needed here)
+  function toggleLandingTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    document.body.setAttribute('data-theme', next);
+    localStorage.setItem('agos-theme', next);
+    document.getElementById('theme-btn').textContent = next === 'dark' ? '☀️' : '🌙';
+    updateWaveColor(next);
+  }
+
+  function updateWaveColor(theme) {
+    const wavePath = document.getElementById('wave-path');
+    if (!wavePath) return;
+    // Wave fill matches the features-section background
+    wavePath.setAttribute('fill', theme === 'dark' ? '#0a1520' : '#f0f8fd');
+  }
+
+  // Init on load
+  (function() {
+    const saved = localStorage.getItem('agos-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+    document.body.setAttribute('data-theme', saved);
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+    updateWaveColor(saved);
+  })();
+</script>
+</body>
+</html>

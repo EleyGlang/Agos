@@ -14,7 +14,8 @@ with app.app_context():
     print(f"Generated password hash: {password_hash}\n")
     
     admin = User(
-        full_name='agosAdmin',
+        first_name='Admin',
+        last_name='User',
         username='admin',
         password=password_hash,
         role='Admin',

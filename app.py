@@ -5,9 +5,7 @@ load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from functools import wraps
 from datetime import datetime, timedelta
-
 from flask_migrate import Migrate
-
 
 from models import (
     db, User, Customer, Product, Inventory,
@@ -33,6 +31,7 @@ def is_super_admin():
 def is_admin_or_above():
     return session.get('role') in ('Super Admin', 'Admin')
 
+
 # ══════════════════════════════════════════════════════
 #  AUDIT LOG HELPER
 # ══════════════════════════════════════════════════════
@@ -49,7 +48,8 @@ def log_activity(action, module, description, target_type=None, target_id=None):
         )
         db.session.add(entry)
     except Exception:
-        pass  # Never crash the app over a log entry
+        pass
+
 
 # ══════════════════════════════════════════════════════
 #  DECORATORS
@@ -88,14 +88,6 @@ def super_admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-def customer_login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'customer_id' not in session:
-            flash('Please log in.', 'error')
-            return redirect(url_for('customer_login'))
-        return f(*args, **kwargs)
-    return decorated
 
 # ══════════════════════════════════════════════════════
 #  CLI SEED
@@ -114,13 +106,26 @@ def seed_super_admin():
     db.session.commit()
     print('Done. username=superadmin  password=changeme123  — change it immediately!')
 
+
 # ══════════════════════════════════════════════════════
 #  AUTH
 # ══════════════════════════════════════════════════════
 
 @app.route('/')
 def index():
-    return redirect(url_for('dashboard') if 'user_id' in session else url_for('login'))
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    if 'customer_id' in session:
+        return redirect(url_for('customer_dashboard'))
+    return redirect(url_for('landing'))
+
+@app.route('/landing')
+def landing():
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    if 'customer_id' in session:
+        return redirect(url_for('customer_dashboard'))
+    return render_template('landing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -146,11 +151,14 @@ def login():
 @login_required
 def logout():
     log_activity('LOGOUT', 'Auth', f"{session.get('full_name')} logged out")
-    try: db.session.commit()
-    except Exception: db.session.rollback()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     session.clear()
     flash('You have been logged out.', 'success')
     return redirect(url_for('login'))
+
 
 # ══════════════════════════════════════════════════════
 #  DASHBOARD
@@ -161,32 +169,144 @@ def logout():
 def dashboard():
     from sqlalchemy import func
     today = datetime.now().date()
-    today_sales        = db.session.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(func.date(Sale.sale_date) == today).scalar()
+    month = datetime.now().strftime('%Y-%m')
+
+    # ── shared metrics ──────────────────────────────────────────────
+    today_sales = db.session.query(
+        func.coalesce(func.sum(Sale.total_amount), 0)
+    ).filter(func.date(Sale.sale_date) == today).scalar()
+
     pending_deliveries = DeliveryOrder.query.filter_by(status='Pending').count()
     total_customers    = Customer.query.count()
-    recent_sales       = Sale.query.order_by(Sale.sale_date.desc()).limit(5).all()
+    recent_sales       = Sale.query.order_by(Sale.sale_date.desc()).limit(8).all()
+    inventory_items    = Inventory.query.all()
+    low_stock_items    = sum(
+        1 for i in inventory_items if i.quantity <= (i.minimum_stock or 10)
+    )
 
+    # 7-day trend (shared by both dashboard templates)
+    sales_trend_labels, sales_trend_values = [], []
+    for i in range(6, -1, -1):
+        day = (datetime.now() - timedelta(days=i)).date()
+        total = db.session.query(
+            func.coalesce(func.sum(Sale.total_amount), 0)
+        ).filter(func.date(Sale.sale_date) == day).scalar()
+        sales_trend_labels.append(day.strftime('%b %d'))
+        sales_trend_values.append(float(total))
+
+    # ── admin / super-admin branch ──────────────────────────────────
     if is_admin_or_above():
-        month            = datetime.now().strftime('%Y-%m')
-        monthly_revenue  = db.session.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(func.date_format(Sale.sale_date, '%Y-%m') == month).scalar()
-        monthly_expenses = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(func.date_format(Expense.expense_date, '%Y-%m') == month).scalar()
-        net_profit       = monthly_revenue - monthly_expenses
-        low_stock_items  = Inventory.query.filter(Inventory.quantity <= 10).count()
-        total_staff      = User.query.filter(User.role.in_(['Admin', 'Operator'])).count()
+        monthly_revenue = db.session.query(
+            func.coalesce(func.sum(Sale.total_amount), 0)
+        ).filter(func.date_format(Sale.sale_date, '%Y-%m') == month).scalar()
+
+        monthly_expenses = db.session.query(
+            func.coalesce(func.sum(Expense.amount), 0)
+        ).filter(func.date_format(Expense.expense_date, '%Y-%m') == month).scalar()
+
+        net_profit   = monthly_revenue - monthly_expenses
+        total_staff  = User.query.filter(User.role.in_(['Admin', 'Operator'])).count()
+
+        walkin_count = Sale.query.filter(
+            Sale.sale_type == 'Walk-in',
+            func.date_format(Sale.sale_date, '%Y-%m') == month
+        ).count()
+        delivery_count = Sale.query.filter(
+            Sale.sale_type == 'Delivery',
+            func.date_format(Sale.sale_date, '%Y-%m') == month
+        ).count()
+
+        top_products_q = db.session.query(
+            Product.product_name,
+            func.sum(SaleItem.quantity).label('qty'),
+        ).join(SaleItem, SaleItem.product_id == Product.product_id)\
+         .join(Sale, Sale.sale_id == SaleItem.sale_id)\
+         .filter(func.date_format(Sale.sale_date, '%Y-%m') == month)\
+         .group_by(Product.product_id)\
+         .order_by(func.sum(SaleItem.quantity).desc())\
+         .limit(5).all()
+        top_product_names = [r[0] for r in top_products_q]
+        top_product_qtys  = [int(r[1]) for r in top_products_q]
+
+        expense_by_category = db.session.query(
+            Expense.category, func.sum(Expense.amount)
+        ).filter(func.date_format(Expense.expense_date, '%Y-%m') == month)\
+         .group_by(Expense.category).all()
+
+        # Super Admin extras
+        user_role_counts = user_role_labels = user_role_values = []
+        total_users = 0
+        recent_activity = []
+        if is_super_admin():
+            role_counts = db.session.query(
+                User.role, func.count(User.user_id)
+            ).group_by(User.role).all()
+            user_role_counts = role_counts
+            user_role_labels = [r[0] for r in role_counts]
+            user_role_values = [r[1] for r in role_counts]
+            total_users      = sum(r[1] for r in role_counts)
+            recent_activity  = ActivityLog.query.order_by(
+                ActivityLog.created_at.desc()
+            ).limit(8).all()
+
         return render_template('dashboard_admin.html',
-            today_sales=today_sales, monthly_revenue=monthly_revenue,
-            monthly_expenses=monthly_expenses, net_profit=net_profit,
-            pending_deliveries=pending_deliveries, total_customers=total_customers,
-            low_stock_items=low_stock_items, recent_sales=recent_sales,
-            total_staff=total_staff, active_page='dashboard')
-    else:
-        items_in_stock        = db.session.query(func.coalesce(func.sum(Inventory.quantity), 0)).scalar()
-        pending_delivery_list = DeliveryOrder.query.filter_by(status='Pending').limit(5).all()
-        return render_template('dashboard_operator.html',
-            today_sales=today_sales, items_in_stock=items_in_stock,
-            pending_deliveries=pending_deliveries, total_customers=total_customers,
-            recent_sales=recent_sales, pending_delivery_list=pending_delivery_list,
-            active_page='dashboard')
+            today_sales=today_sales,
+            monthly_revenue=monthly_revenue,
+            monthly_expenses=monthly_expenses,
+            net_profit=net_profit,
+            pending_deliveries=pending_deliveries,
+            total_customers=total_customers,
+            low_stock_items=low_stock_items,
+            recent_sales=recent_sales,
+            total_staff=total_staff,
+            inventory_items=inventory_items,
+            sales_trend_labels=sales_trend_labels,
+            sales_trend_values=sales_trend_values,
+            walkin_count=walkin_count,
+            delivery_count=delivery_count,
+            top_product_names=top_product_names,
+            top_product_qtys=top_product_qtys,
+            expense_by_category=expense_by_category,
+            user_role_counts=user_role_counts,
+            user_role_labels=user_role_labels,
+            user_role_values=user_role_values,
+            total_users=total_users,
+            recent_activity=recent_activity,
+            active_page='dashboard',
+        )
+
+    # ── operator branch ─────────────────────────────────────────────
+    delivered_today = DeliveryOrder.query.filter(
+        DeliveryOrder.status == 'Delivered',
+        func.date(DeliveryOrder.created_at) == today
+    ).count()
+
+    pending_delivery_list = DeliveryOrder.query.filter_by(status='Pending')\
+        .order_by(DeliveryOrder.delivery_date).limit(6).all()
+
+    walkin_today   = Sale.query.filter(
+        Sale.sale_type == 'Walk-in', func.date(Sale.sale_date) == today
+    ).count()
+    delivery_today = Sale.query.filter(
+        Sale.sale_type == 'Delivery', func.date(Sale.sale_date) == today
+    ).count()
+
+    return render_template('dashboard_operator.html',
+        today_sales=today_sales,
+        pending_deliveries=pending_deliveries,
+        total_customers=total_customers,
+        recent_sales=recent_sales,
+        pending_delivery_list=pending_delivery_list,
+        delivered_today=delivered_today,
+        low_stock_items=low_stock_items,
+        inventory_items=inventory_items,
+        sales_trend_labels=sales_trend_labels,
+        sales_trend_values=sales_trend_values,
+        walkin_today=walkin_today,
+        delivery_today=delivery_today,
+        active_page='dashboard',
+    )
+
 
 # ══════════════════════════════════════════════════════
 #  API: chart data
@@ -210,12 +330,13 @@ def api_dashboard_stats():
         exp   = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(func.date_format(Expense.expense_date, '%Y-%m') == month).scalar()
         monthly.append({'month': ref.strftime('%b %Y'), 'revenue': float(rev), 'expenses': float(exp)})
 
-    cur = datetime.now().strftime('%Y-%m')
-    walkin   = db.session.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(Sale.sale_type == 'Walk-in',   func.date_format(Sale.sale_date, '%Y-%m') == cur).scalar()
-    delivery = db.session.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(Sale.sale_type == 'Delivery',  func.date_format(Sale.sale_date, '%Y-%m') == cur).scalar()
+    cur      = datetime.now().strftime('%Y-%m')
+    walkin   = db.session.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(Sale.sale_type == 'Walk-in',  func.date_format(Sale.sale_date, '%Y-%m') == cur).scalar()
+    delivery = db.session.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(Sale.sale_type == 'Delivery', func.date_format(Sale.sale_date, '%Y-%m') == cur).scalar()
 
     return jsonify({'daily': daily, 'monthly': monthly,
                     'sale_type': {'walkin': float(walkin), 'delivery': float(delivery)}})
+
 
 # ══════════════════════════════════════════════════════
 #  PRODUCT MANAGEMENT
@@ -225,17 +346,18 @@ def api_dashboard_stats():
 @login_required
 @admin_required
 def products():
-    product_list = Product.query.order_by(Product.product_name).all()
-    return render_template('products.html', products=product_list, active_page='products')
+    return render_template('products.html',
+        products=Product.query.order_by(Product.product_name).all(),
+        active_page='products')
 
 @app.route('/products/new', methods=['POST'])
 @login_required
 @admin_required
 def new_product():
-    name  = request.form.get('product_name', '').strip()
-    unit  = request.form.get('unit', '').strip()
+    name = request.form.get('product_name', '').strip()
+    unit = request.form.get('unit', '').strip()
     try:
-        price = float(request.form.get('price', 0))
+        price     = float(request.form.get('price', 0))
         min_stock = int(request.form.get('minimum_stock', 10))
         assert price > 0
     except (ValueError, AssertionError):
@@ -297,6 +419,7 @@ def toggle_product(product_id):
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('products'))
 
+
 # ══════════════════════════════════════════════════════
 #  SALES
 # ══════════════════════════════════════════════════════
@@ -307,13 +430,15 @@ def sales():
     return render_template('sales.html',
         sales=Sale.query.order_by(Sale.sale_date.desc()).all(),
         customers=Customer.query.order_by(Customer.full_name).all(),
-        products=Product.query.filter_by(is_active=True).order_by(Product.product_name).all())
+        products=Product.query.filter_by(is_active=True).order_by(Product.product_name).all(),
+        active_page='sales')
 
 @app.route('/sales/new', methods=['POST'])
 @login_required
 def new_sale():
     customer_id = request.form.get('customer_id') or None
     sale_type   = request.form.get('sale_type', 'Walk-in')
+
     if sale_type == 'Delivery' and not customer_id:
         flash('Delivery sales require a customer.', 'error')
         return redirect(url_for('sales'))
@@ -341,39 +466,57 @@ def new_sale():
     for pid, qty_str in zip(product_ids, quantities):
         product  = Product.query.get(int(pid))
         quantity = int(qty_str)
-        if not product: continue
+        if not product:
+            continue
         subtotal = float(product.price) * quantity
         total_amount += subtotal
-        items_with_products.append((SaleItem(product_id=int(pid), quantity=quantity, price=product.price, subtotal=subtotal), product))
+        items_with_products.append((
+            SaleItem(product_id=int(pid), quantity=quantity,
+                     price=product.price, subtotal=subtotal),
+            product
+        ))
 
     if customer_id:
-        customer      = Customer.query.get(customer_id)
-        total_refills = sum(i.quantity for i, p in items_with_products if 'refill' in p.product_name.lower())
-        if customer.loyalty_points > 0 and total_refills > 0:
-            refill_total  = sum(i.subtotal for i, p in items_with_products if 'refill' in p.product_name.lower())
-            free_used     = min(customer.loyalty_points, total_refills)
-            total_amount -= (refill_total / total_refills) * free_used
-            customer.loyalty_points -= free_used
-            db.session.add(LoyaltyTransaction(customer_id=customer_id, points_change=-free_used, transaction_type='Redemption', description=f'Used {free_used} point(s)'))
-            remaining_refills = total_refills - free_used
-        else:
-            remaining_refills = total_refills
-        if remaining_refills > 0:
-            new_pts = remaining_refills // 10
-            if new_pts > 0:
-                customer.loyalty_points += new_pts
-                db.session.add(LoyaltyTransaction(customer_id=customer_id, points_change=new_pts, transaction_type='Earned', description=f'Earned {new_pts} pt(s)'))
+        customer = Customer.query.get(customer_id)
+        if customer:
+            total_refills = sum(
+                i.quantity for i, p in items_with_products
+                if 'refill' in p.product_name.lower()
+            )
+            if customer.loyalty_points > 0 and total_refills > 0:
+                refill_total  = sum(
+                    i.subtotal for i, p in items_with_products
+                    if 'refill' in p.product_name.lower()
+                )
+                free_used     = min(customer.loyalty_points, total_refills)
+                total_amount -= (refill_total / total_refills) * free_used
+                customer.loyalty_points -= free_used
+                remaining_refills = total_refills - free_used
+            else:
+                remaining_refills = total_refills
 
-    sale = Sale(user_id=session['user_id'], customer_id=customer_id, sale_type=sale_type, total_amount=total_amount, sale_date=datetime.now())
+            if remaining_refills > 0:
+                new_pts = remaining_refills // 10
+                if new_pts > 0:
+                    customer.loyalty_points += new_pts
+
+    sale = Sale(
+        user_id=session['user_id'], customer_id=customer_id,
+        sale_type=sale_type, total_amount=total_amount,
+        sale_date=datetime.now()
+    )
     db.session.add(sale)
     db.session.flush()
+
     for sale_item, product in items_with_products:
         sale_item.sale_id = sale.sale_id
         db.session.add(sale_item)
         inv = Inventory.query.filter_by(product_id=product.product_id).first()
-        if inv: inv.quantity = max(0, inv.quantity - sale_item.quantity)
+        if inv:
+            inv.quantity = max(0, inv.quantity - sale_item.quantity)
 
-    log_activity('CREATE_SALE', 'Sales', f'{sale_type} sale — ₱{total_amount:.2f}', 'Sale', sale.sale_id)
+    log_activity('CREATE_SALE', 'Sales',
+                 f'{sale_type} sale — ₱{total_amount:.2f}', 'Sale', sale.sale_id)
     try:
         db.session.commit()
         flash('Sale recorded!', 'success')
@@ -381,6 +524,7 @@ def new_sale():
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('sales'))
+
 
 # ══════════════════════════════════════════════════════
 #  USER MANAGEMENT
@@ -392,32 +536,57 @@ def new_sale():
 def user_management():
     users = User.query.order_by(User.created_at.desc()).all() if is_super_admin() \
             else User.query.filter_by(role='Operator').order_by(User.created_at.desc()).all()
-    return render_template('user_management.html', users=users, is_super_admin=is_super_admin(), active_page='user_management')
+    return render_template('user_management.html',
+        users=users, is_super_admin=is_super_admin(), active_page='user_management')
 
 @app.route('/admin/users', methods=['POST'])
 @login_required
 @admin_required
 def create_user():
-    full_name = request.form.get('full_name', '').strip()
-    username  = request.form.get('username', '').strip()
-    password  = request.form.get('password', '').strip()
-    role      = request.form.get('role', 'Operator')
+    # Supports split-name fields from the form
+    first_name     = request.form.get('first_name', '').strip()
+    middle_initial = request.form.get('middle_initial', '').strip()
+    last_name      = request.form.get('last_name', '').strip()
+
+    if first_name and last_name:
+        parts = [first_name]
+        if middle_initial:
+            parts.append(middle_initial.rstrip('.') + '.')
+        parts.append(last_name)
+        full_name = ' '.join(parts)
+    else:
+        full_name = request.form.get('full_name', '').strip()
+
+    username = request.form.get('username', '').strip()
+    password = request.form.get('password', '').strip()
+    role     = request.form.get('role', 'Operator')
+
     if role == 'Admin' and not is_super_admin():
         flash('Only Super Admin can create Admin accounts.', 'error')
         return redirect(url_for('user_management'))
     if role == 'Super Admin':
         flash('Super Admin accounts cannot be created here.', 'error')
         return redirect(url_for('user_management'))
+    if not full_name:
+        flash('Full name is required.', 'error')
+        return redirect(url_for('user_management'))
     if User.query.filter_by(username=username).first():
         flash('Username already exists.', 'error')
         return redirect(url_for('user_management'))
-    if not full_name or not all(c.isalpha() or c.isspace() for c in full_name):
-        flash('Full name must contain only letters and spaces.', 'error')
+    if len(password) < 8:
+        flash('Password must be at least 8 characters.', 'error')
         return redirect(url_for('user_management'))
-    new_user = User(full_name=full_name, username=username, password=generate_password_hash(password), role=role, status='Active')
+
+    new_user = User(
+        full_name=full_name, username=username,
+        password=generate_password_hash(password),
+        role=role, status='Active'
+    )
     db.session.add(new_user)
     db.session.flush()
-    log_activity('CREATE_USER', 'Users', f'Account created for {full_name} (@{username}) as {role}', 'User', new_user.user_id)
+    log_activity('CREATE_USER', 'Users',
+                 f'Account created for {full_name} (@{username}) as {role}',
+                 'User', new_user.user_id)
     try:
         db.session.commit()
         flash(f'Account for {full_name} created!', 'success')
@@ -454,7 +623,7 @@ def toggle_user_status(user_id):
 @login_required
 @super_admin_required
 def reset_user_password(user_id):
-    user = User.query.get_or_404(user_id)
+    user         = User.query.get_or_404(user_id)
     new_password = request.form.get('new_password', '').strip()
     if len(new_password) < 8:
         flash('Password must be at least 8 characters.', 'error')
@@ -477,7 +646,8 @@ def delete_user(user_id):
     if user.user_id == session['user_id'] or user.role == 'Super Admin':
         flash('Cannot delete this account.', 'error')
         return redirect(url_for('user_management'))
-    log_activity('DELETE_USER', 'Users', f'{user.full_name} (@{user.username}) deleted', 'User', user_id)
+    log_activity('DELETE_USER', 'Users',
+                 f'{user.full_name} (@{user.username}) deleted', 'User', user_id)
     try:
         db.session.delete(user)
         db.session.commit()
@@ -490,7 +660,7 @@ def delete_user(user_id):
 @app.route('/change-password', methods=['POST'])
 @login_required
 def change_password():
-    user = User.query.get(session['user_id'])
+    user       = User.query.get(session['user_id'])
     current_pw = request.form.get('current_password', '').strip()
     new_pw     = request.form.get('new_password', '').strip()
     confirm_pw = request.form.get('confirm_password', '').strip()
@@ -513,6 +683,7 @@ def change_password():
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('user_management'))
 
+
 # ══════════════════════════════════════════════════════
 #  ACTIVITY LOG  (Super Admin only)
 # ══════════════════════════════════════════════════════
@@ -534,6 +705,7 @@ def activity_log():
         logs=logs, total=total, page=page, per_page=per_page,
         modules=modules, selected_module=module, active_page='activity_log')
 
+
 # ══════════════════════════════════════════════════════
 #  CUSTOMERS
 # ══════════════════════════════════════════════════════
@@ -554,7 +726,8 @@ def customers():
         nc = Customer(full_name=full_name, contact_number=contact_number, address=address)
         db.session.add(nc)
         db.session.flush()
-        log_activity('CREATE_CUSTOMER', 'Customers', f'Customer "{full_name}" added', 'Customer', nc.customer_id)
+        log_activity('CREATE_CUSTOMER', 'Customers',
+                     f'Customer "{full_name}" added', 'Customer', nc.customer_id)
         try:
             db.session.commit()
             flash(f'Customer {full_name} added!', 'success')
@@ -562,7 +735,9 @@ def customers():
             db.session.rollback()
             flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('customers'))
-    return render_template('customers.html', customers=Customer.query.order_by(Customer.full_name).all(), active_page='customers')
+    return render_template('customers.html',
+        customers=Customer.query.order_by(Customer.full_name).all(),
+        active_page='customers')
 
 @app.route('/customers/<int:customer_id>/edit', methods=['POST'])
 @login_required
@@ -571,7 +746,8 @@ def edit_customer(customer_id):
     c.full_name      = request.form.get('full_name', c.full_name).strip()
     c.contact_number = request.form.get('contact_number', '').strip()
     c.address        = request.form.get('address', '').strip()
-    log_activity('EDIT_CUSTOMER', 'Customers', f'Customer "{c.full_name}" updated', 'Customer', customer_id)
+    log_activity('EDIT_CUSTOMER', 'Customers',
+                 f'Customer "{c.full_name}" updated', 'Customer', customer_id)
     try:
         db.session.commit()
         flash('Customer updated!', 'success')
@@ -584,7 +760,8 @@ def edit_customer(customer_id):
 @login_required
 def delete_customer(customer_id):
     c = Customer.query.get_or_404(customer_id)
-    log_activity('DELETE_CUSTOMER', 'Customers', f'Customer "{c.full_name}" deleted', 'Customer', customer_id)
+    log_activity('DELETE_CUSTOMER', 'Customers',
+                 f'Customer "{c.full_name}" deleted', 'Customer', customer_id)
     try:
         db.session.delete(c)
         db.session.commit()
@@ -593,6 +770,7 @@ def delete_customer(customer_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('customers'))
+
 
 # ══════════════════════════════════════════════════════
 #  INVENTORY
@@ -611,16 +789,21 @@ def inventory():
             return redirect(url_for('inventory'))
         if action == 'add':
             item.quantity += qty_change
-            log_activity('INVENTORY_ADD', 'Inventory', f'Added {qty_change} units to "{item.product.product_name}"', 'Inventory', item.inventory_id)
+            log_activity('INVENTORY_ADD', 'Inventory',
+                         f'Added {qty_change} units to "{item.product.product_name}"',
+                         'Inventory', item.inventory_id)
             flash(f'Added {qty_change} units to {item.product.product_name}.', 'success')
         elif action == 'deduct':
             if item.quantity < qty_change:
                 flash('Not enough stock!', 'error')
                 return redirect(url_for('inventory'))
             item.quantity -= qty_change
-            log_activity('INVENTORY_DEDUCT', 'Inventory', f'Deducted {qty_change} units from "{item.product.product_name}"', 'Inventory', item.inventory_id)
+            log_activity('INVENTORY_DEDUCT', 'Inventory',
+                         f'Deducted {qty_change} units from "{item.product.product_name}"',
+                         'Inventory', item.inventory_id)
             flash(f'Deducted {qty_change} from {item.product.product_name}.', 'success')
-        try: db.session.commit()
+        try:
+            db.session.commit()
         except Exception as e:
             db.session.rollback()
             flash(f'Error: {str(e)}', 'error')
@@ -630,6 +813,7 @@ def inventory():
         inventory_items=Inventory.query.all(),
         products=Product.query.all(),
         active_page='inventory')
+
 
 # ══════════════════════════════════════════════════════
 #  DELIVERIES
@@ -644,20 +828,33 @@ def deliveries():
         notes         = request.form.get('notes', '').strip()
         product_ids   = request.form.getlist('product_id[]')
         quantities    = request.form.getlist('quantity[]')
-        delivery = DeliveryOrder(customer_id=customer_id, delivery_date=delivery_date, notes=notes, status='Pending')
+
+        delivery = DeliveryOrder(
+            customer_id=customer_id, delivery_date=delivery_date,
+            notes=notes, status='Pending'
+        )
         db.session.add(delivery)
         db.session.flush()
+
         total_amount = 0.0
         for pid, qty_str in zip(product_ids, quantities):
-            product = Product.query.get(int(pid))
-            if not product: continue
-            qty = int(qty_str)
+            product  = Product.query.get(int(pid))
+            if not product:
+                continue
+            qty      = int(qty_str)
             subtotal = float(product.price) * qty
             total_amount += subtotal
-            db.session.add(DeliveryItem(delivery_id=delivery.delivery_id, product_id=int(pid), quantity=qty, price=product.price, subtotal=subtotal))
+            db.session.add(DeliveryItem(
+                delivery_id=delivery.delivery_id,
+                product_id=int(pid), quantity=qty,
+                price=product.price, subtotal=subtotal
+            ))
         delivery.total_amount = total_amount
+
         customer = Customer.query.get(customer_id)
-        log_activity('CREATE_DELIVERY', 'Deliveries', f'Delivery #{delivery.delivery_id} for {customer.full_name} — ₱{total_amount:.2f}', 'DeliveryOrder', delivery.delivery_id)
+        log_activity('CREATE_DELIVERY', 'Deliveries',
+                     f'Delivery #{delivery.delivery_id} for {customer.full_name} — ₱{total_amount:.2f}',
+                     'DeliveryOrder', delivery.delivery_id)
         try:
             db.session.commit()
             flash('Delivery order created!', 'success')
@@ -678,16 +875,24 @@ def update_delivery_status(delivery_id):
     delivery   = DeliveryOrder.query.get_or_404(delivery_id)
     new_status = request.form.get('status')
     if new_status == 'Delivered' and delivery.status != 'Delivered':
-        sale = Sale(user_id=session['user_id'], customer_id=delivery.customer_id, sale_type='Delivery', total_amount=delivery.total_amount, sale_date=datetime.now())
+        sale = Sale(
+            user_id=session['user_id'], customer_id=delivery.customer_id,
+            sale_type='Delivery', total_amount=delivery.total_amount,
+            sale_date=datetime.now()
+        )
         db.session.add(sale)
         db.session.flush()
         for di in delivery.delivery_items:
-            db.session.add(SaleItem(sale_id=sale.sale_id, product_id=di.product_id, quantity=di.quantity, price=di.price, subtotal=di.subtotal))
+            db.session.add(SaleItem(
+                sale_id=sale.sale_id, product_id=di.product_id,
+                quantity=di.quantity, price=di.price, subtotal=di.subtotal
+            ))
             inv = Inventory.query.filter_by(product_id=di.product_id).first()
-            if inv: inv.quantity = max(0, inv.quantity - di.quantity)
+            if inv:
+                inv.quantity = max(0, inv.quantity - di.quantity)
     delivery.status = new_status
-    customer = Customer.query.get(delivery.customer_id)
-    log_activity('UPDATE_DELIVERY', 'Deliveries', f'Delivery #{delivery_id} → {new_status}', 'DeliveryOrder', delivery_id)
+    log_activity('UPDATE_DELIVERY', 'Deliveries',
+                 f'Delivery #{delivery_id} → {new_status}', 'DeliveryOrder', delivery_id)
     try:
         db.session.commit()
         flash(f'Delivery updated to {new_status}.', 'success')
@@ -695,6 +900,7 @@ def update_delivery_status(delivery_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('deliveries'))
+
 
 # ══════════════════════════════════════════════════════
 #  EXPENSES
@@ -704,7 +910,9 @@ def update_delivery_status(delivery_id):
 @login_required
 @admin_required
 def expense_management():
-    return render_template('expenses.html', expenses=Expense.query.order_by(Expense.expense_date.desc()).all())
+    return render_template('expenses.html',
+        expenses=Expense.query.order_by(Expense.expense_date.desc()).all(),
+        active_page='expenses')
 
 @app.route('/expenses', methods=['GET', 'POST'])
 @login_required
@@ -715,10 +923,14 @@ def expenses():
         description  = request.form.get('description', '').strip()
         amount       = float(request.form.get('amount'))
         expense_date = request.form.get('expense_date')
-        exp = Expense(user_id=session['user_id'], category=category, description=description, amount=amount, expense_date=expense_date)
+        exp = Expense(
+            user_id=session['user_id'], category=category,
+            description=description, amount=amount, expense_date=expense_date
+        )
         db.session.add(exp)
         db.session.flush()
-        log_activity('CREATE_EXPENSE', 'Expenses', f'"{description}" — ₱{amount:.2f}', 'Expense', exp.expense_id)
+        log_activity('CREATE_EXPENSE', 'Expenses',
+                     f'"{description}" — ₱{amount:.2f}', 'Expense', exp.expense_id)
         try:
             db.session.commit()
             flash('Expense recorded!', 'success')
@@ -726,14 +938,17 @@ def expenses():
             db.session.rollback()
             flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('expenses'))
-    return render_template('expenses.html', expenses=Expense.query.order_by(Expense.expense_date.desc()).all())
+    return render_template('expenses.html',
+        expenses=Expense.query.order_by(Expense.expense_date.desc()).all(),
+        active_page='expenses')
 
 @app.route('/expenses/<int:expense_id>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
-    log_activity('DELETE_EXPENSE', 'Expenses', f'"{expense.description}" deleted', 'Expense', expense_id)
+    log_activity('DELETE_EXPENSE', 'Expenses',
+                 f'"{expense.description}" deleted', 'Expense', expense_id)
     try:
         db.session.delete(expense)
         db.session.commit()
@@ -743,8 +958,9 @@ def delete_expense(expense_id):
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('expenses'))
 
+
 # ══════════════════════════════════════════════════════
-#  REPORTS  (fully implemented)
+#  REPORTS
 # ══════════════════════════════════════════════════════
 
 @app.route('/reports')
@@ -752,7 +968,7 @@ def delete_expense(expense_id):
 @admin_required
 def reports():
     from sqlalchemy import func
-    month = request.args.get('month', datetime.now().strftime('%Y-%m'))
+    month          = request.args.get('month', datetime.now().strftime('%Y-%m'))
     total_revenue  = db.session.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(func.date_format(Sale.sale_date, '%Y-%m') == month).scalar()
     total_expenses = db.session.query(func.coalesce(func.sum(Expense.amount), 0)).filter(func.date_format(Expense.expense_date, '%Y-%m') == month).scalar()
     net_profit     = total_revenue - total_expenses
@@ -774,6 +990,7 @@ def reports():
         net_profit=net_profit, sales_count=sales_count,
         by_category=by_category, top_products=top_products, active_page='reports')
 
+
 # ══════════════════════════════════════════════════════
 #  CUSTOMER PORTAL
 # ══════════════════════════════════════════════════════
@@ -781,22 +998,47 @@ def reports():
 @app.route('/customers/create', methods=['POST'])
 @login_required
 def create_customer():
-    full_name = request.form.get('full_name')
-    username  = request.form.get('username')
-    password  = request.form.get('password')
+    first_name     = request.form.get('first_name', '').strip()
+    middle_initial = request.form.get('middle_initial', '').strip()
+    last_name      = request.form.get('last_name', '').strip()
+
+    if first_name and last_name:
+        parts = [first_name]
+        if middle_initial:
+            parts.append(middle_initial.rstrip('.') + '.')
+        parts.append(last_name)
+        full_name = ' '.join(parts)
+    else:
+        full_name = request.form.get('full_name', '').strip()
+
+    username = request.form.get('username')
+    password = request.form.get('password')
+    contact  = request.form.get('contact_number', '').strip()
+    address  = request.form.get('address', '').strip()
+
     if Customer.query.filter_by(username=username).first():
         flash('Username already exists.', 'error')
         return redirect(url_for('customers'))
-    nc = Customer(full_name=full_name, username=username, password=generate_password_hash(password))
+
+    nc = Customer(
+        full_name=full_name, username=username,
+        password=generate_password_hash(password),
+        contact_number=contact, address=address
+    )
     db.session.add(nc)
+    db.session.flush()
+    log_activity('CREATE_CUSTOMER', 'Customers',
+                 f'Customer account created for {full_name}', 'Customer', nc.customer_id)
     db.session.commit()
     flash('Customer account created!', 'success')
     return redirect(url_for('customers'))
 
 @app.route('/customer/login', methods=['GET', 'POST'])
 def customer_login():
-    if 'customer_id' in session: return redirect(url_for('customer_dashboard'))
-    if 'user_id' in session:     return redirect(url_for('dashboard'))
+    if 'customer_id' in session:
+        return redirect(url_for('customer_dashboard'))
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
@@ -809,7 +1051,6 @@ def customer_login():
     return render_template('customer_login.html')
 
 @app.route('/customer/logout')
-@customer_login_required
 def customer_logout():
     session.pop('customer_id', None)
     session.pop('customer_name', None)
@@ -817,20 +1058,24 @@ def customer_logout():
     return redirect(url_for('customer_login'))
 
 @app.route('/customer/dashboard')
-@customer_login_required
 def customer_dashboard():
+    if 'customer_id' not in session:
+        return redirect(url_for('customer_login'))
     customer         = Customer.query.get_or_404(session['customer_id'])
     total_orders     = DeliveryOrder.query.filter_by(customer_id=customer.customer_id).count()
     pending_orders   = DeliveryOrder.query.filter_by(customer_id=customer.customer_id, status='Pending').count()
     delivered_orders = DeliveryOrder.query.filter_by(customer_id=customer.customer_id, status='Delivered').count()
-    recent_orders    = DeliveryOrder.query.filter_by(customer_id=customer.customer_id).order_by(DeliveryOrder.delivery_date.desc()).limit(5).all()
+    recent_orders    = DeliveryOrder.query.filter_by(customer_id=customer.customer_id)\
+        .order_by(DeliveryOrder.delivery_date.desc()).limit(5).all()
     return render_template('customer_dashboard.html', customer=customer,
         total_orders=total_orders, pending_orders=pending_orders,
-        delivered_orders=delivered_orders, recent_orders=recent_orders)
+        delivered_orders=delivered_orders, recent_orders=recent_orders,
+        active_page='customer_dashboard')
 
 @app.route('/customer/order', methods=['GET', 'POST'])
-@customer_login_required
 def customer_order():
+    if 'customer_id' not in session:
+        return redirect(url_for('customer_login'))
     customer = Customer.query.get_or_404(session['customer_id'])
     products = Product.query.filter_by(is_active=True).order_by(Product.product_name).all()
     if request.method == 'POST':
@@ -840,25 +1085,36 @@ def customer_order():
         quantities    = request.form.getlist('quantity[]')
         if not delivery_date:
             flash('Please select a delivery date.', 'error')
-            return render_template('customer_order.html', customer=customer, products=products)
-        delivery = DeliveryOrder(customer_id=customer.customer_id, delivery_date=delivery_date, notes=notes, status='Pending')
+            return render_template('customer_order.html', customer=customer,
+                                   products=products, active_page='customer_order')
+        delivery = DeliveryOrder(
+            customer_id=customer.customer_id,
+            delivery_date=delivery_date, notes=notes, status='Pending'
+        )
         db.session.add(delivery)
         db.session.flush()
         total_amount = 0.0
         items_added  = 0
         for pid_str, qty_str in zip(product_ids, quantities):
-            if not pid_str: continue
-            product = Product.query.get(int(pid_str))
-            qty     = int(qty_str) if qty_str else 1
-            if not product: continue
+            if not pid_str:
+                continue
+            product  = Product.query.get(int(pid_str))
+            qty      = int(qty_str) if qty_str else 1
+            if not product:
+                continue
             subtotal      = float(product.price) * qty
             total_amount += subtotal
             items_added  += 1
-            db.session.add(DeliveryItem(delivery_id=delivery.delivery_id, product_id=product.product_id, quantity=qty, price=product.price, subtotal=subtotal))
+            db.session.add(DeliveryItem(
+                delivery_id=delivery.delivery_id,
+                product_id=product.product_id, quantity=qty,
+                price=product.price, subtotal=subtotal
+            ))
         if items_added == 0:
             db.session.rollback()
             flash('Please select at least one product.', 'error')
-            return render_template('customer_order.html', customer=customer, products=products)
+            return render_template('customer_order.html', customer=customer,
+                                   products=products, active_page='customer_order')
         delivery.total_amount = total_amount
         try:
             db.session.commit()
@@ -867,26 +1123,36 @@ def customer_order():
             db.session.rollback()
             flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('customer_deliveries'))
-    return render_template('customer_order.html', customer=customer, products=products)
+    return render_template('customer_order.html', customer=customer,
+                           products=products, active_page='customer_order')
 
 @app.route('/customer/deliveries')
-@customer_login_required
 def customer_deliveries():
+    if 'customer_id' not in session:
+        return redirect(url_for('customer_login'))
     customer  = Customer.query.get_or_404(session['customer_id'])
     search    = request.args.get('search', '').strip().lower()
     date_from = request.args.get('date_from')
     date_to   = request.args.get('date_to')
     status    = request.args.get('status')
     query     = DeliveryOrder.query.filter_by(customer_id=customer.customer_id)
-    if status and status != 'All': query = query.filter(DeliveryOrder.status == status)
-    if date_from: query = query.filter(DeliveryOrder.delivery_date >= date_from)
-    if date_to:   query = query.filter(DeliveryOrder.delivery_date <= date_to)
+    if status and status != 'All':
+        query = query.filter(DeliveryOrder.status == status)
+    if date_from:
+        query = query.filter(DeliveryOrder.delivery_date >= date_from)
+    if date_to:
+        query = query.filter(DeliveryOrder.delivery_date <= date_to)
     orders = query.order_by(DeliveryOrder.delivery_date.desc()).all()
     if search:
-        orders = [o for o in orders if search in (o.status or '').lower()
-                  or any(search in i.product.product_name.lower() for i in o.delivery_items)]
+        orders = [
+            o for o in orders
+            if search in (o.status or '').lower()
+            or any(search in i.product.product_name.lower() for i in o.delivery_items)
+        ]
     return render_template('customer_deliveries.html', orders=orders,
-        search=search, date_from=date_from, date_to=date_to, status=status or 'All')
+        search=search, date_from=date_from, date_to=date_to,
+        status=status or 'All', active_page='customer_deliveries')
+
 
 if __name__ == '__main__':
     with app.app_context():

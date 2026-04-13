@@ -5,63 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Activity Log — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Outfit',sans-serif;">
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
-    style="background:linear-gradient(180deg,#0d1f2d 0%,#123047 100%);">
-    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
         <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace',serif">Agos</div>
-        <div class="text-[0.6rem] tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
       </div>
     </div>
-    <div class="flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3" style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3">
       <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       <div>
         <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5" style="background:rgba(0,149,200,0.25);color:#5bb8e0">{{ session['role'] }}</div>
+        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
       </div>
     </div>
     <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Dashboard</a>
-      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Record Sales</a>
-      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Inventory</a>
-      <a href="{{ url_for('products') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Products</a>
-      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Customers</a>
-      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Deliveries</a>
-      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Users</a>
-      <a href="{{ url_for('expenses') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Expenses</a>
-      <a href="{{ url_for('reports') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(0,149,200,0.18)">Reports</a>
+      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
+      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
+      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
+      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
+      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
+      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
+      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
+      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link active">Activity Log</a>
     </nav>
-    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <button onclick="openLogoutModal()" class="w-full text-left px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none cursor-pointer" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">Log Out</button>
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
     </div>
   </aside>
 
-  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-10" style="background:rgba(13,31,45,0.50)"></div>
+  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
 
-  <!-- MAIN -->
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
-    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5" style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(124,58,237,0.15)">
+
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:#7c3aed">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Activity Log</div>
-          <div class="text-xs text-[#5a7a8e]">Full system audit trail — {{ total }} event{{ 's' if total != 1 }} recorded</div>
+          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Activity Log</div>
+          <div class="text-xs" style="color:var(--text-muted)">Full system audit trail — {{ total }} event{{ 's' if total != 1 }} recorded</div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date" style="background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.15)"></div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" style="color:var(--text-muted)">Theme</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#7c3aed,#a855f7)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
@@ -69,56 +78,54 @@
     <main class="flex-1 p-4 md:p-6 lg:p-8">
 
       <!-- Filter bar -->
-      <form method="GET" class="bg-white rounded-2xl px-5 py-4 mb-5 flex flex-wrap gap-3 items-center" style="border:1px solid rgba(124,58,237,0.12)">
-        <select name="module" class="px-3 py-2 rounded-lg text-sm outline-none" style="background:#f5f0ff;border:1px solid rgba(124,58,237,0.20);color:#4a1d96;font-family:'Outfit',sans-serif">
+      <form method="GET" class="agos-card px-5 py-4 mb-5 flex flex-wrap gap-3 items-center">
+        <select name="module" class="agos-input" style="width:auto">
           <option value="">All Modules</option>
           {% for m in modules %}
           <option value="{{ m }}" {% if selected_module == m %}selected{% endif %}>{{ m }}</option>
           {% endfor %}
         </select>
-        <button type="submit" class="px-4 py-2 rounded-lg text-white text-sm font-medium border-none cursor-pointer" style="background:#7c3aed">Filter</button>
+        <button type="submit" class="agos-btn-primary px-4 py-2">Filter</button>
         {% if selected_module %}
-        <a href="{{ url_for('activity_log') }}" class="px-3 py-2 rounded-lg text-sm no-underline" style="color:#7c3aed">Clear</a>
+        <a href="{{ url_for('activity_log') }}" class="px-3 py-2 rounded-lg text-sm no-underline" style="color:var(--accent)">Clear</a>
         {% endif %}
-        <span class="text-xs ml-auto" style="color:#7a99ae">Showing {{ logs|length }} of {{ total }} — Page {{ page }}</span>
+        <span class="text-xs ml-auto" style="color:var(--text-muted)">Showing {{ logs|length }} of {{ total }} — Page {{ page }}</span>
       </form>
 
       <!-- Log table -->
-      <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(124,58,237,0.12);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+      <div class="agos-card overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full border-collapse min-w-[760px]">
+          <table class="agos-table w-full border-collapse min-w-[760px]">
             <thead>
               <tr>
                 {% for h in ['Time','Actor','Role','Module','Action','Description','IP'] %}
-                <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(124,58,237,0.10);color:#7a99ae">{{ h }}</th>
+                <th>{{ h }}</th>
                 {% endfor %}
               </tr>
             </thead>
             <tbody>
               {% if logs %}
                 {% for log in logs %}
-                <tr class="hover:bg-[rgba(124,58,237,0.02)] transition-colors">
-                  <td class="px-5 py-3 text-[0.72rem]" style="border-bottom:1px solid rgba(124,58,237,0.06);color:#7a99ae;white-space:nowrap">
-                    {{ log.created_at.strftime('%b %d, %Y') }}<br>
-                    <span style="color:#a8c4d4">{{ log.created_at.strftime('%I:%M %p') }}</span>
+                <tr>
+                  <td style="white-space:nowrap;font-size:0.72rem">
+                    <div>{{ log.created_at.strftime('%b %d, %Y') }}</div>
+                    <div style="color:var(--text-muted)">{{ log.created_at.strftime('%I:%M %p') }}</div>
                   </td>
-                  <td class="px-5 py-3 text-[0.82rem] font-medium text-[#0d1f2d]" style="border-bottom:1px solid rgba(124,58,237,0.06)">{{ log.actor_name }}</td>
-                  <td class="px-5 py-3" style="border-bottom:1px solid rgba(124,58,237,0.06)">
-                    <span class="text-[0.68rem] font-semibold px-2 py-0.5 rounded-full"
-                          style="{% if log.actor_role == 'Super Admin' %}background:rgba(124,58,237,0.12);color:#7c3aed{% elif log.actor_role == 'Admin' %}background:rgba(0,149,200,0.10);color:#0074a0{% else %}background:rgba(45,136,184,0.10);color:#1a5f8a{% endif %}">
+                  <td class="font-medium" style="color:var(--text-primary)">{{ log.actor_name }}</td>
+                  <td>
+                    <span class="agos-badge {% if log.actor_role == 'Super Admin' %}agos-badge-warning{% else %}agos-badge-info{% endif %}"
+                          style="{% if log.actor_role == 'Super Admin' %}background:rgba(124,58,237,0.15);color:#a855f7{% endif %}">
                       {{ log.actor_role }}
                     </span>
                   </td>
-                  <td class="px-5 py-3" style="border-bottom:1px solid rgba(124,58,237,0.06)">
-                    <span class="text-[0.68rem] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(45,136,184,0.08);color:#3a5f78">{{ log.module }}</span>
-                  </td>
-                  <td class="px-5 py-3 text-[0.75rem] font-mono font-semibold" style="border-bottom:1px solid rgba(124,58,237,0.06);color:#4a1d96">{{ log.action }}</td>
-                  <td class="px-5 py-3 text-[0.82rem] text-[#3a5f78]" style="border-bottom:1px solid rgba(124,58,237,0.06);max-width:280px">{{ log.description }}</td>
-                  <td class="px-5 py-3 text-[0.72rem]" style="border-bottom:1px solid rgba(124,58,237,0.06);color:#a8c4d4">{{ log.ip_address or '—' }}</td>
+                  <td><span class="agos-badge agos-badge-info">{{ log.module }}</span></td>
+                  <td class="font-mono font-semibold text-[0.75rem]" style="color:var(--accent)">{{ log.action }}</td>
+                  <td style="max-width:280px">{{ log.description }}</td>
+                  <td style="font-size:0.72rem;color:var(--text-muted)">{{ log.ip_address or '—' }}</td>
                 </tr>
                 {% endfor %}
               {% else %}
-              <tr><td colspan="7" class="text-center py-12 text-sm" style="color:#a8c4d4">No activity logged yet.</td></tr>
+              <tr><td colspan="7" class="text-center py-12 text-sm" style="color:var(--text-faint)">No activity logged yet.</td></tr>
               {% endif %}
             </tbody>
           </table>
@@ -130,12 +137,12 @@
       <div class="flex items-center justify-center gap-2 mt-5">
         {% if page > 1 %}
         <a href="{{ url_for('activity_log', page=page-1, module=selected_module) }}"
-           class="px-4 py-2 rounded-lg text-sm no-underline" style="background:white;border:1px solid rgba(124,58,237,0.20);color:#7c3aed">← Prev</a>
+           class="px-4 py-2 rounded-lg text-sm no-underline" style="background:var(--bg-card);border:1px solid var(--border-input);color:var(--accent)">← Prev</a>
         {% endif %}
-        <span class="text-sm px-4 py-2" style="color:#5a7a8e">Page {{ page }} of {{ (total // per_page) + (1 if total % per_page else 0) }}</span>
+        <span class="text-sm px-4 py-2" style="color:var(--text-muted)">Page {{ page }} of {{ (total // per_page) + (1 if total % per_page else 0) }}</span>
         {% if page * per_page < total %}
         <a href="{{ url_for('activity_log', page=page+1, module=selected_module) }}"
-           class="px-4 py-2 rounded-lg text-sm no-underline" style="background:white;border:1px solid rgba(124,58,237,0.20);color:#7c3aed">Next →</a>
+           class="px-4 py-2 rounded-lg text-sm no-underline" style="background:var(--bg-card);border:1px solid var(--border-input);color:var(--accent)">Next →</a>
         {% endif %}
       </div>
       {% endif %}
@@ -144,17 +151,25 @@
   </div>
 </div>
 
-<script>
-  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('overlay').classList.toggle('hidden'); }
-  function closeSidebar(){ document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
-  function checkWidth(){
-    const mobile = window.innerWidth < 768;
-    const btn = document.getElementById('menu-btn'); const sb = document.getElementById('sidebar');
-    if(mobile){ btn.classList.remove('hidden'); btn.classList.add('flex'); if(!sb.classList.contains('-translate-x-full')) sb.classList.add('-translate-x-full'); }
-    else{ btn.classList.add('hidden'); btn.classList.remove('flex'); sb.classList.remove('-translate-x-full'); }
-  }
-  checkWidth(); window.addEventListener('resize', checkWidth);
-</script>
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 </body>
 </html>

@@ -5,274 +5,222 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Operator Dashboard — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    .kpi-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;padding:1.1rem 1.25rem;transition:transform .2s,background .25s,border-color .25s;display:flex;flex-direction:column;gap:.2rem}
+    .kpi-card:hover{transform:translateY(-2px)}
+    .kpi-icon{width:2.25rem;height:2.25rem;border-radius:.625rem;display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.35rem}
+    .kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);font-family:'Outfit',sans-serif}
+    .kpi-value{font-size:1.75rem;font-weight:800;line-height:1.1;color:var(--text-primary);font-family:'Inconsolata',monospace}
+    .kpi-sub{font-size:.68rem;color:var(--text-muted);font-family:'Outfit',sans-serif}
+    .chart-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;overflow:hidden;transition:background .25s,border-color .25s}
+    .chart-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border-section);display:flex;align-items:center;justify-content:space-between}
+    .chart-title{font-size:.95rem;font-weight:700;color:var(--text-primary);font-family:'Inconsolata',monospace}
+    .chart-sub{font-size:.68rem;color:var(--text-muted);margin-top:.1rem;font-family:'Outfit',sans-serif}
+    canvas{max-height:240px}
+  </style>
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
 
   <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar"
-    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
-    style="background:linear-gradient(180deg,#0b2535 0%,#0f3a54 100%);">
-    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
-        </svg>
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace',serif">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
       </div>
     </div>
-    <div class="flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3"
-         style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       <div>
-        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5"
-             style="background:rgba(45,136,184,0.30);color:#a8d8f0">{{ session['role'] }}</div>
+        <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
+        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
       </div>
     </div>
     <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Dashboard</a>
-      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(45,136,184,0.22)"><span></span> Sales Management</a>
-      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Inventory Management</a>
-      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Customer Management</a>
-      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Delivery Management</a>
-      {% if session.get('role') == 'Admin' %}
-      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> User Management</a>
-      <a href="{{ url_for('expense_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Expense Management</a>
-      {% endif %}
+      <a href="{{ url_for('dashboard') }}"      class="agos-sidebar-link active">Dashboard</a>
+      <a href="{{ url_for('sales') }}"           class="agos-sidebar-link">Record Sales</a>
+      <a href="{{ url_for('inventory') }}"       class="agos-sidebar-link">Inventory</a>
+      <a href="{{ url_for('customers') }}"       class="agos-sidebar-link">Customers</a>
+      <a href="{{ url_for('deliveries') }}"      class="agos-sidebar-link">Deliveries</a>
     </nav>
-    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <button type="button" onclick="openLogoutModal()" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)"><span> </span> Log Out</button>
+    <div class="agos-sidebar-footer flex-shrink-0 p-3 flex flex-col gap-2">
+      <div class="flex items-center justify-between px-2 py-1.5 rounded-xl" style="background:rgba(255,255,255,0.04)">
+        <div class="flex items-center gap-2"><span style="font-size:.82rem">☀️</span><span class="text-[0.69rem] font-medium" style="color:var(--sidebar-link)">Theme</span></div>
+        <label class="agos-theme-toggle"><input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label>
+        <span style="font-size:.82rem">🌙</span>
+      </div>
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
     </div>
   </aside>
+  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
 
-  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-30" style="background:rgba(13,31,45,0.50)"></div>
-
-  <!-- ══ MAIN ══ -->
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]" id="main-wrap">
-
-    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5"
-            style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-          </svg>
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d] leading-tight" style="font-family:'Inconsolata',monospace',serif">Dashboard</div>
-          <div class="text-[0.65rem] md:text-xs text-[#5a7a8e]">EP-Bluelife Water Refilling Station</div>
+          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Operator Dashboard</div>
+          <div class="text-xs" style="color:var(--text-muted)">EP-Bluelife Water Refilling Station</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
-        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date"
-             style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
-             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
-          {{ session['full_name'][0].upper() }}
-        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
 
-    <main class="flex-1 p-4 md:p-6 lg:p-8">
+    <main class="flex-1 p-4 md:p-5 lg:p-7 flex flex-col gap-5">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="flex gap-2 items-start rounded-xl px-3.5 py-3 mb-5 text-[0.79rem]
-                        {% if category == 'error' %}text-[#7a5a10]{% else %}text-[#1a5f8a]{% endif %}"
-                 style="{% if category == 'error' %}background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.22);{% else %}background:rgba(0,149,200,0.07);border:1px solid rgba(0,149,200,0.17);{% endif %}">
-              {{ message }}
-            </div>
-          {% endfor %}
-        {% endif %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
+        {% endfor %}{% endif %}
       {% endwith %}
 
-      <!-- Welcome banner — teal operator variant -->
-      <div class="relative overflow-hidden rounded-2xl px-4 md:px-8 py-5 md:py-6 mb-6 md:mb-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0"
-           style="background:linear-gradient(135deg,#0b3a52 0%,#1a6a8a 100%)">
-        <div class="absolute rounded-full pointer-events-none" style="width:180px;height:180px;right:-20px;top:-30px;background:rgba(91,184,224,0.07)"></div>
-        <div class="absolute rounded-full pointer-events-none" style="width:120px;height:120px;right:80px;bottom:-40px;background:rgba(45,136,184,0.10)"></div>
+      <!-- Welcome banner -->
+      <div class="agos-welcome-banner relative overflow-hidden rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="absolute rounded-full pointer-events-none" style="width:180px;height:180px;right:-20px;top:-40px;background:rgba(91,184,224,0.07)"></div>
         <div class="relative z-10">
-          <div class="text-xl md:text-2xl font-bold text-white mb-1" style="font-family:'Inconsolata',monospace',serif">
-            Good day, {{ session['full_name'].split()[0] }}. 👋
-          </div>
-          <div class="text-[0.75rem] md:text-[0.82rem]" style="color:rgba(184,218,240,0.60)">Ready for today's operations at EP-Bluelife.</div>
+          <div class="text-xl md:text-2xl font-bold text-white mb-1" style="font-family:'Inconsolata',monospace">Ready, {{ session['full_name'].split()[0] }}. 👋</div>
+          <div class="text-[0.78rem]" style="color:rgba(184,218,240,0.65)">Today's operations at a glance.</div>
         </div>
-        <div class="relative z-10 flex flex-col items-start md:items-end gap-2">
-          <span class="text-[0.7rem] font-semibold tracking-widest uppercase px-2.5 py-1 rounded-md"
-                style="background:rgba(45,136,184,0.30);border:1px solid rgba(91,184,224,0.30);color:#a8d8f0">Operator Access</span>
-          <span class="text-xs" style="color:rgba(184,218,240,0.45)">Sales, delivery &amp; inventory</span>
+        <div class="relative z-10 flex items-center gap-3">
+          <a href="{{ url_for('sales') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-xs font-semibold no-underline" style="background:rgba(0,149,200,0.60);border:1px solid rgba(91,184,224,0.35)">+ Record Sale</a>
+          <a href="{{ url_for('deliveries') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold no-underline" style="background:rgba(255,255,255,0.10);border:1px solid rgba(91,184,224,0.25);color:rgba(184,218,240,0.85)">Deliveries</a>
         </div>
       </div>
 
-      <!-- Stat cards — 4 cards, no profit for operator -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mb-6 md:mb-7">
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(0,149,200,0.10)">💧</div>
-          <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Today's Sales</div>
-          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
-            ₱{{ "%.2f"|format(today_sales) }}
-          </div>
-          <div class="text-xs text-[#7a99ae]">Walk-in &amp; delivery</div>
+      <!-- KPI strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:var(--accent-soft)">💧</div>
+          <div class="kpi-label">Today's Revenue</div>
+          <div class="kpi-value">₱{{ "%.0f"|format(today_sales) }}</div>
+          <div class="kpi-sub">All sales today</div>
         </div>
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(46,170,110,0.10)">📦</div>
-          <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Items in Stock</div>
-          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
-            {{ items_in_stock }}
-          </div>
-          <div class="text-xs text-[#7a99ae]">Across all products</div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:var(--warning-bg)">🚚</div>
+          <div class="kpi-label">Pending Deliveries</div>
+          <div class="kpi-value" style="color:{% if pending_deliveries > 0 %}var(--warning-text){% else %}var(--success-text){% endif %}">{{ pending_deliveries }}</div>
+          <div class="kpi-sub">Needs dispatch</div>
         </div>
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(212,168,67,0.10)">🚚</div>
-          <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Pending Deliveries</div>
-          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
-            {{ pending_deliveries }}
-          </div>
-          <div class="text-xs text-[#7a99ae]">Awaiting confirmation</div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:var(--success-bg)">✅</div>
+          <div class="kpi-label">Delivered Today</div>
+          <div class="kpi-value">{{ delivered_today }}</div>
+          <div class="kpi-sub">Completed orders</div>
         </div>
-
-        <div class="bg-white rounded-2xl p-5 flex flex-col gap-1 transition-all duration-200 hover:-translate-y-0.5"
-             style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2 self-start" style="background:rgba(91,184,224,0.10)">👥</div>
-          <div class="text-[0.73rem] font-semibold uppercase tracking-wider text-[#7a99ae]">Total Customers</div>
-          <div class="text-[2.2rem] font-bold leading-none text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
-            {{ total_customers }}
-          </div>
-          <div class="text-xs text-[#7a99ae]">Registered customers</div>
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background:{% if low_stock_items > 0 %}var(--danger-bg){% else %}var(--success-bg){% endif %}">📦</div>
+          <div class="kpi-label">Low Stock</div>
+          <div class="kpi-value" style="color:{% if low_stock_items > 0 %}var(--danger-text){% else %}var(--success-text){% endif %}">{{ low_stock_items }}</div>
+          <div class="kpi-sub">Items below minimum</div>
         </div>
-
       </div>
 
-      <!-- Main grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 md:gap-5 mb-5">
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title">Sales — Last 7 Days</div><div class="chart-sub">Daily revenue trend</div></div></div>
+          <div class="p-4"><canvas id="opSalesTrend"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div><div class="chart-title">Today's Sale Types</div><div class="chart-sub">Walk-in vs delivery</div></div></div>
+          <div class="p-4 flex flex-col items-center gap-4">
+            <canvas id="opSaleType" style="max-height:170px;max-width:170px"></canvas>
+            <div class="w-full flex flex-col gap-2">
+              <div class="flex justify-between items-center text-[0.78rem]">
+                <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#0095c8"></span><span style="color:var(--text-secondary)">Walk-in</span></div>
+                <span class="font-bold" style="color:var(--text-primary)">{{ walkin_today }}</span>
+              </div>
+              <div class="flex justify-between items-center text-[0.78rem]">
+                <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#d4a843"></span><span style="color:var(--text-secondary)">Delivery</span></div>
+                <span class="font-bold" style="color:var(--text-primary)">{{ delivery_today }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         <!-- Recent sales -->
-        <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Recent Sales</div>
-            <a href="{{ url_for('sales') }}" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
-          </div>
-          <div class="p-5 overflow-x-auto">
-            <table class="w-full border-collapse min-w-[500px]">
-              <thead>
-                <tr>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Customer</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Type</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Amount</th>
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] pb-3" style="border-bottom:1px solid rgba(45,136,184,0.10)">Loyalty</th>
-                </tr>
-              </thead>
+        <div class="chart-card lg:col-span-2">
+          <div class="chart-header"><div class="chart-title">Recent Transactions</div><a href="{{ url_for('sales') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">All sales →</a></div>
+          <div class="overflow-x-auto">
+            <table class="agos-table w-full border-collapse min-w-[420px]">
+              <thead><tr><th>Customer</th><th>Type</th><th>Items</th><th>Amount</th></tr></thead>
               <tbody>
-                {% if recent_sales %}
-                  {% for sale in recent_sales %}
-                  <tr>
-                    <td class="text-[0.82rem] text-[#3a5f78] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      {{ sale.customer.full_name if sale.customer else 'Walk-in' }}
-                    </td>
-                    <td class="text-[0.82rem] text-[#3a5f78] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      <span class="inline-flex items-center text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full
-                                   {% if sale.sale_type == 'Walk-in' %}bg-[rgba(0,149,200,0.10)] text-[#0074a0]{% else %}bg-[rgba(212,168,67,0.12)] text-[#8a6010]{% endif %}">
-                        {{ sale.sale_type }}
-                      </span>
-                    </td>
-                    <td class="text-[0.82rem] font-semibold text-[#0d1f2d] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      ₱{{ "%.2f"|format(sale.total_amount) }}
-                    </td>
-                    <td class="text-[0.82rem] py-2.5" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      {% if sale.customer %}
-                        <span class="text-[0.72rem] font-semibold" style="color:#2eaa6e">
-                          {{ sale.customer.loyalty_points }} pts
-                        </span>
-                      {% else %}
-                        <span class="text-[0.72rem] text-[#a8c4d4]">—</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td colspan="4" class="text-center py-8 text-xs" style="color:#a8c4d4">No sales recorded yet.</td>
-                  </tr>
+                {% if recent_sales %}{% for sale in recent_sales[:6] %}
+                <tr>
+                  <td>{{ sale.customer.full_name if sale.customer else 'Walk-in' }}</td>
+                  <td><span class="agos-badge {% if sale.sale_type == 'Walk-in' %}agos-badge-info{% else %}agos-badge-warning{% endif %}">{{ sale.sale_type }}</span></td>
+                  <td style="font-size:.72rem;color:var(--text-muted)">{{ sale.sale_items | length }} item{{ 's' if sale.sale_items|length != 1 }}</td>
+                  <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(sale.total_amount) }}</td>
+                </tr>
+                {% endfor %}{% else %}
+                <tr><td colspan="4" class="text-center py-8" style="color:var(--text-faint)">No sales today yet.</td></tr>
                 {% endif %}
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Right column -->
-        <div class="flex flex-col gap-5">
-
-          <!-- Quick actions -->
-          <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-            <div class="flex items-center px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Quick Actions</div>
-            </div>
-            <div class="p-5 flex flex-col gap-2.5">
-              <a href="{{ url_for('sales') }}"
-                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
-                 style="border:1px solid rgba(45,136,184,0.10)">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style="background:rgba(0,149,200,0.10)">💧</div>
-                <div>
-                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Record Sale</div>
-                  <div class="text-[0.72rem] text-[#7a99ae]">Walk-in or delivery</div>
-                </div>
-              </a>
-              <a href="{{ url_for('deliveries') }}"
-                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
-                 style="border:1px solid rgba(45,136,184,0.10)">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style="background:rgba(212,168,67,0.10)">🚚</div>
-                <div>
-                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Delivery Orders</div>
-                  <div class="text-[0.72rem] text-[#7a99ae]">Confirm or reject</div>
-                </div>
-              </a>
-              <a href="{{ url_for('customers') }}"
-                 class="flex items-center gap-3 p-3 rounded-xl no-underline transition-all duration-200 hover:translate-x-1"
-                 style="border:1px solid rgba(45,136,184,0.10)">
-                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0" style="background:rgba(91,184,224,0.10)">👥</div>
-                <div>
-                  <div class="text-[0.82rem] font-medium text-[#1a5f8a]">Customers</div>
-                  <div class="text-[0.72rem] text-[#7a99ae]">View &amp; add customers</div>
-                </div>
-              </a>
-            </div>
-          </div>
-
-          <!-- Pending deliveries preview -->
-          <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-            <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Delivery Queue</div>
-              <a href="{{ url_for('deliveries') }}" class="text-xs font-medium text-[#0095c8] no-underline hover:underline">View all →</a>
-            </div>
-            <div class="p-5 flex flex-col gap-2">
+        <!-- Delivery queue + stock alerts -->
+        <div class="flex flex-col gap-4">
+          <div class="chart-card flex-1">
+            <div class="chart-header"><div class="chart-title">Delivery Queue</div><a href="{{ url_for('deliveries') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">All →</a></div>
+            <div class="p-4 flex flex-col gap-2 max-h-[200px] overflow-y-auto">
               {% if pending_delivery_list %}
-                {% for d in pending_delivery_list %}
-                  <div class="flex items-center justify-between py-2 text-[0.82rem]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                    <span class="text-[#3a5f78] font-medium">{{ d.customer.full_name }}</span>
-                    <span class="text-[0.68rem] font-semibold px-2 py-0.5 rounded-full" style="background:rgba(212,168,67,0.12);color:#8a6010">Pending</span>
+                {% for d in pending_delivery_list[:6] %}
+                <div class="flex items-center justify-between py-1.5" style="border-bottom:1px solid var(--border-section)">
+                  <div>
+                    <div class="text-[0.78rem] font-medium" style="color:var(--text-primary)">{{ d.customer.full_name }}</div>
+                    <div class="text-[0.68rem]" style="color:var(--text-muted)">{{ d.delivery_date.strftime('%b %d') if d.delivery_date else '—' }}</div>
                   </div>
+                  <span class="agos-badge agos-badge-warning">Pending</span>
+                </div>
                 {% endfor %}
               {% else %}
-                <div class="text-center py-4 text-xs" style="color:#a8c4d4">No pending deliveries.</div>
+                <div class="text-center py-4 text-xs" style="color:var(--text-faint)">🎉 No pending deliveries</div>
               {% endif %}
             </div>
           </div>
 
+          <div class="chart-card flex-1">
+            <div class="chart-header"><div class="chart-title">Stock Alerts</div><a href="{{ url_for('inventory') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">Adjust →</a></div>
+            <div class="p-4 flex flex-col gap-2">
+              {% if inventory_items %}
+                {% set ns = namespace(shown=0) %}
+                {% for item in inventory_items %}
+                  {% if item.quantity <= (item.minimum_stock or 10) and ns.shown < 5 %}
+                  {% set ns.shown = ns.shown + 1 %}
+                  <div class="flex items-center justify-between py-1">
+                    <span class="text-[0.76rem]" style="color:var(--text-secondary)">{{ item.product.product_name }}</span>
+                    <span class="agos-badge {% if item.quantity == 0 %}agos-badge-danger{% else %}agos-badge-warning{% endif %} text-[0.65rem]">{{ item.quantity }} left</span>
+                  </div>
+                  {% endif %}
+                {% endfor %}
+                {% if ns.shown == 0 %}
+                  <div class="text-center py-4 text-xs" style="color:var(--text-faint)">✅ All stock levels OK</div>
+                {% endif %}
+              {% else %}
+                <div class="text-center py-4 text-xs" style="color:var(--text-faint)">No inventory data.</div>
+              {% endif %}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -280,112 +228,71 @@
   </div>
 </div>
 
-<script>
-  document.getElementById('topbar-date').textContent =
-    new Date().toLocaleDateString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
-
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
-  }
-  
-  function closeSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    sidebar.classList.add('-translate-x-full');
-    overlay.classList.add('hidden');
-  }
-  
-  function checkWidth() {
-    const isMobile = window.innerWidth < 768;
-    const sidebar = document.getElementById('sidebar');
-    const menuBtn = document.getElementById('menu-btn');
-    const overlay = document.getElementById('overlay');
-    
-    if (isMobile) {
-      menuBtn.classList.remove('hidden');
-      menuBtn.classList.add('flex');
-      if (!sidebar.classList.contains('-translate-x-full')) {
-        sidebar.classList.add('-translate-x-full');
-      }
-      overlay.classList.add('hidden');
-    } else {
-      menuBtn.classList.add('hidden');
-      menuBtn.classList.remove('flex');
-      sidebar.classList.remove('-translate-x-full');
-      overlay.classList.add('hidden');
-    }
-  }
-  
-  checkWidth();
-  window.addEventListener('resize', checkWidth);
-
-  function openLogoutModal() {
-    document.getElementById('logout-modal').classList.remove('hidden');
-    document.getElementById('logout-modal').classList.add('flex');
-  }
-
-  function closeLogoutModal() {
-    document.getElementById('logout-modal').classList.add('hidden');
-    document.getElementById('logout-modal').classList.remove('flex');
-  }
-
-  function confirmLogout() {
-    window.location.href = "{{ url_for('logout') }}";
-  }
-</script>
-
-<div id="logout-modal" 
-     class="hidden fixed inset-0 z-50 justify-center items-center"
-     style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
-    
-    <div class="relative p-4 w-full max-w-md">
-        <div class="relative bg-white rounded-2xl shadow-2xl overflow-hidden">
-            
-            <!-- Modal Content -->
-            <div class="p-8 text-center">
-                
-                <!-- Icon -->
-                <div style="width:4rem;height:4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem auto;background:linear-gradient(135deg,rgba(0,149,200,0.10),rgba(91,184,224,0.10))">
-                    <svg class="w-8 h-8" style="color:#0095c8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                    </svg>
-                </div>
-                
-                <!-- Title -->
-                <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Inconsolata',monospace',serif">
-                    Confirm Logout
-                </h3>
-                
-                <!-- Message -->
-                <p class="mb-6 text-sm leading-relaxed" style="color:#5a7a8e">
-                    Are you sure you want to log out of your account?
-                </p>
-                
-                <!-- Buttons -->
-                <div style="display:flex;align-items:center;gap:1rem;justify-content:center;margin-top:0.5rem">
-                    <!-- Confirm Logout Button -->
-                    <button onclick="confirmLogout()"
-                       style="padding:0.625rem 1.75rem;border-radius:9999px;background:#0095c8;color:#fff;font-weight:600;font-size:0.875rem;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(0,149,200,0.25);transition:all 0.2s;white-space:nowrap"
-                       onmouseover="this.style.background='#007eb0';this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 16px rgba(0,149,200,0.30)'"
-                       onmouseout="this.style.background='#0095c8';this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(0,149,200,0.25)'">
-                        Yes, Logout
-                    </button>
-                    
-                    <!-- Cancel Button -->
-                    <button onclick="closeLogoutModal()" type="button"
-                            style="padding:0.625rem 1.75rem;border-radius:9999px;background:#f0f8fd;color:#0d1f2d;font-weight:600;font-size:0.875rem;cursor:pointer;border:1.5px solid rgba(45,136,184,0.20);transition:all 0.2s;white-space:nowrap"
-                            onmouseover="this.style.background='#e8f6fc';this.style.borderColor='#0095c8'"
-                            onmouseout="this.style.background='#f0f8fd';this.style.borderColor='rgba(45,136,184,0.20)'">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
     </div>
+  </div>
 </div>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+const OP_LABELS = {{ sales_trend_labels | tojson }};
+const OP_VALUES = {{ sales_trend_values | tojson }};
+const WT = {{ walkin_today   | default(0) }};
+const DT = {{ delivery_today | default(0) }};
+
+let _c = {};
+
+function gc() {
+  const d = document.documentElement.getAttribute('data-theme') === 'dark';
+  return { grid: d ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)',
+           tick: d ? '#5a8aaa' : '#7a99ae' };
+}
+
+function build() {
+  Chart.defaults.font.family = "'Outfit',sans-serif";
+  Chart.defaults.font.size = 11;
+  Object.values(_c).forEach(c => c.destroy()); _c = {};
+  const c = gc();
+
+  _c.t = new Chart('opSalesTrend', {
+    type:'line',
+    data:{ labels:OP_LABELS, datasets:[{ label:'Revenue', data:OP_VALUES,
+      borderColor:'#0095c8', backgroundColor:'rgba(0,149,200,0.10)',
+      borderWidth:2.5, pointBackgroundColor:'#0095c8', pointRadius:4,
+      fill:true, tension:0.4 }]},
+    options:{ responsive:true, plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:x=>' ₱'+x.parsed.y.toFixed(2)}}},
+      scales:{ x:{grid:{color:c.grid},ticks:{color:c.tick}},
+               y:{grid:{color:c.grid},ticks:{color:c.tick,callback:v=>'₱'+v},beginAtZero:true}}}
+  });
+
+  _c.p = new Chart('opSaleType', {
+    type:'doughnut',
+    data:{ labels:['Walk-in','Delivery'], datasets:[{data:[WT,DT],
+      backgroundColor:['#0095c8','#d4a843'], borderWidth:0, hoverOffset:6}]},
+    options:{ cutout:'62%', plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:x=>x.parsed+' orders'}}}}
+  });
+}
+
+document.addEventListener('DOMContentLoaded', build);
+
+const _oT = window.toggleTheme;
+window.toggleTheme = function() { _oT(); setTimeout(build, 280); };
+</script>
 </body>
 </html>

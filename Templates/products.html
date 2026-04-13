@@ -5,70 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Product Management — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
 
   <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar"
-    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
-    style="background:linear-gradient(180deg,#0b2535 0%,#0f3a54 100%);">
-    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
-        </svg>
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace',serif">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
       </div>
     </div>
-    <div class="flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3"
-         style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       <div>
         <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5"
-             style="background:rgba(45,136,184,0.30);color:#a8d8f0">{{ session['role'] }}</div>
+        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
       </div>
     </div>
     <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Dashboard</a>
-      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(45,136,184,0.22)"><span></span> Sales Management</a>
-      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Inventory Management</a>
-      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Customer Management</a>
-      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Delivery Management</a>
-      {% if session.get('role') == 'Admin' %}
-      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> User Management</a>
-      <a href="{{ url_for('expense_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all duration-200 hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)"><span></span> Expense Management</a>
+      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
+      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
+      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
+      <a href="{{ url_for('products') }}"         class="agos-sidebar-link active">Products</a>
+      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link ">Customers</a>
+      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
+      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
+      {% if session.get('role') == 'Super Admin' %}
+      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
       {% endif %}
     </nav>
-    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <button type="button" onclick="openLogoutModal()" class="w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all duration-200" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)"><span> </span> Log Out</button>
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
     </div>
   </aside>
 
-  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-30" style="background:rgba(13,31,45,0.50)"></div>
+  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
 
-  <!-- ══ MAIN ══ -->
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
-    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5" style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
+
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Product Management</div>
-          <div class="text-xs text-[#5a7a8e]">Add, edit, and manage the product catalog</div>
+          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Product Management</div>
+          <div class="text-xs" style="color:var(--text-muted)">Add, edit, and manage the product catalog</div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date" style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
@@ -77,115 +81,83 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
-          <div class="rounded-xl px-3.5 py-3 mb-5 text-[0.79rem] {% if category=='error' %}text-[#7a5a10]{% else %}text-[#1a5f8a]{% endif %}" style="{% if category=='error' %}background:rgba(212,168,67,0.08);border:1px solid rgba(212,168,67,0.22){% else %}background:rgba(0,149,200,0.07);border:1px solid rgba(0,149,200,0.17){% endif %}">{{ message }}</div>
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
         {% endfor %}{% endif %}
       {% endwith %}
 
       <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
 
-        <!-- ADD PRODUCT FORM -->
-        <div class="bg-white rounded-2xl overflow-hidden self-start" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Add New Product</div>
-            <div class="text-xs text-[#7a99ae] mt-0.5">Products added here appear in Sales &amp; Deliveries</div>
+        <!-- Add Product Form -->
+        <div class="agos-card overflow-hidden self-start">
+          <div class="agos-card-header">
+            <div class="agos-card-title">Add New Product</div>
+            <div class="agos-card-subtitle">Products added here appear in Sales &amp; Deliveries</div>
           </div>
           <div class="p-5">
             <form action="{{ url_for('new_product') }}" method="POST" class="flex flex-col gap-4">
-
               <div>
-                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Product Name <span style="color:#d32f2f">*</span></label>
-                <input type="text" name="product_name" required placeholder="e.g. 5-Gallon Refill"
-                       class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none"
-                       style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;"
-                       onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                       onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                <label class="agos-label">Product Name <span style="color:#d32f2f">*</span></label>
+                <input type="text" name="product_name" required placeholder="e.g. 5-Gallon Refill" class="agos-input"/>
               </div>
-
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Price (₱) <span style="color:#d32f2f">*</span></label>
-                  <input type="number" name="price" min="0.01" step="0.01" required placeholder="0.00"
-                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none"
-                         style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;"
-                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                  <label class="agos-label">Price (₱) <span style="color:#d32f2f">*</span></label>
+                  <input type="number" name="price" min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/>
                 </div>
                 <div>
-                  <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Unit</label>
-                  <input type="text" name="unit" placeholder="e.g. gallon"
-                         class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none"
-                         style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;"
-                         onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                         onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+                  <label class="agos-label">Unit</label>
+                  <input type="text" name="unit" placeholder="e.g. gallon" class="agos-input"/>
                 </div>
               </div>
-
               <div>
-                <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Low-Stock Threshold</label>
-                <input type="number" name="minimum_stock" min="1" value="10" placeholder="10"
-                       class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none"
-                       style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;"
-                       onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'"
-                       onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
-                <p class="text-[0.7rem] text-[#7a99ae] mt-1">Dashboard will flag products below this count.</p>
+                <label class="agos-label">Low-Stock Threshold</label>
+                <input type="number" name="minimum_stock" min="1" value="10" placeholder="10" class="agos-input"/>
+                <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">Dashboard will flag products below this count.</p>
               </div>
-
-              <button type="submit" class="w-full py-3 rounded-full text-white font-semibold text-sm border-none cursor-pointer"
-                      style="background:#0095c8;font-family:'Outfit',sans-serif"
-                      onmouseover="this.style.background='#007eb0'" onmouseout="this.style.background='#0095c8'">
-                Add Product
-              </button>
+              <button type="submit" class="agos-btn-primary w-full py-3">Add Product</button>
             </form>
           </div>
         </div>
 
-        <!-- PRODUCT TABLE -->
-        <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="flex items-center justify-between px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
+        <!-- Product Table -->
+        <div class="agos-card overflow-hidden">
+          <div class="agos-card-header flex items-center justify-between">
             <div>
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Product Catalog</div>
-              <div class="text-xs text-[#7a99ae] mt-0.5">{{ products|length }} product{{ 's' if products|length != 1 }}</div>
+              <div class="agos-card-title">Product Catalog</div>
+              <div class="agos-card-subtitle">{{ products|length }} product{{ 's' if products|length != 1 }}</div>
             </div>
             <input type="text" id="search-products" oninput="filterProducts()" placeholder="Search..."
-                   class="px-3 py-1.5 rounded-lg text-sm outline-none w-36"
-                   style="background:#e8f6fc;border:1px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif"/>
+                   class="agos-input" style="width:9rem"/>
           </div>
           <div class="overflow-x-auto">
-            <table class="w-full border-collapse min-w-[580px]">
+            <table class="agos-table w-full border-collapse min-w-[580px]">
               <thead>
-                <tr>
-                  {% for h in ['#','Product','Price','Unit','Min Stock','Status','Actions'] %}
-                  <th class="text-left text-[0.68rem] font-semibold uppercase tracking-wider text-[#7a99ae] px-5 pb-3 pt-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">{{ h }}</th>
-                  {% endfor %}
-                </tr>
+                <tr><th>#</th><th>Product</th><th>Price</th><th>Unit</th><th>Min Stock</th><th>Status</th><th>Actions</th></tr>
               </thead>
               <tbody>
                 {% if products %}
                   {% for product in products %}
-                  <tr class="product-row hover:bg-[rgba(0,149,200,0.03)] transition-colors">
-                    <td class="px-5 py-3 text-[0.75rem] text-[#7a99ae]" style="border-bottom:1px solid rgba(45,136,184,0.06)">{{ loop.index }}</td>
-                    <td class="px-5 py-3 text-[0.85rem] font-medium text-[#0d1f2d] product-name" style="border-bottom:1px solid rgba(45,136,184,0.06)">{{ product.product_name }}</td>
-                    <td class="px-5 py-3 text-[0.82rem] font-semibold text-[#0d1f2d]" style="border-bottom:1px solid rgba(45,136,184,0.06)">₱{{ "%.2f"|format(product.price) }}</td>
-                    <td class="px-5 py-3 text-[0.82rem] text-[#5a7a8e]" style="border-bottom:1px solid rgba(45,136,184,0.06)">{{ product.unit or '—' }}</td>
-                    <td class="px-5 py-3 text-[0.82rem] text-[#5a7a8e]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
-                      {{ product.inventory.minimum_stock if product.inventory else '—' }}
-                    </td>
-                    <td class="px-5 py-3" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                  <tr class="product-row">
+                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                    <td class="font-medium product-name" style="color:var(--text-primary)">{{ product.product_name }}</td>
+                    <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(product.price) }}</td>
+                    <td>{{ product.unit or '—' }}</td>
+                    <td>{{ product.inventory.minimum_stock if product.inventory else '—' }}</td>
+                    <td>
                       {% if product.is_active %}
-                        <span class="text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full" style="background:rgba(46,170,110,0.10);color:#1e8a55">Active</span>
+                        <span class="agos-badge agos-badge-success">Active</span>
                       {% else %}
-                        <span class="text-[0.68rem] font-semibold px-2.5 py-0.5 rounded-full" style="background:rgba(224,82,82,0.10);color:#b03030">Inactive</span>
+                        <span class="agos-badge agos-badge-danger">Inactive</span>
                       {% endif %}
                     </td>
-                    <td class="px-5 py-3" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                    <td>
                       <div class="flex items-center gap-1.5">
                         <button onclick="openEditModal({{ product.product_id }}, '{{ product.product_name|replace("'","\\'") }}', {{ product.price }}, '{{ product.unit or '' }}', {{ product.inventory.minimum_stock if product.inventory else 10 }})"
                                 class="px-3 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                style="background:rgba(45,136,184,0.10);color:#1a5f8a;">Edit</button>
-                        <!-- Toggle active/inactive -->
+                                style="background:var(--info-bg);color:var(--info-text);">Edit</button>
                         <form action="{{ url_for('toggle_product', product_id=product.product_id) }}" method="POST" style="display:inline">
                           <button type="submit" class="px-3 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                  style="{% if product.is_active %}background:rgba(224,82,82,0.08);color:#b03030{% else %}background:rgba(46,170,110,0.10);color:#1e8a55{% endif %}">
+                                  style="{% if product.is_active %}background:var(--danger-bg);color:var(--danger-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
                             {{ 'Deactivate' if product.is_active else 'Activate' }}
                           </button>
                         </form>
@@ -194,7 +166,7 @@
                   </tr>
                   {% endfor %}
                 {% else %}
-                  <tr><td colspan="7" class="text-center py-10 text-xs" style="color:#a8c4d4">No products yet. Add one above.</td></tr>
+                  <tr><td colspan="7" class="text-center py-10" style="color:var(--text-faint)">No products yet. Add one above.</td></tr>
                 {% endif %}
               </tbody>
             </table>
@@ -207,34 +179,34 @@
 </div>
 
 <!-- ══ EDIT PRODUCT MODAL ══ -->
-<div id="edit-modal" class="hidden fixed inset-0 z-50 justify-center items-center" style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
-  <div class="relative p-4 w-full max-w-md">
-    <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
-      <div class="px-6 py-4" style="border-bottom:1px solid rgba(45,136,184,0.10)">
-        <div class="text-[1.1rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Edit Product</div>
+<div id="edit-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box">
+      <div class="px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div class="agos-card-title">Edit Product</div>
       </div>
       <form id="edit-form" method="POST" class="p-6 flex flex-col gap-4">
         <div>
-          <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Product Name</label>
-          <input type="text" id="edit-name" name="product_name" required class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none" style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;" onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'" onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+          <label class="agos-label">Product Name</label>
+          <input type="text" id="edit-name" name="product_name" required class="agos-input"/>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Price (₱)</label>
-            <input type="number" id="edit-price" name="price" min="0.01" step="0.01" required class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none" style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;" onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'" onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+            <label class="agos-label">Price (₱)</label>
+            <input type="number" id="edit-price" name="price" min="0.01" step="0.01" required class="agos-input"/>
           </div>
           <div>
-            <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Unit</label>
-            <input type="text" id="edit-unit" name="unit" class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none" style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;" onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'" onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+            <label class="agos-label">Unit</label>
+            <input type="text" id="edit-unit" name="unit" class="agos-input"/>
           </div>
         </div>
         <div>
-          <label class="block text-[0.74rem] font-semibold tracking-widest uppercase text-[#3a5f78] mb-1.5">Low-Stock Threshold</label>
-          <input type="number" id="edit-min-stock" name="minimum_stock" min="1" class="w-full px-3 py-2.5 rounded-xl text-[0.88rem] outline-none" style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;" onfocus="this.style.background='#fff';this.style.borderColor='#0095c8'" onblur="this.style.background='#e8f6fc';this.style.borderColor='rgba(45,136,184,0.20)'"/>
+          <label class="agos-label">Low-Stock Threshold</label>
+          <input type="number" id="edit-min-stock" name="minimum_stock" min="1" class="agos-input"/>
         </div>
         <div class="flex gap-3 pt-1">
-          <button type="submit" class="flex-1 py-2.5 rounded-full text-white font-semibold text-sm border-none cursor-pointer" style="background:#0095c8;font-family:'Outfit',sans-serif" onmouseover="this.style.background='#007eb0'" onmouseout="this.style.background='#0095c8'">Save Changes</button>
-          <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 rounded-full font-semibold text-sm cursor-pointer" style="background:#f0f8fd;color:#0d1f2d;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif">Cancel</button>
+          <button type="submit" class="agos-btn-primary flex-1 py-2.5">Save Changes</button>
+          <button type="button" onclick="closeEditModal()" class="agos-btn-ghost flex-1 py-2.5">Cancel</button>
         </div>
       </form>
     </div>
@@ -242,57 +214,45 @@
 </div>
 
 <!-- ══ LOGOUT MODAL ══ -->
-<div id="logout-modal" class="hidden fixed inset-0 z-50 justify-center items-center" style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
-  <div class="relative p-4 w-full max-w-md">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 text-center">
-      <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Inconsolata',monospace',serif">Confirm Logout</h3>
-      <p class="mb-6 text-sm" style="color:#5a7a8e">Are you sure you want to log out?</p>
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
       <div class="flex gap-3 justify-center">
-        <button onclick="window.location.href='{{ url_for('logout') }}'" class="px-7 py-2.5 rounded-full text-white font-semibold text-sm border-none cursor-pointer" style="background:#0095c8">Yes, Logout</button>
-        <button onclick="closeLogoutModal()" class="px-7 py-2.5 rounded-full font-semibold text-sm cursor-pointer" style="background:#f0f8fd;border:1.5px solid rgba(45,136,184,0.20)">Cancel</button>
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
     </div>
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
+  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
+  const _orig = window.toggleTheme;
+  window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
 
   function filterProducts() {
     const q = document.getElementById('search-products').value.toLowerCase();
-    document.querySelectorAll('.product-row').forEach(r => {
-      r.style.display = r.querySelector('.product-name').textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
+    document.querySelectorAll('.product-row').forEach(r => { r.style.display = r.querySelector('.product-name').textContent.toLowerCase().includes(q) ? '' : 'none'; });
   }
 
   function openEditModal(id, name, price, unit, minStock) {
     document.getElementById('edit-form').action = `/products/${id}/edit`;
-    document.getElementById('edit-name').value      = name;
-    document.getElementById('edit-price').value     = price;
-    document.getElementById('edit-unit').value      = unit;
+    document.getElementById('edit-name').value = name;
+    document.getElementById('edit-price').value = price;
+    document.getElementById('edit-unit').value = unit;
     document.getElementById('edit-min-stock').value = minStock;
-    const m = document.getElementById('edit-modal');
-    m.classList.remove('hidden'); m.classList.add('flex');
+    document.getElementById('edit-modal').classList.add('open');
   }
-  function closeEditModal() {
-    const m = document.getElementById('edit-modal');
-    m.classList.add('hidden'); m.classList.remove('flex');
-  }
-  document.getElementById('edit-modal').addEventListener('click', function(e){ if(e.target===this) closeEditModal(); });
-
-  function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('overlay').classList.toggle('hidden'); }
-  function closeSidebar(){ document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
-  function checkWidth(){
-    const mobile = window.innerWidth < 768;
-    const btn = document.getElementById('menu-btn');
-    const sb  = document.getElementById('sidebar');
-    if(mobile){ btn.classList.remove('hidden'); btn.classList.add('flex'); if(!sb.classList.contains('-translate-x-full')) sb.classList.add('-translate-x-full'); }
-    else{ btn.classList.add('hidden'); btn.classList.remove('flex'); sb.classList.remove('-translate-x-full'); }
-  }
-  checkWidth(); window.addEventListener('resize', checkWidth);
-
-  function openLogoutModal(){ const m=document.getElementById('logout-modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
-  function closeLogoutModal(){ const m=document.getElementById('logout-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+  function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
+  document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
 </script>
 </body>
 </html>

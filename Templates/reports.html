@@ -5,63 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Reports — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
-<body class="m-0 p-0 bg-[#f0f8fd]" style="font-family:'Inconsolata',monospace;">
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full"
-    style="background:linear-gradient(180deg,#0d1f2d 0%,#123047 100%);">
-    <div class="flex items-center gap-3 flex-shrink-0 px-5 py-5" style="border-bottom:1px solid rgba(91,184,224,0.10)">
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
       <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
         <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace',serif">Agos</div>
-        <div class="text-[0.6rem] tracking-widest uppercase" style="color:#5bb8e0">EP-Bluelife System</div>
+        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
       </div>
     </div>
-    <div class="flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3" style="background:rgba(255,255,255,0.05);border:1px solid rgba(91,184,224,0.12)">
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3">
       <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       <div>
         <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <div class="inline-block text-[0.6rem] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded mt-0.5" style="background:rgba(0,149,200,0.25);color:#5bb8e0">{{ session['role'] }}</div>
+        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
       </div>
     </div>
     <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Dashboard</a>
-      <a href="{{ url_for('sales') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Record Sales</a>
-      <a href="{{ url_for('inventory') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Inventory</a>
-      <a href="{{ url_for('products') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Products</a>
-      <a href="{{ url_for('customers') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Customers</a>
-      <a href="{{ url_for('deliveries') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Deliveries</a>
-      <a href="{{ url_for('user_management') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Users</a>
-      <a href="{{ url_for('expenses') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm transition-all hover:bg-[rgba(255,255,255,0.06)]" style="color:rgba(204,234,247,0.60)">Expenses</a>
-      <a href="{{ url_for('reports') }}" class="flex items-center gap-3 mx-3 my-0.5 px-3 py-2.5 rounded-xl no-underline text-sm font-medium text-white" style="background:rgba(0,149,200,0.18)">Reports</a>
+      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
+      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
+      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
+      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
+      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
+      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
+      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link active">Reports</a>
+      {% if session.get('role') == 'Super Admin' %}
+      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
+      {% endif %}
     </nav>
-    <div class="flex-shrink-0 p-3" style="border-top:1px solid rgba(91,184,224,0.08)">
-      <button onclick="openLogoutModal()" class="w-full text-left px-3.5 py-2.5 rounded-xl text-[0.83rem] font-medium border-none cursor-pointer" style="background:rgba(224,82,82,0.08);color:rgba(255,150,150,0.80)">Log Out</button>
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
     </div>
   </aside>
 
-  <div id="overlay" onclick="closeSidebar()" class="hidden fixed inset-0 z-10" style="background:rgba(13,31,45,0.50)"></div>
+  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
 
-  <!-- MAIN -->
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
-    <header class="sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5" style="background:rgba(245,251,255,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(45,136,184,0.12)">
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1 text-[#1a5f8a]">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Financial Reports</div>
-          <div class="text-xs text-[#5a7a8e]">Monthly revenue, expenses, profit &amp; top products</div>
+          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Financial Reports</div>
+          <div class="text-xs" style="color:var(--text-muted)">Monthly revenue, expenses, profit &amp; top products</div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="hidden sm:block text-xs text-[#7a99ae] px-3 py-1 rounded-md" id="topbar-date" style="background:rgba(45,136,184,0.07);border:1px solid rgba(45,136,184,0.12)"></div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
@@ -69,125 +79,122 @@
     <main class="flex-1 p-4 md:p-6 lg:p-8 flex flex-col gap-6">
 
       <!-- Month picker -->
-      <div class="bg-white rounded-2xl px-5 py-4 flex flex-wrap items-center justify-between gap-4" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
+      <div class="agos-card px-5 py-4 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Report Period</div>
-          <div class="text-xs text-[#7a99ae] mt-0.5">Viewing data for <strong>{{ month }}</strong></div>
+          <div class="agos-card-title">Report Period</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-muted)">Viewing data for <strong>{{ month }}</strong></div>
         </div>
         <form action="{{ url_for('reports') }}" method="GET" class="flex items-center gap-3">
-          <input type="month" name="month" value="{{ month }}" class="px-3 py-2 rounded-xl text-[0.88rem] outline-none" style="background:#e8f6fc;border:1.5px solid rgba(45,136,184,0.20);font-family:'Outfit',sans-serif;" onfocus="this.style.borderColor='#0095c8'" onblur="this.style.borderColor='rgba(45,136,184,0.20)'"/>
-          <button type="submit" class="px-5 py-2 rounded-full text-white text-sm font-semibold border-none cursor-pointer" style="background:#0095c8;font-family:'Outfit',sans-serif" onmouseover="this.style.background='#007eb0'" onmouseout="this.style.background='#0095c8'">Apply</button>
+          <input type="month" name="month" value="{{ month }}" class="agos-input" style="width:auto"/>
+          <button type="submit" class="agos-btn-primary px-5 py-2">Apply</button>
         </form>
       </div>
 
       <!-- KPI cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-2xl px-5 py-4" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="text-[0.68rem] font-semibold uppercase tracking-widest text-[#7a99ae] mb-2">Total Revenue</div>
-          <div class="text-2xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">₱{{ "%.2f"|format(total_revenue) }}</div>
-          <div class="text-[0.72rem] text-[#0095c8] mt-1">{{ sales_count }} sale{{ 's' if sales_count != 1 }} this month</div>
+        <div class="agos-stat-card">
+          <div class="agos-stat-label">Total Revenue</div>
+          <div class="agos-stat-value" style="font-size:1.6rem">₱{{ "%.2f"|format(total_revenue) }}</div>
+          <div class="agos-stat-sub" style="color:var(--accent)">{{ sales_count }} sale{{ 's' if sales_count != 1 }} this month</div>
         </div>
-        <div class="bg-white rounded-2xl px-5 py-4" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="text-[0.68rem] font-semibold uppercase tracking-widest text-[#7a99ae] mb-2">Total Expenses</div>
-          <div class="text-2xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">₱{{ "%.2f"|format(total_expenses) }}</div>
-          <div class="text-[0.72rem] text-[#c0392b] mt-1">{{ by_category|length }} categor{{ 'ies' if by_category|length != 1 else 'y' }}</div>
+        <div class="agos-stat-card">
+          <div class="agos-stat-label">Total Expenses</div>
+          <div class="agos-stat-value" style="font-size:1.6rem">₱{{ "%.2f"|format(total_expenses) }}</div>
+          <div class="agos-stat-sub" style="color:var(--danger-text)">{{ by_category|length }} categor{{ 'ies' if by_category|length != 1 else 'y' }}</div>
         </div>
-        <div class="bg-white rounded-2xl px-5 py-4" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="text-[0.68rem] font-semibold uppercase tracking-widest text-[#7a99ae] mb-2">Net Profit</div>
-          <div class="text-2xl font-bold {% if net_profit >= 0 %}text-[#0074a0]{% else %}text-[#c0392b]{% endif %}" style="font-family:'Inconsolata',monospace',serif">
+        <div class="agos-stat-card">
+          <div class="agos-stat-label">Net Profit</div>
+          <div class="agos-stat-value" style="font-size:1.6rem;color:{% if net_profit >= 0 %}var(--accent){% else %}var(--danger-text){% endif %}">
             {% if net_profit >= 0 %}+{% endif %}₱{{ "%.2f"|format(net_profit) }}
           </div>
-          <div class="text-[0.72rem] mt-1 {% if net_profit >= 0 %}text-[#0095c8]{% else %}text-[#c0392b]{% endif %}">{{ 'Profitable month' if net_profit >= 0 else 'Operating at a loss' }}</div>
-        </div>
-        <div class="bg-white rounded-2xl px-5 py-4" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="text-[0.68rem] font-semibold uppercase tracking-widest text-[#7a99ae] mb-2">Profit Margin</div>
-          <div class="text-2xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">
-            {% if total_revenue > 0 %}{{ "%.1f"|format((net_profit / total_revenue) * 100) }}%{% else %}—{% endif %}
+          <div class="agos-stat-sub" style="color:{% if net_profit >= 0 %}var(--success-text){% else %}var(--danger-text){% endif %}">
+            {{ 'Profitable month' if net_profit >= 0 else 'Operating at a loss' }}
           </div>
-          <div class="text-[0.72rem] text-[#7a99ae] mt-1">Net / Revenue</div>
+        </div>
+        <div class="agos-stat-card">
+          <div class="agos-stat-label">Profit Margin</div>
+          <div class="agos-stat-value" style="font-size:1.6rem">{% if total_revenue > 0 %}{{ "%.1f"|format((net_profit / total_revenue) * 100) }}%{% else %}—{% endif %}</div>
+          <div class="agos-stat-sub">Net / Revenue</div>
         </div>
       </div>
 
       <!-- Bottom grid -->
       <div class="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
 
-        <!-- Revenue vs Expenses bars + Top Products -->
         <div class="flex flex-col gap-5">
-
-          <!-- Bar comparison -->
-          <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-            <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Revenue vs Expenses</div>
-              <div class="text-xs text-[#7a99ae] mt-0.5">Visual comparison for {{ month }}</div>
+          <!-- Revenue vs Expenses bars -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Revenue vs Expenses</div>
+              <div class="agos-card-subtitle">Visual comparison for {{ month }}</div>
             </div>
             <div class="p-5 flex flex-col gap-5">
               {% set max_val = [total_revenue, total_expenses] | max %}
               <div>
                 <div class="flex justify-between items-center mb-1.5">
-                  <span class="text-[0.78rem] font-semibold text-[#3a5f78]">Revenue</span>
-                  <span class="text-[0.82rem] font-bold text-[#0d1f2d]">₱{{ "%.2f"|format(total_revenue) }}</span>
+                  <span class="text-[0.78rem] font-semibold" style="color:var(--text-secondary)">Revenue</span>
+                  <span class="text-[0.82rem] font-bold" style="color:var(--text-primary)">₱{{ "%.2f"|format(total_revenue) }}</span>
                 </div>
-                <div class="w-full rounded-full overflow-hidden" style="background:rgba(0,149,200,0.10);height:10px">
+                <div class="w-full rounded-full overflow-hidden" style="background:var(--accent-soft);height:10px">
                   {% if max_val > 0 %}<div class="h-full rounded-full" style="width:{{ (total_revenue / max_val * 100)|round }}%;background:linear-gradient(90deg,#2d88b8,#0095c8)"></div>{% endif %}
                 </div>
               </div>
               <div>
                 <div class="flex justify-between items-center mb-1.5">
-                  <span class="text-[0.78rem] font-semibold text-[#3a5f78]">Expenses</span>
-                  <span class="text-[0.82rem] font-bold text-[#0d1f2d]">₱{{ "%.2f"|format(total_expenses) }}</span>
+                  <span class="text-[0.78rem] font-semibold" style="color:var(--text-secondary)">Expenses</span>
+                  <span class="text-[0.82rem] font-bold" style="color:var(--text-primary)">₱{{ "%.2f"|format(total_expenses) }}</span>
                 </div>
-                <div class="w-full rounded-full overflow-hidden" style="background:rgba(224,82,82,0.08);height:10px">
+                <div class="w-full rounded-full overflow-hidden" style="background:var(--danger-bg);height:10px">
                   {% if max_val > 0 %}<div class="h-full rounded-full" style="width:{{ (total_expenses / max_val * 100)|round }}%;background:linear-gradient(90deg,#e05252,#c0392b)"></div>{% endif %}
                 </div>
               </div>
               <div>
                 <div class="flex justify-between items-center mb-1.5">
-                  <span class="text-[0.78rem] font-semibold text-[#3a5f78]">Net Profit</span>
-                  <span class="text-[0.82rem] font-bold {% if net_profit >= 0 %}text-[#0074a0]{% else %}text-[#c0392b]{% endif %}">{% if net_profit >= 0 %}+{% endif %}₱{{ "%.2f"|format(net_profit) }}</span>
+                  <span class="text-[0.78rem] font-semibold" style="color:var(--text-secondary)">Net Profit</span>
+                  <span class="text-[0.82rem] font-bold" style="color:{% if net_profit >= 0 %}var(--accent){% else %}var(--danger-text){% endif %}">{% if net_profit >= 0 %}+{% endif %}₱{{ "%.2f"|format(net_profit) }}</span>
                 </div>
-                <div class="w-full rounded-full overflow-hidden" style="background:rgba(45,136,184,0.08);height:10px">
+                <div class="w-full rounded-full overflow-hidden" style="background:var(--success-bg);height:10px">
                   {% if max_val > 0 and net_profit > 0 %}<div class="h-full rounded-full" style="width:{{ (net_profit / max_val * 100)|round }}%;background:linear-gradient(90deg,#27ae60,#2ecc71)"></div>{% endif %}
                 </div>
               </div>
-              <div class="rounded-xl p-3 flex items-center justify-between mt-1" style="background:rgba(0,149,200,0.06);border:1px solid rgba(0,149,200,0.15)">
-                <span class="text-[0.82rem] font-semibold text-[#1a5f8a]">Total Transactions</span>
-                <span class="text-xl font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">{{ sales_count }}</span>
+              <div class="rounded-xl p-3 flex items-center justify-between" style="background:var(--accent-softer);border:1px solid var(--accent-border)">
+                <span class="text-[0.82rem] font-semibold" style="color:var(--accent)">Total Transactions</span>
+                <span class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ sales_count }}</span>
               </div>
             </div>
           </div>
 
           <!-- Top products -->
-          <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-            <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-              <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Top Products</div>
-              <div class="text-xs text-[#7a99ae] mt-0.5">By revenue for {{ month }}</div>
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Top Products</div>
+              <div class="agos-card-subtitle">By revenue for {{ month }}</div>
             </div>
             <div class="p-5">
               {% if top_products %}
                 <div class="flex flex-col gap-3">
                   {% for name, revenue, qty in top_products %}
-                  <div class="flex items-center justify-between py-2 text-[0.82rem]" style="border-bottom:1px solid rgba(45,136,184,0.06)">
+                  <div class="flex items-center justify-between py-2" style="border-bottom:1px solid var(--border-section)">
                     <div>
-                      <div class="font-medium text-[#0d1f2d]">{{ name }}</div>
-                      <div class="text-[0.72rem] text-[#7a99ae]">{{ qty }} unit{{ 's' if qty != 1 }} sold</div>
+                      <div class="font-medium text-[0.82rem]" style="color:var(--text-primary)">{{ name }}</div>
+                      <div class="text-[0.72rem]" style="color:var(--text-muted)">{{ qty }} unit{{ 's' if qty != 1 }} sold</div>
                     </div>
-                    <div class="font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">₱{{ "%.2f"|format(revenue) }}</div>
+                    <div class="font-bold text-[0.82rem]" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">₱{{ "%.2f"|format(revenue) }}</div>
                   </div>
                   {% endfor %}
                 </div>
               {% else %}
-                <div class="text-center py-6 text-xs" style="color:#a8c4d4">No sales recorded for this month.</div>
+                <div class="text-center py-6 text-xs" style="color:var(--text-faint)">No sales recorded for this month.</div>
               {% endif %}
             </div>
           </div>
-
         </div>
 
-        <!-- Expense breakdown by category -->
-        <div class="bg-white rounded-2xl overflow-hidden" style="border:1px solid rgba(45,136,184,0.10);box-shadow:0 2px 12px rgba(13,31,45,0.07)">
-          <div class="px-5 py-4" style="border-bottom:1px solid rgba(45,136,184,0.08)">
-            <div class="text-[1.05rem] font-bold text-[#0d1f2d]" style="font-family:'Inconsolata',monospace',serif">Expenses by Category</div>
-            <div class="text-xs text-[#7a99ae] mt-0.5">Breakdown for {{ month }}</div>
+        <!-- Expense breakdown -->
+        <div class="agos-card overflow-hidden">
+          <div class="agos-card-header">
+            <div class="agos-card-title">Expenses by Category</div>
+            <div class="agos-card-subtitle">Breakdown for {{ month }}</div>
           </div>
           <div class="p-5">
             {% if by_category %}
@@ -195,22 +202,22 @@
                 {% for cat, total in by_category %}
                 <div>
                   <div class="flex justify-between items-center mb-1">
-                    <span class="text-[0.80rem] font-medium text-[#3a5f78]">{{ cat }}</span>
-                    <span class="text-[0.80rem] font-semibold text-[#0d1f2d]">₱{{ "%.2f"|format(total) }}</span>
+                    <span class="text-[0.80rem] font-medium" style="color:var(--text-secondary)">{{ cat }}</span>
+                    <span class="text-[0.80rem] font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(total) }}</span>
                   </div>
-                  <div class="w-full rounded-full overflow-hidden" style="background:rgba(45,136,184,0.08);height:7px">
+                  <div class="w-full rounded-full overflow-hidden" style="background:var(--accent-soft);height:7px">
                     {% if total_expenses > 0 %}
                     <div class="h-full rounded-full" style="width:{{ (total / total_expenses * 100)|round }}%;background:linear-gradient(90deg,#2d88b8,#5bb8e0)"></div>
                     {% endif %}
                   </div>
                   {% if total_expenses > 0 %}
-                  <div class="text-right text-[0.68rem] text-[#7a99ae] mt-0.5">{{ "%.1f"|format(total / total_expenses * 100) }}%</div>
+                  <div class="text-right text-[0.68rem] mt-0.5" style="color:var(--text-muted)">{{ "%.1f"|format(total / total_expenses * 100) }}%</div>
                   {% endif %}
                 </div>
                 {% endfor %}
               </div>
             {% else %}
-              <div class="text-center py-8 text-xs" style="color:#a8c4d4">No expenses recorded for this month.</div>
+              <div class="text-center py-8 text-xs" style="color:var(--text-faint)">No expenses recorded for this month.</div>
             {% endif %}
           </div>
         </div>
@@ -220,33 +227,30 @@
   </div>
 </div>
 
-<!-- LOGOUT MODAL -->
-<div id="logout-modal" class="hidden fixed inset-0 z-50 justify-center items-center" style="background:rgba(11,37,53,0.60);backdrop-filter:blur(4px)">
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 text-center">
-      <h3 class="mb-2 text-2xl font-bold text-gray-900" style="font-family:'Inconsolata',monospace',serif">Confirm Logout</h3>
-      <p class="mb-6 text-sm" style="color:#5a7a8e">Are you sure you want to log out?</p>
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
       <div class="flex gap-3 justify-center">
-        <button onclick="window.location.href='{{ url_for('logout') }}'" class="px-7 py-2.5 rounded-full text-white font-semibold text-sm border-none cursor-pointer" style="background:#0095c8">Yes, Logout</button>
-        <button onclick="closeLogoutModal()" class="px-7 py-2.5 rounded-full font-semibold text-sm cursor-pointer" style="background:#f0f8fd;border:1.5px solid rgba(45,136,184,0.20)">Cancel</button>
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
     </div>
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-PH',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('overlay').classList.toggle('hidden'); }
-  function closeSidebar(){ document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
-  function checkWidth(){
-    const mobile = window.innerWidth < 768;
-    const btn = document.getElementById('menu-btn'); const sb = document.getElementById('sidebar');
-    if(mobile){ btn.classList.remove('hidden'); btn.classList.add('flex'); if(!sb.classList.contains('-translate-x-full')) sb.classList.add('-translate-x-full'); }
-    else{ btn.classList.add('hidden'); btn.classList.remove('flex'); sb.classList.remove('-translate-x-full'); }
-  }
-  checkWidth(); window.addEventListener('resize', checkWidth);
-  function openLogoutModal(){ const m=document.getElementById('logout-modal'); m.classList.remove('hidden'); m.classList.add('flex'); }
-  function closeLogoutModal(){ const m=document.getElementById('logout-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
+  const _orig = window.toggleTheme;
+  window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
 </script>
 </body>
 </html>
