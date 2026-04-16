@@ -2,14 +2,16 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-from .user                import User
-from .customer            import Customer
-from .product             import Product
-from .inventory           import Inventory
-from .sale                import Sale
-from .sale_item           import SaleItem
-from .delivery_order      import DeliveryOrder
-from .delivery_item       import DeliveryItem
-from .expense             import Expense
-from .loyalty_transaction import LoyaltyTransaction
-from .activity_log        import ActivityLog
+from models.user                import User
+from models.customer            import Customer
+from models.product             import Product
+from models.inventory           import Inventory
+from models.sale                import Sale
+from models.sale_item           import SaleItem
+from models.delivery_order      import DeliveryOrder
+from models.delivery_item       import DeliveryItem
+from models.expense             import Expense
+from models.loyalty_transaction import LoyaltyTransaction
+from models.activity_log        import ActivityLog
+from models.return_model        import Return_Model
+from models.return_item         import ReturnItem

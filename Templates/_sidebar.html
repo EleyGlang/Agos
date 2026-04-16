@@ -75,8 +75,6 @@
       Inventory
     </a>
 
-    <!-- Products (Admin only) -->
-    {% if session.get('role') in ('Super Admin', 'Admin') %}
     <a href="{{ url_for('products') }}"
        class="agos-sidebar-link {% if active_page == 'products' %}active{% endif %}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
@@ -84,18 +82,6 @@
         <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
       </svg>
       Products
-    </a>
-    {% endif %}
-
-    <!-- Customers -->
-    <a href="{{ url_for('customers') }}"
-       class="agos-sidebar-link {% if active_page == 'customers' %}active{% endif %}">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-      </svg>
-      Customers
     </a>
 
     <!-- Deliveries -->
@@ -115,6 +101,7 @@
     <div class="mx-4 mb-1 text-[0.6rem] font-bold uppercase tracking-widest" style="color:rgba(91,184,224,0.40)">Admin</div>
 
     <!-- User Management -->
+     {% if session.get('role') in ['Admin', 'Super Admin'] %}
     <a href="{{ url_for('user_management') }}"
        class="agos-sidebar-link {% if active_page == 'user_management' %}active{% endif %}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
@@ -123,7 +110,7 @@
       </svg>
       User Management
     </a>
-
+      {% endif %}
     <!-- Expenses -->
     <a href="{{ url_for('expenses') }}"
        class="agos-sidebar-link {% if active_page == 'expenses' %}active{% endif %}">
@@ -148,7 +135,7 @@
     {% endif %}
 
     <!-- Super Admin only -->
-    {% if session.get('role') == 'Super Admin' %}
+     {% if session.get('role') in ['Admin', 'Super Admin'] %}
     <a href="{{ url_for('activity_log') }}"
        class="agos-sidebar-link {% if active_page == 'activity_log' %}active{% endif %}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">

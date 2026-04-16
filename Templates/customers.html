@@ -4,206 +4,228 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Customer Management — Agos</title>
-
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 
 <body class="agos-body m-0 p-0">
+<!-- Required by agos-theme.js confirmLogout() -->
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+
 <div class="flex min-h-screen">
 
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="agos-sidebar fixed top-0 left-0 bottom-0 z-40 flex flex-col w-[260px] transition-transform duration-300 md:translate-x-0 -translate-x-full">
-
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center"
-           style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar" class="agos-sidebar fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full">
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
       </div>
       <div>
-        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata'">Agos</div>
-        <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
       </div>
     </div>
 
-    <div class="agos-sidebar-user-wrap mx-3 my-3 p-3 flex gap-2.5 rounded-xl">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
            style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
         {{ session['full_name'][0].upper() }}
       </div>
       <div>
-        <div class="text-[0.82rem] text-white">{{ session['full_name'] }}</div>
+        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
         <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
       </div>
     </div>
 
-   <nav class="flex-1 py-2">
+    <nav class="flex-1 py-2">
       <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
       <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
       <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
       <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
       <a href="{{ url_for('customers') }}"        class="agos-sidebar-link active">Customers</a>
       <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('user_management') }}" class="agos-sidebar-link">Users</a>
+      {% endif %}      
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') == 'Super Admin' %}
+     {% if session.get('role') in ['Admin',  'Super Admin'] %}
       <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
       {% endif %}
     </nav>
 
-    <div class="p-3">
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
       <button onclick="openLogoutModal()" class="agos-logout-btn w-full">Log Out</button>
     </div>
-
   </aside>
 
   <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
 
-  <!-- MAIN -->
-  <div class="flex flex-col flex-1 md:ml-[260px]">
+  <!-- ══ MAIN ══ -->
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
 
     <!-- TOPBAR -->
-    <header class="agos-topbar flex justify-between items-center px-6 py-3.5">
-
-      <div>
-        <div class="text-2xl font-bold" style="font-family:'Inconsolata'">Customer Management</div>
-        <div class="text-xs" style="color:var(--text-muted)">Manage customers and loyalty points</div>
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
+      <div class="flex items-center gap-4">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Customer Management</div>
+          <div class="text-xs" style="color:var(--text-muted)">Manage customers and loyalty points</div>
+        </div>
       </div>
-
-      <div class="flex items-center gap-3">
-        <label class="agos-theme-toggle">
-          <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
-          <span class="agos-theme-track"></span>
-        </label>
-
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs"
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" style="color:var(--text-muted)">Theme</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold"
              style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
           {{ session['full_name'][0].upper() }}
         </div>
       </div>
-
     </header>
 
     <!-- CONTENT -->
-    <main class="p-6 flex flex-col gap-6">
+    <main class="flex-1 p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
 
       <!-- CREATE FORM -->
-      <div class="agos-card p-5">
-        <div class="agos-card-title">Create Customer</div>
-
-        <form method="POST" action="{{ url_for('create_customer') }}" class="flex flex-col gap-4 mt-4">
-
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-  <input 
-    type="text" 
-    name="first_name" 
-    placeholder="First Name" 
-    required 
-    class="agos-input"
-    pattern="[A-Za-z ]+"
-    title="Only letters and spaces"/>
-
-  <input 
-    type="text" 
-    name="middle_initial" 
-    placeholder="M.I." 
-    maxlength="2" 
-    class="agos-input"
-    pattern="[A-Za-z ]*"
-    title="Letters only"/>
-
-  <input 
-    type="text" 
-    name="last_name" 
-    placeholder="Last Name" 
-    required 
-    class="agos-input"
-    pattern="[A-Za-z ]+"
-    title="Only letters and spaces"/>
-</div>
-            <input name="username" placeholder="Username" required class="agos-input"/>
-            <input name="password" type="password" placeholder="Password" required class="agos-input"/>
-          </div>
-
-          <div class="flex">
-            <span class="px-3 py-2 border rounded-l-lg bg-gray-100">+63</span>
-            <input name="contact_number" class="agos-input rounded-l-none" placeholder="9XXXXXXXXX"/>
-          </div>
-
-          <input name="address" placeholder="Address" class="agos-input"/>
-
-          <button class="agos-btn-primary w-full py-3">Create Account</button>
-
-        </form>
+      <div class="agos-card overflow-hidden">
+        <div class="agos-card-header">
+          <div class="agos-card-title">Create Customer Account</div>
+          <div class="agos-card-subtitle">Add a customer with login credentials</div>
+        </div>
+        <div class="p-5">
+          <form method="POST" action="{{ url_for('create_customer') }}" class="flex flex-col gap-4">
+            <div>
+              <label class="agos-label">Full Name</label>
+              <div class="grid grid-cols-3 gap-2">
+                <input type="text" name="first_name" placeholder="First Name" required
+                       class="agos-input" pattern="[A-Za-z ]+" title="Letters and spaces only"/>
+                <input type="text" name="middle_initial" placeholder="M.I." maxlength="2"
+                       class="agos-input" pattern="[A-Za-z.]*" title="Letters only"/>
+                <input type="text" name="last_name" placeholder="Last Name" required
+                       class="agos-input" pattern="[A-Za-z ]+" title="Letters and spaces only"/>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="agos-label">Username</label>
+                <input name="username" placeholder="Unique username" required class="agos-input"/>
+              </div>
+              <div>
+                <label class="agos-label">Password</label>
+                <input name="password" type="password" placeholder="Password" required class="agos-input"/>
+              </div>
+            </div>
+            <div>
+              <label class="agos-label">Contact Number</label>
+              <div class="flex">
+                <span class="px-3 py-2 rounded-l-xl text-sm font-medium flex items-center"
+                      style="background:var(--bg-input);border:1.5px solid var(--border-input);border-right:none;color:var(--text-muted)">+63</span>
+                <input name="contact_number" class="agos-input rounded-l-none flex-1" placeholder="9XXXXXXXXX"
+                       maxlength="10" pattern="\d{10}" inputmode="numeric"/>
+              </div>
+            </div>
+            <div>
+              <label class="agos-label">Address</label>
+              <input name="address" placeholder="Full address" class="agos-input"/>
+            </div>
+            <button type="submit" class="agos-btn-primary w-full py-3">Create Customer Account</button>
+          </form>
+        </div>
       </div>
 
       <!-- TABLE -->
       <div class="agos-card overflow-hidden">
-
         <div class="agos-card-header flex justify-between items-center">
           <div>
-            <div class="agos-card-title">Customers</div>
+            <div class="agos-card-title">All Customers</div>
             <div class="agos-card-subtitle">{{ customers | length }} total</div>
           </div>
-
           <input id="search-customers" oninput="filterCustomers()" placeholder="Search..."
-                 class="agos-input w-40"/>
+                 class="agos-input" style="width:9rem"/>
         </div>
 
         <div class="overflow-x-auto">
-          <table class="agos-table w-full">
-
+          <table class="agos-table w-full min-w-[480px]">
             <thead>
               <tr>
                 <th>#</th>
                 <th>Name</th>
+                <th>Username</th>
                 <th>Contact</th>
                 <th>Address</th>
                 <th>Points</th>
               </tr>
             </thead>
-
             <tbody id="customers-body">
-              {% for c in customers %}
-              <tr class="customer-row">
-                <td>{{ loop.index }}</td>
-                <td>{{ c.full_name }}</td>
-                <td>{{ c.contact_number }}</td>
-                <td>{{ c.address }}</td>
-                <td>{{ c.loyalty_points }}</td>
-              </tr>
-              {% endfor %}
+              {% if customers %}
+                {% for c in customers %}
+                <tr class="customer-row">
+                  <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                  <td class="font-medium" style="color:var(--text-primary)">{{ c.full_name }}</td>
+                  <td style="color:var(--text-muted)">{{ c.username or '—' }}</td>
+                  <td>{{ c.contact_number or '—' }}</td>
+                  <td>{{ c.address or '—' }}</td>
+                  <td>
+                    <span class="agos-badge agos-badge-info">{{ c.loyalty_points }} pts</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="6" class="text-center py-10" style="color:var(--text-faint)">No customers yet.</td></tr>
+              {% endif %}
             </tbody>
-
           </table>
         </div>
-
       </div>
 
     </main>
   </div>
 </div>
 
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out of your account?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
-
 <script>
-function filterCustomers(){
-  const q=document.getElementById('search-customers').value.toLowerCase();
-  document.querySelectorAll('.customer-row').forEach(r=>{
-    r.style.display=r.textContent.toLowerCase().includes(q)?'':'none';
-  });
-}
-
-function toggleSidebar(){
-  document.getElementById('sidebar').classList.toggle('-translate-x-full');
-}
-function closeSidebar(){
-  document.getElementById('sidebar').classList.add('-translate-x-full');
-}
+  function filterCustomers() {
+    const q = document.getElementById('search-customers').value.toLowerCase();
+    document.querySelectorAll('.customer-row').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
 </script>
-
 </body>
 </html>

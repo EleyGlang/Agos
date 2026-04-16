@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="agos-body m-0 p-0">
+{% set active_page = 'customer_profile' %}
+
+<div class="flex min-h-screen">
+
+  {% include '_sidebar_customer.html' %}
+
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
+      <div class="flex items-center gap-4">
+        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">My Profile</div>
+          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Manage your personal information and password</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" style="color:var(--text-muted)">Theme</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['customer_name'][0].upper() }}</div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-4 md:p-6 lg:p-8">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+
+        <!-- Left: Forms -->
+        <div class="flex flex-col gap-5">
+
+          <!-- Personal Information -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Personal Information</div>
+              <div class="agos-card-subtitle">Update your name, contact, and delivery address</div>
+            </div>
+            <form method="POST" action="{{ url_for('customer_profile_update') }}">
+              <input type="hidden" name="form_type" value="info"/>
+              <div class="p-5 flex flex-col gap-4">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="agos-label">Full Name <span style="color:#d32f2f">*</span></label>
+                    <input type="text" name="full_name" required class="agos-input"
+                           value="{{ customer.full_name or '' }}" placeholder="e.g. Juan dela Cruz"/>
+                  </div>
+                  <div>
+                    <label class="agos-label">Phone Number</label>
+                    <input type="tel" name="phone" class="agos-input"
+                           value="{{ customer.phone or '' }}" placeholder="e.g. 09171234567"/>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="agos-label">Email Address</label>
+                  <input type="email" name="email" class="agos-input"
+                         value="{{ customer.email or '' }}" placeholder="you@example.com"/>
+                </div>
+
+                <div>
+                  <label class="agos-label">Default Delivery Address</label>
+                  <textarea name="address" rows="2" class="agos-input" style="resize:none"
+                            placeholder="e.g. Blk 5 Lot 12 Sampaguita St., Brgy. San Jose">{{ customer.address or '' }}</textarea>
+                  <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">This will be pre-filled when placing orders.</div>
+                </div>
+
+                <div class="flex justify-end pt-1">
+                  <button type="submit" class="agos-btn-primary px-6 py-2.5">Save Changes</button>
+                </div>
+
+              </div>
+            </form>
+          </div>
+
+          <!-- Change Password -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Change Password</div>
+              <div class="agos-card-subtitle">Leave blank if you don't want to change your password</div>
+            </div>
+            <form method="POST" action="{{ url_for('customer_profile_update') }}" id="pw-form">
+              <input type="hidden" name="form_type" value="password"/>
+              <div class="p-5 flex flex-col gap-4">
+
+                <div>
+                  <label class="agos-label">Current Password <span style="color:#d32f2f">*</span></label>
+                  <div class="relative">
+                    <input type="password" name="current_password" id="pw-current" class="agos-input pr-10" placeholder="Enter current password"/>
+                    <button type="button" onclick="togglePw('pw-current', 'eye-current')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
+                      <svg id="eye-current" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="agos-label">New Password <span style="color:#d32f2f">*</span></label>
+                  <div class="relative">
+                    <input type="password" name="new_password" id="pw-new" class="agos-input pr-10" placeholder="At least 8 characters"/>
+                    <button type="button" onclick="togglePw('pw-new', 'eye-new')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
+                      <svg id="eye-new" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
+                  <!-- Password strength bar -->
+                  <div class="mt-2">
+                    <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--bg-input)">
+                      <div id="pw-strength-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:#e05252"></div>
+                    </div>
+                    <div id="pw-strength-label" class="text-[0.65rem] mt-1" style="color:var(--text-muted)"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="agos-label">Confirm New Password <span style="color:#d32f2f">*</span></label>
+                  <div class="relative">
+                    <input type="password" name="confirm_password" id="pw-confirm" class="agos-input pr-10" placeholder="Re-enter new password"/>
+                    <button type="button" onclick="togglePw('pw-confirm', 'eye-confirm')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
+                      <svg id="eye-confirm" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
+                  <div id="pw-match-msg" class="text-[0.68rem] mt-1" style="color:var(--text-muted)"></div>
+                </div>
+
+                <div class="flex justify-end pt-1">
+                  <button type="submit" class="agos-btn-primary px-6 py-2.5">Update Password</button>
+                </div>
+
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Right: Account card -->
+        <div class="flex flex-col gap-4">
+
+          <!-- Avatar / account overview -->
+          <div class="agos-card overflow-hidden">
+            <div class="p-6 flex flex-col items-center gap-3 text-center" style="border-bottom:1px solid var(--border-section)">
+              <div class="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white"
+                   style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
+                {{ session['customer_name'][0].upper() }}
+              </div>
+              <div>
+                <div class="text-[1rem] font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ customer.full_name }}</div>
+                <div class="text-[0.72rem] mt-0.5" style="color:var(--text-muted)">{{ customer.email or 'No email set' }}</div>
+              </div>
+              <span class="agos-badge agos-badge-info">Customer</span>
+            </div>
+            <div class="p-5 flex flex-col gap-3">
+              <div class="flex items-center justify-between text-[0.78rem]">
+                <span style="color:var(--text-muted)">Phone</span>
+                <span class="font-medium" style="color:var(--text-primary)">{{ customer.phone or '—' }}</span>
+              </div>
+              <div style="border-top:1px solid var(--border-section)"></div>
+              <div class="flex items-center justify-between text-[0.78rem]">
+                <span style="color:var(--text-muted)">Loyalty Points</span>
+                <span class="font-bold" style="color:var(--warning-text)">⭐ {{ customer.loyalty_points }}</span>
+              </div>
+              <div style="border-top:1px solid var(--border-section)"></div>
+              <div class="flex items-start justify-between text-[0.78rem] gap-2">
+                <span style="color:var(--text-muted);flex-shrink:0">Address</span>
+                <span class="font-medium text-right" style="color:var(--text-primary)">{{ customer.address or '—' }}</span>
+              </div>
+              {% if customer.created_at %}
+              <div style="border-top:1px solid var(--border-section)"></div>
+              <div class="flex items-center justify-between text-[0.78rem]">
+                <span style="color:var(--text-muted)">Member since</span>
+                <span class="font-medium" style="color:var(--text-primary)">{{ customer.created_at.strftime('%b %Y') }}</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Quick links -->
+          <div class="agos-card p-4 flex flex-col gap-2">
+            <div class="text-[0.72rem] uppercase font-semibold tracking-wider mb-1" style="color:var(--text-muted)">Quick Links</div>
+            <a href="{{ url_for('customer_order') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl no-underline text-[0.82rem] font-medium transition-colors" style="color:var(--text-primary);background:var(--bg-input)">
+              <span>🛒</span> Place a New Order
+            </a>
+            <a href="{{ url_for('customer_deliveries') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl no-underline text-[0.82rem] font-medium transition-colors" style="color:var(--text-primary);background:var(--bg-input)">
+              <span>🚚</span> View My Deliveries
+            </a>
+            <a href="{{ url_for('customer_dashboard') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl no-underline text-[0.82rem] font-medium transition-colors" style="color:var(--text-primary);background:var(--bg-input)">
+              <span>📊</span> Go to Dashboard
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+  /* ── Show/hide password toggle ── */
+  function togglePw(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  /* ── Password strength ── */
+  const pwInput = document.getElementById('pw-new');
+  const pwBar   = document.getElementById('pw-strength-bar');
+  const pwLabel = document.getElementById('pw-strength-label');
+
+  if (pwInput) {
+    pwInput.addEventListener('input', function() {
+      const v = this.value;
+      let score = 0;
+      if (v.length >= 8)            score++;
+      if (/[A-Z]/.test(v))          score++;
+      if (/[0-9]/.test(v))          score++;
+      if (/[^A-Za-z0-9]/.test(v))   score++;
+
+      const levels = [
+        { pct: '0%',   color: '#e05252', label: '' },
+        { pct: '25%',  color: '#e05252', label: 'Weak' },
+        { pct: '50%',  color: '#d4a843', label: 'Fair' },
+        { pct: '75%',  color: '#0095c8', label: 'Good' },
+        { pct: '100%', color: '#2eaa6e', label: 'Strong' },
+      ];
+      const l = levels[score];
+      pwBar.style.width = l.pct;
+      pwBar.style.background = l.color;
+      pwLabel.textContent = l.label;
+      pwLabel.style.color = l.color;
+    });
+  }
+
+  /* ── Password match ── */
+  const pwConfirm = document.getElementById('pw-confirm');
+  const pwMatchMsg = document.getElementById('pw-match-msg');
+
+  if (pwConfirm) {
+    pwConfirm.addEventListener('input', function() {
+      const match = this.value === pwInput.value;
+      pwMatchMsg.textContent = this.value ? (match ? '✓ Passwords match' : '✗ Passwords do not match') : '';
+      pwMatchMsg.style.color = match ? 'var(--success-text)' : '#e05252';
+    });
+  }
+
+  /* ── Validate password form before submit ── */
+  document.getElementById('pw-form').addEventListener('submit', function(e) {
+    const newPw  = document.getElementById('pw-new').value;
+    const conf   = document.getElementById('pw-confirm').value;
+    const curr   = document.getElementById('pw-current').value;
+    if (!curr) { e.preventDefault(); alert('Please enter your current password.'); return; }
+    if (newPw.length < 8) { e.preventDefault(); alert('New password must be at least 8 characters.'); return; }
+    if (newPw !== conf) { e.preventDefault(); alert('New passwords do not match.'); return; }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Landing Page Editor — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+
+<div class="flex min-h-screen">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar"
+    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+        </svg>
+      </div>
+      <div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
+      </div>
+    </div>
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      <div>
+        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
+        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
+      </div>
+    </div>
+    <nav class="flex-1 py-2">
+      <a href="{{ url_for('dashboard') }}"         class="agos-sidebar-link">Dashboard</a>
+      <a href="{{ url_for('sales') }}"             class="agos-sidebar-link">Record Sales</a>
+      <a href="{{ url_for('inventory') }}"         class="agos-sidebar-link">Inventory</a>
+      <a href="{{ url_for('products') }}"          class="agos-sidebar-link">Products</a>
+      <a href="{{ url_for('deliveries') }}"        class="agos-sidebar-link">Deliveries</a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      {% endif %}
+      <a href="{{ url_for('expenses') }}"          class="agos-sidebar-link">Expenses</a>
+      <a href="{{ url_for('reports') }}"           class="agos-sidebar-link">Reports</a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}      
+      <a href="{{ url_for('activity_log') }}"      class="agos-sidebar-link">Activity Log</a>
+      {% endif %}
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('landing_editor') }}"           class="agos-sidebar-link active">Landing Editor</a>
+      {% endif %}
+    </nav>
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
+    </div>
+  </aside>
+
+  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
+
+  <!-- ══ PAGE WRAPPER ══ -->
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+
+    <!-- ══ TOPBAR ══ -->
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
+      <div class="flex items-center gap-4">
+        <button id="menu-btn" onclick="toggleSidebar()"
+                class="hidden bg-transparent border-none cursor-pointer p-1"
+                style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div>
+          <div class="text-lg md:text-2xl font-bold leading-tight"
+               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Landing Page Editor</div>
+          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Customize what visitors see before logging in</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <!-- View Live button -->
+        <a href="{{ url_for('landing') }}" target="_blank"
+           class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline transition-all"
+           style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-border)">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+            <path d="M10 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5M13 3h4v4M10 10l7-7"
+                  stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          View Live
+        </a>
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      </div>
+    </header>
+
+    <!-- ══ FLASH MESSAGES ══ -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="px-4 md:px-8 pt-4 pb-0">
+          {% for category, message in messages %}
+            <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %} mb-3">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- ══ MAIN ══ -->
+    <form id="editor-form" action="{{ url_for('landing_save') }}" method="POST">
+      <main class="flex-1 p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+
+        <!-- ══════════════════════════════════════════
+             TOP: LIVE PREVIEW PANEL
+        ══════════════════════════════════════════ -->
+        <div class="agos-card overflow-hidden">
+          <!-- Preview header bar -->
+          <div class="agos-card-header flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <div class="agos-card-title flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                Live Preview
+              </div>
+              <div class="agos-card-subtitle">Updates instantly as you type below</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <!-- Preview tab switcher -->
+              <div class="flex items-center rounded-lg overflow-hidden text-xs font-semibold"
+                   style="border:1px solid var(--border-input)">
+                <button type="button" onclick="switchPreviewTab('hero')" id="pvtab-hero"
+                        class="px-3 py-1.5 border-none cursor-pointer transition-all"
+                        style="background:var(--accent);color:#fff">Hero</button>
+                <button type="button" onclick="switchPreviewTab('features')" id="pvtab-features"
+                        class="px-3 py-1.5 border-none cursor-pointer transition-all"
+                        style="background:transparent;color:var(--text-muted)">Features</button>
+                <button type="button" onclick="switchPreviewTab('stats')" id="pvtab-stats"
+                        class="px-3 py-1.5 border-none cursor-pointer transition-all"
+                        style="background:transparent;color:var(--text-muted)">Stats</button>
+                <button type="button" onclick="switchPreviewTab('about')" id="pvtab-about"
+                        class="px-3 py-1.5 border-none cursor-pointer transition-all"
+                        style="background:transparent;color:var(--text-muted)">About</button>
+                <button type="button" onclick="switchPreviewTab('contact')" id="pvtab-contact"
+                        class="px-3 py-1.5 border-none cursor-pointer transition-all"
+                        style="background:transparent;color:var(--text-muted)">Contact</button>
+              </div>
+              <a href="{{ url_for('landing') }}" target="_blank"
+                 class="sm:hidden flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline"
+                 style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-border)">
+                <svg width="11" height="11" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5M13 3h4v4M10 10l7-7"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Live
+              </a>
+            </div>
+          </div>
+
+          <!-- ── Hero preview ── -->
+          <div id="pv-hero" class="preview-section-panel block">
+            <div class="relative overflow-hidden rounded-b-xl"
+                 style="background:linear-gradient(160deg,#061926 0%,#0a2c44 45%,#0d3d5a 100%);min-height:260px;padding:2.5rem 2rem 2rem">
+              <!-- Decorative circles -->
+              <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-5"
+                   style="background:radial-gradient(circle,#5bb8e0,transparent);transform:translate(30%,-30%)"></div>
+              <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-5"
+                   style="background:radial-gradient(circle,#0095c8,transparent);transform:translate(-20%,20%)"></div>
+
+              <div class="relative z-10 max-w-xl">
+                <div class="text-[0.65rem] font-bold tracking-[0.22em] uppercase mb-2"
+                     style="color:rgba(91,184,224,0.75)" id="pv-tagline">
+                  {{ content.get('hero_tagline', 'EP-Bluelife Water Refilling Station') }}
+                </div>
+                <div class="font-black leading-none mb-3"
+                     style="font-family:'Inconsolata',monospace;font-size:clamp(1.6rem,4vw,2.5rem);color:#fff">
+                  <span id="pv-headline1" class="block">{{ content.get('hero_headline', 'Clean Water,') }}</span>
+                  <span id="pv-headline2" class="block" style="color:#5bb8e0">{{ content.get('hero_subheadline', 'Cleaner Records.') }}</span>
+                </div>
+                <p class="text-sm leading-relaxed mb-5 max-w-sm"
+                   style="color:rgba(204,234,247,0.60)" id="pv-desc">
+                  {{ content.get('hero_desc', 'Agos is the all-in-one management system for EP-Bluelife — handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.') }}
+                </p>
+                <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-bold"
+                     style="background:#0095c8;box-shadow:0 4px 18px rgba(0,149,200,0.45)">
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5M13 3h4v4M10 10l7-7"
+                          stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <span id="pv-cta">{{ content.get('hero_cta_text', 'Get Started') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Features preview ── -->
+          <div id="pv-features" class="preview-section-panel hidden p-5 md:p-6">
+            <div class="font-bold text-base mb-1"
+                 style="font-family:'Inconsolata',monospace;color:var(--text-primary)" id="pv-features-title">
+              {{ content.get('features_title', 'Everything in One Place') }}
+            </div>
+            <p class="text-xs mb-4" style="color:var(--text-muted)" id="pv-features-desc">
+              {{ content.get('features_desc', '') }}
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="pv-feature-grid">
+              {% set default_features = [
+                {'emoji':'💧','title':'Sales Management','desc':'Record walk-in and delivery sales instantly with auto-computed totals.'},
+                {'emoji':'📦','title':'Inventory Control','desc':'Track stock levels, get low-stock alerts, and adjust inventory.'},
+                {'emoji':'🚚','title':'Delivery Orders','desc':'Customers place delivery requests online. Staff confirms and routes.'},
+                {'emoji':'⭐','title':'Loyalty Rewards','desc':'Earn points on refills. Redeem for free deliveries automatically.'},
+                {'emoji':'📊','title':'Financial Reports','desc':'Monthly revenue vs. expenses, net profit, and top products.'},
+                {'emoji':'🔐','title':'Role-Based Access','desc':'Super Admin, Admin, Operator — each sees only what they need.'}
+              ] %}
+              {% set features = content.get('features', default_features) %}
+              {% for f in features %}
+              <div class="rounded-xl p-3" style="background:var(--bg-input);border:1px solid var(--border-card)">
+                <div class="font-semibold text-sm mb-1" style="color:var(--text-primary)">{{ f.emoji }} {{ f.title }}</div>
+                <div class="text-xs leading-relaxed" style="color:var(--text-muted)">{{ f.desc }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- ── Stats preview ── -->
+          <div id="pv-stats" class="preview-section-panel hidden overflow-hidden rounded-b-xl"
+               style="background:linear-gradient(135deg,#061926 0%,#0a2c44 100%);padding:2rem">
+            {% set default_stats = [
+              {'num':'5,000+','label':'Gallons Delivered'},
+              {'num':'300+','label':'Regular Customers'},
+              {'num':'99.9%','label':'Uptime'}
+            ] %}
+            {% set stats = content.get('stats', default_stats) %}
+            <div class="grid grid-cols-3 gap-4 max-w-lg mx-auto" id="pv-stat-grid">
+              {% for s in stats %}
+              <div class="text-center">
+                <div class="font-black text-2xl md:text-3xl leading-none"
+                     style="font-family:'Inconsolata',monospace;color:#5bb8e0"
+                     data-stat-num="{{ loop.index0 }}">{{ s.num }}</div>
+                <div class="text-[0.6rem] font-bold tracking-wider uppercase mt-1"
+                     style="color:rgba(184,218,240,0.50)"
+                     data-stat-label="{{ loop.index0 }}">{{ s.label }}</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- ── About preview ── -->
+          <div id="pv-about" class="preview-section-panel hidden p-5 md:p-6">
+            <div class="font-bold text-base mb-2"
+                 style="font-family:'Inconsolata',monospace;color:var(--text-primary)" id="pv-about-title">
+              {{ content.get('about_title', 'About EP-Bluelife') }}
+            </div>
+            <p class="text-sm leading-relaxed" style="color:var(--text-muted)" id="pv-about-body">
+              {{ content.get('about_body', '') or '(empty — this section will be hidden on the live page)' }}
+            </p>
+          </div>
+
+          <!-- ── Contact preview ── -->
+          <div id="pv-contact" class="preview-section-panel hidden p-5 md:p-6">
+            <div class="text-xs font-bold uppercase tracking-widest mb-3" style="color:var(--text-faint)">Contact / Footer</div>
+            <div class="flex flex-col gap-2" id="pv-contact-rows">
+              {% if content.get('contact_email') %}
+              <div class="flex items-center gap-3 text-sm" style="color:var(--text-secondary)">
+                <span class="text-xs font-bold uppercase tracking-wider w-14 flex-shrink-0" style="color:var(--accent)">Email</span>
+                {{ content.get('contact_email') }}
+              </div>
+              {% endif %}
+              {% if content.get('contact_phone') %}
+              <div class="flex items-center gap-3 text-sm" style="color:var(--text-secondary)">
+                <span class="text-xs font-bold uppercase tracking-wider w-14 flex-shrink-0" style="color:var(--accent)">Phone</span>
+                {{ content.get('contact_phone') }}
+              </div>
+              {% endif %}
+              {% if content.get('contact_address') %}
+              <div class="flex items-center gap-3 text-sm" style="color:var(--text-secondary)">
+                <span class="text-xs font-bold uppercase tracking-wider w-14 flex-shrink-0" style="color:var(--accent)">Addr</span>
+                {{ content.get('contact_address', 'Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija') }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <!-- END LIVE PREVIEW -->
+
+
+        <!-- ══════════════════════════════════════════
+             BOTTOM: EDITOR TABS + FIELDS
+        ══════════════════════════════════════════ -->
+        <div class="agos-card overflow-hidden">
+
+          <!-- Editor tab bar -->
+          <div class="agos-card-header">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <div class="agos-card-title">Content Editor</div>
+                <div class="agos-card-subtitle">Select a section to edit</div>
+              </div>
+              <!-- Unsaved indicator -->
+              <div class="flex items-center gap-2 text-xs" style="color:var(--text-muted)">
+                <div class="w-2 h-2 rounded-full bg-yellow-400 transition-all" id="dirty-dot"></div>
+                <span id="dirty-text">No changes</span>
+              </div>
+            </div>
+            <!-- Tabs -->
+            <div class="flex gap-1 mt-4 flex-wrap">
+              <button type="button" onclick="switchEditorTab('hero')" id="etab-hero"
+                      class="px-4 py-2 text-xs font-bold rounded-lg border-none cursor-pointer transition-all"
+                      style="background:var(--accent);color:#fff">Hero</button>
+              <button type="button" onclick="switchEditorTab('features')" id="etab-features"
+                      class="px-4 py-2 text-xs font-bold rounded-lg border-none cursor-pointer transition-all"
+                      style="background:var(--bg-input);color:var(--text-muted)">Features</button>
+              <button type="button" onclick="switchEditorTab('stats')" id="etab-stats"
+                      class="px-4 py-2 text-xs font-bold rounded-lg border-none cursor-pointer transition-all"
+                      style="background:var(--bg-input);color:var(--text-muted)">Stats</button>
+              <button type="button" onclick="switchEditorTab('about')" id="etab-about"
+                      class="px-4 py-2 text-xs font-bold rounded-lg border-none cursor-pointer transition-all"
+                      style="background:var(--bg-input);color:var(--text-muted)">About</button>
+              <button type="button" onclick="switchEditorTab('contact')" id="etab-contact"
+                      class="px-4 py-2 text-xs font-bold rounded-lg border-none cursor-pointer transition-all"
+                      style="background:var(--bg-input);color:var(--text-muted)">Contact</button>
+            </div>
+          </div>
+
+          <div class="p-5 md:p-6">
+
+            <!-- ── HERO EDITOR ── -->
+            <div id="etab-hero-panel" class="editor-panel block">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                  <label class="agos-label">Tagline <span class="normal-case font-normal text-[0.68rem]" style="color:var(--text-faint)">(small caps line above headline)</span></label>
+                  <input type="text" name="hero_tagline" class="agos-input"
+                         value="{{ content.get('hero_tagline', 'EP-Bluelife Water Refilling Station') }}"
+                         placeholder="EP-Bluelife Water Refilling Station" maxlength="80"
+                         oninput="liveText('pv-tagline', this.value); markDirty()"/>
+                </div>
+                <div>
+                  <label class="agos-label">Headline — Line 1</label>
+                  <input type="text" name="hero_headline" class="agos-input"
+                         value="{{ content.get('hero_headline', 'Clean Water,') }}"
+                         placeholder="Clean Water," maxlength="60"
+                         oninput="liveText('pv-headline1', this.value); markDirty()"/>
+                </div>
+                <div>
+                  <label class="agos-label">Headline — Line 2 <span class="normal-case font-normal text-[0.68rem]" style="color:var(--accent)">(blue accent)</span></label>
+                  <input type="text" name="hero_subheadline" class="agos-input"
+                         value="{{ content.get('hero_subheadline', 'Cleaner Records.') }}"
+                         placeholder="Cleaner Records." maxlength="60"
+                         oninput="liveText('pv-headline2', this.value); markDirty()"/>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="agos-label">Description</label>
+                  <textarea name="hero_desc" class="agos-input" rows="3"
+                            placeholder="Short description..." maxlength="300"
+                            oninput="liveText('pv-desc', this.value); markDirty()">{{ content.get('hero_desc', 'Agos is the all-in-one management system for EP-Bluelife — handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.') }}</textarea>
+                  <p class="text-[0.68rem] mt-1" style="color:var(--text-faint)">Keep it under 2 sentences for the best visual result.</p>
+                </div>
+                <div>
+                  <label class="agos-label">CTA Button Label</label>
+                  <input type="text" name="hero_cta_text" class="agos-input"
+                         value="{{ content.get('hero_cta_text', 'Get Started') }}"
+                         placeholder="Get Started" maxlength="30"
+                         oninput="liveText('pv-cta', this.value); markDirty()"/>
+                  <p class="text-[0.68rem] mt-1" style="color:var(--text-faint)">Links to the login/signup page.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── FEATURES EDITOR ── -->
+            <div id="etab-features-panel" class="editor-panel hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label class="agos-label">Section Title</label>
+                  <input type="text" name="features_title" class="agos-input"
+                         value="{{ content.get('features_title', 'Everything in One Place') }}"
+                         placeholder="Everything in One Place" maxlength="60"
+                         oninput="liveText('pv-features-title', this.value); markDirty()"/>
+                </div>
+                <div>
+                  <label class="agos-label">Section Description</label>
+                  <input type="text" name="features_desc" class="agos-input"
+                         value="{{ content.get('features_desc', '') }}"
+                         placeholder="Built specifically for EP-Bluelife..." maxlength="180"
+                         oninput="liveText('pv-features-desc', this.value); markDirty()"/>
+                </div>
+              </div>
+
+              <label class="agos-label mb-3 block">Feature Cards <span class="normal-case font-normal text-[0.68rem]" style="color:var(--text-faint)">(up to 6)</span></label>
+              <div id="feature-list" class="flex flex-col gap-3">
+                {% set default_features = [
+                  {'emoji':'💧','title':'Sales Management','desc':'Record walk-in and delivery sales instantly with auto-computed totals.'},
+                  {'emoji':'📦','title':'Inventory Control','desc':'Track stock levels, get low-stock alerts, and adjust inventory.'},
+                  {'emoji':'🚚','title':'Delivery Orders','desc':'Customers place delivery requests online. Staff confirms and routes.'},
+                  {'emoji':'⭐','title':'Loyalty Rewards','desc':'Earn points on refills. Redeem for free deliveries automatically.'},
+                  {'emoji':'📊','title':'Financial Reports','desc':'Monthly revenue vs. expenses, net profit, and top products.'},
+                  {'emoji':'🔐','title':'Role-Based Access','desc':'Super Admin, Admin, Operator — each sees only what they need.'}
+                ] %}
+                {% set features = content.get('features', default_features) %}
+                {% for f in features %}
+                <div class="feature-row flex items-start gap-2 p-3 rounded-xl"
+                     style="border:1px solid var(--border-card);background:var(--bg-card)">
+                  <input type="text" class="agos-input w-12 flex-shrink-0 text-center text-lg"
+                         name="feature_emoji_{{ loop.index0 }}"
+                         value="{{ f.emoji }}" maxlength="4" title="Emoji"/>
+                  <div class="flex flex-col gap-2 flex-1 min-w-0">
+                    <input type="text" class="agos-input"
+                           name="feature_title_{{ loop.index0 }}"
+                           value="{{ f.title }}" placeholder="Feature title" maxlength="40"
+                           oninput="refreshFeaturePreview(); markDirty()"/>
+                    <input type="text" class="agos-input"
+                           name="feature_desc_{{ loop.index0 }}"
+                           value="{{ f.desc }}" placeholder="Short description" maxlength="150"
+                           oninput="refreshFeaturePreview(); markDirty()"/>
+                  </div>
+                  <button type="button" onclick="removeFeature(this)" title="Remove"
+                          class="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0 text-sm border-none cursor-pointer transition-all mt-1"
+                          style="background:var(--danger-bg);color:var(--danger-text)">✕</button>
+                </div>
+                {% endfor %}
+              </div>
+              <input type="hidden" name="feature_count" id="feature-count" value="{{ features|length }}"/>
+              <button type="button" onclick="addFeature()" id="add-feature-btn"
+                      class="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border-2 border-dashed transition-all cursor-pointer bg-transparent"
+                      style="border-color:var(--border-card);color:var(--accent)">
+                <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Add Feature Card
+              </button>
+            </div>
+
+            <!-- ── STATS EDITOR ── -->
+            <div id="etab-stats-panel" class="editor-panel hidden">
+              <p class="text-xs mb-4" style="color:var(--text-muted)">3 fixed statistics displayed on a dark banner strip. Shown on the live landing page between the features and about sections.</p>
+              {% set default_stats = [
+                {'num':'5,000+','label':'Gallons Delivered'},
+                {'num':'300+','label':'Regular Customers'},
+                {'num':'99.9%','label':'Uptime'}
+              ] %}
+              {% set stats = content.get('stats', default_stats) %}
+              <div class="flex flex-col gap-4">
+                {% for s in stats %}
+                <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center p-3 rounded-xl"
+                     style="border:1px solid var(--border-card);background:var(--bg-input)">
+                  <span class="text-xs font-bold uppercase tracking-wider w-12 flex-shrink-0" style="color:var(--text-muted)">Stat {{ loop.index }}</span>
+                  <input type="text" class="agos-input flex-1"
+                         name="stat_num_{{ loop.index0 }}"
+                         value="{{ s.num }}" placeholder="5,000+" maxlength="20"
+                         oninput="refreshStatPreview(); markDirty()"/>
+                  <input type="text" class="agos-input flex-1"
+                         name="stat_label_{{ loop.index0 }}"
+                         value="{{ s.label }}" placeholder="Gallons Delivered" maxlength="40"
+                         oninput="refreshStatPreview(); markDirty()"/>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- ── ABOUT EDITOR ── -->
+            <div id="etab-about-panel" class="editor-panel hidden">
+              <div class="flex flex-col gap-4">
+                <div>
+                  <label class="agos-label">Section Title</label>
+                  <input type="text" name="about_title" class="agos-input"
+                         value="{{ content.get('about_title', 'About EP-Bluelife') }}"
+                         placeholder="About EP-Bluelife" maxlength="80"
+                         oninput="liveText('pv-about-title', this.value); markDirty()"/>
+                </div>
+                <div>
+                  <label class="agos-label">Body Text</label>
+                  <textarea name="about_body" class="agos-input" rows="5"
+                            placeholder="Tell your story here..." maxlength="600"
+                            oninput="liveText('pv-about-body', this.value || '(empty — this section will be hidden on the live page)'); markDirty()">{{ content.get('about_body', '') }}</textarea>
+                  <p class="text-[0.68rem] mt-1" style="color:var(--text-faint)">Leave blank to hide this section entirely on the live page.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── CONTACT EDITOR ── -->
+            <div id="etab-contact-panel" class="editor-panel hidden">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="agos-label">Email Address</label>
+                  <input type="email" name="contact_email" class="agos-input"
+                         value="{{ content.get('contact_email', '') }}"
+                         placeholder="epbluelife@email.com" maxlength="100"
+                         oninput="refreshContactPreview(); markDirty()"/>
+                </div>
+                <div>
+                  <label class="agos-label">Phone / Mobile</label>
+                  <input type="text" name="contact_phone" class="agos-input"
+                         value="{{ content.get('contact_phone', '') }}"
+                         placeholder="0912 345 6789" maxlength="50"
+                         oninput="refreshContactPreview(); markDirty()"/>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="agos-label">Address</label>
+                  <input type="text" name="contact_address" class="agos-input"
+                         value="{{ content.get('contact_address', 'Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija') }}"
+                         placeholder="Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija" maxlength="150"
+                         oninput="refreshContactPreview(); markDirty()"/>
+                  <p class="text-[0.68rem] mt-1" style="color:var(--text-faint)">Shown in the footer area of the landing page.</p>
+                </div>
+                <div class="md:col-span-2">
+                  <label class="agos-label">Footer Tagline</label>
+                  <input type="text" name="footer_tagline" class="agos-input"
+                         value="{{ content.get('footer_tagline', 'Built for EP-Bluelife Water Refilling Station') }}"
+                         placeholder="Built for EP-Bluelife Water Refilling Station" maxlength="120"
+                         oninput="markDirty()"/>
+                  <p class="text-[0.68rem] mt-1" style="color:var(--text-faint)">Small text shown below the brand name in the footer.</p>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- end card body -->
+
+          <!-- ── SAVE BAR (sticky bottom of editor card) ── -->
+          <div class="sticky bottom-0 z-10 flex items-center justify-between gap-3 px-5 md:px-6 py-3.5 flex-wrap"
+               style="background:var(--bg-card);border-top:1px solid var(--border-card)">
+            <div class="flex items-center gap-2 text-xs" style="color:var(--text-muted)">
+              <div class="w-2 h-2 rounded-full bg-yellow-400 transition-all" id="dirty-dot-2"></div>
+              <span id="dirty-text-2">No changes</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <a href="{{ url_for('landing') }}" target="_blank"
+                 class="agos-btn-ghost px-4 py-2 text-sm no-underline flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 3H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5M13 3h4v4M10 10l7-7"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                View Live
+              </a>
+              <!-- This triggers the confirmation modal, NOT a direct submit -->
+              <button type="button" onclick="openSaveConfirmModal()"
+                      class="agos-btn-primary px-5 py-2 text-sm flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Save Changes
+              </button>
+            </div>
+          </div>
+
+        </div><!-- end editor card -->
+
+      </main>
+    </form>
+
+  </div><!-- end page wrapper -->
+</div><!-- end flex -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     SAVE CONFIRMATION MODAL
+══════════════════════════════════════════════════════ -->
+<div id="save-confirm-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-lg">
+    <div class="agos-modal-box overflow-hidden w-full">
+      <!-- Modal header -->
+      <div class="px-7 py-6" style="background:linear-gradient(160deg,#0b2535 0%,#0e3a54 100%)">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
+            <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
+              <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white"/>
+            </svg>
+          </div>
+          <div>
+            <div class="text-white font-bold text-base" style="font-family:'Inconsolata',monospace">Confirm Save</div>
+            <div class="text-xs uppercase tracking-wider" style="color:#5bb8e0">Landing Page Update</div>
+          </div>
+        </div>
+        <p class="text-sm leading-relaxed" style="color:rgba(168,216,240,0.75)">
+          You're about to publish these changes to the public-facing landing page. All visitors will see the updated content immediately.
+        </p>
+      </div>
+      <!-- Change summary -->
+      <div class="px-7 py-5">
+        <div class="text-xs font-bold uppercase tracking-wider mb-3" style="color:var(--text-muted)">What will be updated</div>
+        <div class="flex flex-col gap-2 mb-5" id="save-summary">
+          <!-- Filled by JS -->
+        </div>
+        <div class="rounded-xl p-3 text-xs flex items-start gap-2.5"
+             style="background:var(--warning-bg);color:var(--warning-text);border:1px solid rgba(212,168,67,0.25)">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" class="flex-shrink-0 mt-0.5">
+            <path d="M10 3L2 17h16L10 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M10 8v4M10 14v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          This will overwrite the current live content. This action cannot be undone from the UI.
+        </div>
+      </div>
+      <!-- Actions -->
+      <div class="px-7 pb-6 flex items-center gap-3">
+        <button type="button" onclick="confirmSave()"
+                class="agos-btn-primary flex-1 py-3 flex items-center justify-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Yes, Publish Changes
+        </button>
+        <button type="button" onclick="closeModal('save-confirm-modal')"
+                class="agos-btn-ghost flex-1 py-3">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out of your account?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ TOAST ══ -->
+<div id="toast"
+     class="fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold pointer-events-none opacity-0 transition-all duration-300"
+     style="background:var(--bg-card);border:1px solid #22c55e;color:#22c55e;box-shadow:0 8px 30px rgba(0,0,0,0.15);transform:translateY(12px)">
+  <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+    <path d="M4 10l4 4 8-8" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  Landing page saved successfully!
+</div>
+
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+/* ─────────────────────────────────────────────
+   THEME LABEL SYNC
+───────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+});
+const _origToggle = window.toggleTheme;
+window.toggleTheme = function () {
+  _origToggle();
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+};
+
+/* ─────────────────────────────────────────────
+   PREVIEW TAB SWITCHER (top panel)
+───────────────────────────────────────────── */
+function switchPreviewTab(name) {
+  document.querySelectorAll('.preview-section-panel').forEach(p => p.classList.add('hidden'));
+  const panel = document.getElementById('pv-' + name);
+  if (panel) panel.classList.remove('hidden');
+
+  // Also auto-switch the editor tab to match
+  switchEditorTab(name);
+
+  // Update preview tab buttons
+  ['hero','features','stats','about','contact'].forEach(n => {
+    const btn = document.getElementById('pvtab-' + n);
+    if (!btn) return;
+    btn.style.background = n === name ? 'var(--accent)' : 'transparent';
+    btn.style.color      = n === name ? '#fff' : 'var(--text-muted)';
+  });
+}
+
+/* ─────────────────────────────────────────────
+   EDITOR TAB SWITCHER (bottom panel)
+───────────────────────────────────────────── */
+function switchEditorTab(name) {
+  document.querySelectorAll('.editor-panel').forEach(p => p.classList.add('hidden'));
+  const panel = document.getElementById('etab-' + name + '-panel');
+  if (panel) panel.classList.remove('hidden');
+
+  ['hero','features','stats','about','contact'].forEach(n => {
+    const btn = document.getElementById('etab-' + n);
+    if (!btn) return;
+    btn.style.background = n === name ? 'var(--accent)' : 'var(--bg-input)';
+    btn.style.color      = n === name ? '#fff' : 'var(--text-muted)';
+  });
+
+  // Sync preview tab too (without recursing)
+  ['hero','features','stats','about','contact'].forEach(n => {
+    const pvBtn = document.getElementById('pvtab-' + n);
+    if (!pvBtn) return;
+    pvBtn.style.background = n === name ? 'var(--accent)' : 'transparent';
+    pvBtn.style.color      = n === name ? '#fff' : 'var(--text-muted)';
+  });
+  document.querySelectorAll('.preview-section-panel').forEach(p => p.classList.add('hidden'));
+  const pvPanel = document.getElementById('pv-' + name);
+  if (pvPanel) pvPanel.classList.remove('hidden');
+}
+
+/* ─────────────────────────────────────────────
+   LIVE UPDATERS
+───────────────────────────────────────────── */
+function liveText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val || '';
+}
+
+function refreshFeaturePreview() {
+  const grid = document.getElementById('pv-feature-grid');
+  const rows = document.querySelectorAll('#feature-list .feature-row');
+  grid.innerHTML = '';
+  rows.forEach(row => {
+    const emoji = row.querySelector('[name^="feature_emoji"]')?.value || '';
+    const title = row.querySelector('[name^="feature_title"]')?.value || '';
+    const desc  = row.querySelector('[name^="feature_desc"]')?.value  || '';
+    if (!title && !desc) return;
+    const card = document.createElement('div');
+    card.className = 'rounded-xl p-3';
+    card.style.cssText = 'background:var(--bg-input);border:1px solid var(--border-card)';
+    card.innerHTML = `
+      <div class="font-semibold text-sm mb-1" style="color:var(--text-primary)">${emoji} ${escHtml(title)}</div>
+      <div class="text-xs leading-relaxed" style="color:var(--text-muted)">${escHtml(desc)}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+function refreshStatPreview() {
+  for (let i = 0; i < 3; i++) {
+    const numEl  = document.querySelector(`[data-stat-num="${i}"]`);
+    const lblEl  = document.querySelector(`[data-stat-label="${i}"]`);
+    const numInp = document.querySelector(`[name="stat_num_${i}"]`);
+    const lblInp = document.querySelector(`[name="stat_label_${i}"]`);
+    if (numEl && numInp) numEl.textContent = numInp.value;
+    if (lblEl && lblInp) lblEl.textContent = lblInp.value;
+  }
+}
+
+function refreshContactPreview() {
+  const email   = document.querySelector('[name="contact_email"]')?.value   || '';
+  const phone   = document.querySelector('[name="contact_phone"]')?.value   || '';
+  const address = document.querySelector('[name="contact_address"]')?.value || '';
+  const cont    = document.getElementById('pv-contact-rows');
+  if (!cont) return;
+  cont.innerHTML = '';
+  if (email)   cont.innerHTML += row('Email', email);
+  if (phone)   cont.innerHTML += row('Phone', phone);
+  if (address) cont.innerHTML += row('Addr',  address);
+}
+
+function row(label, val) {
+  return `<div class="flex items-center gap-3 text-sm" style="color:var(--text-secondary)">
+    <span class="text-xs font-bold uppercase tracking-wider w-14 flex-shrink-0" style="color:var(--accent)">${label}</span>
+    ${escHtml(val)}
+  </div>`;
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ─────────────────────────────────────────────
+   FEATURE CARD ADD / REMOVE
+───────────────────────────────────────────── */
+function addFeature() {
+  const list = document.getElementById('feature-list');
+  const count = list.querySelectorAll('.feature-row').length;
+  if (count >= 6) { alert('Maximum 6 feature cards allowed.'); return; }
+  const idx = count;
+  const row = document.createElement('div');
+  row.className = 'feature-row flex items-start gap-2 p-3 rounded-xl';
+  row.style.cssText = 'border:1px solid var(--border-card);background:var(--bg-card)';
+  row.innerHTML = `
+    <input type="text" class="agos-input w-12 flex-shrink-0 text-center text-lg"
+           name="feature_emoji_${idx}" value="✨" maxlength="4" title="Emoji"/>
+    <div class="flex flex-col gap-2 flex-1 min-w-0">
+      <input type="text" class="agos-input"
+             name="feature_title_${idx}" value="" placeholder="Feature title" maxlength="40"
+             oninput="refreshFeaturePreview(); markDirty()"/>
+      <input type="text" class="agos-input"
+             name="feature_desc_${idx}" value="" placeholder="Short description" maxlength="150"
+             oninput="refreshFeaturePreview(); markDirty()"/>
+    </div>
+    <button type="button" onclick="removeFeature(this)" title="Remove"
+            class="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0 text-sm border-none cursor-pointer mt-1 transition-all"
+            style="background:var(--danger-bg);color:var(--danger-text)">✕</button>`;
+  list.appendChild(row);
+  updateFeatureCount();
+  refreshFeaturePreview();
+  markDirty();
+}
+
+function removeFeature(btn) {
+  btn.closest('.feature-row').remove();
+  reindexFeatures();
+  updateFeatureCount();
+  refreshFeaturePreview();
+  markDirty();
+}
+
+function reindexFeatures() {
+  document.querySelectorAll('#feature-list .feature-row').forEach((r, i) => {
+    const emojiInp = r.querySelector('[name^="feature_emoji"]');
+    const titleInp = r.querySelector('[name^="feature_title"]');
+    const descInp  = r.querySelector('[name^="feature_desc"]');
+    if (emojiInp) emojiInp.name = `feature_emoji_${i}`;
+    if (titleInp) titleInp.name = `feature_title_${i}`;
+    if (descInp)  descInp.name  = `feature_desc_${i}`;
+  });
+}
+
+function updateFeatureCount() {
+  document.getElementById('feature-count').value =
+    document.querySelectorAll('#feature-list .feature-row').length;
+}
+
+/* ─────────────────────────────────────────────
+   DIRTY STATE
+───────────────────────────────────────────── */
+let _dirty = false;
+
+function markDirty() {
+  if (_dirty) return;
+  _dirty = true;
+  ['dirty-dot','dirty-dot-2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.background = '#f59e0b'; }
+  });
+  ['dirty-text','dirty-text-2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = 'Unsaved changes';
+  });
+}
+
+function markSaved() {
+  _dirty = false;
+  ['dirty-dot','dirty-dot-2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.background = '#22c55e'; }
+  });
+  ['dirty-text','dirty-text-2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = 'All changes saved';
+  });
+}
+
+// Listen to all form inputs
+document.getElementById('editor-form').addEventListener('input', markDirty);
+
+/* ─────────────────────────────────────────────
+   SAVE CONFIRMATION MODAL
+───────────────────────────────────────────── */
+function openSaveConfirmModal() {
+  // Build a quick summary of sections that have content
+  const summary = document.getElementById('save-summary');
+  summary.innerHTML = '';
+
+  const checks = [
+    { label: 'Hero Section', check: () => document.querySelector('[name="hero_headline"]')?.value?.trim() },
+    { label: 'Features',     check: () => document.querySelectorAll('#feature-list .feature-row').length + ' cards' },
+    { label: 'Stats Strip',  check: () => document.querySelector('[name="stat_num_0"]')?.value?.trim() },
+    { label: 'About Section',check: () => document.querySelector('[name="about_title"]')?.value?.trim() },
+    { label: 'Contact Info', check: () => {
+        const email = document.querySelector('[name="contact_email"]')?.value?.trim();
+        const phone = document.querySelector('[name="contact_phone"]')?.value?.trim();
+        return (email || phone) ? (email || phone) : null;
+      }
+    },
+  ];
+
+  checks.forEach(c => {
+    const val = c.check();
+    const div = document.createElement('div');
+    div.className = 'flex items-center gap-2.5 text-sm';
+    div.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+        <path d="M4 10l4 4 8-8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span style="color:var(--text-secondary)"><span style="color:var(--text-primary);font-weight:600">${c.label}</span>${val ? ' — ' + escHtml(String(val).substring(0, 40)) + (String(val).length > 40 ? '…' : '') : ''}</span>`;
+    summary.appendChild(div);
+  });
+
+  openModal('save-confirm-modal');
+}
+
+function confirmSave() {
+  closeModal('save-confirm-modal');
+  markSaved();
+  showToast();
+  document.getElementById('editor-form').submit();
+}
+
+/* ─────────────────────────────────────────────
+   TOAST
+───────────────────────────────────────────── */
+function showToast() {
+  const t = document.getElementById('toast');
+  t.style.opacity = '1';
+  t.style.transform = 'translateY(0)';
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(12px)';
+  }, 3200);
+}
+
+// Auto-show toast on page load if redirected after save (flash message present)
+window.addEventListener('load', () => {
+  const flashSuccess = document.querySelector('.agos-flash-success');
+  if (flashSuccess) {
+    showToast();
+    markSaved();
+  } else {
+    markSaved(); // start in "saved" state since nothing is changed yet
+  }
+});
+</script>
+</body>
+</html>

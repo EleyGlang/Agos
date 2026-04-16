@@ -16,8 +16,11 @@
   <!-- ══ SIDEBAR ══ -->
   <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
     <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+        </svg>
       </div>
       <div>
         <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
@@ -25,7 +28,8 @@
       </div>
     </div>
     <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       <div>
         <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
         <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
@@ -36,12 +40,13 @@
       <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
       <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
       <a href="{{ url_for('products') }}"         class="agos-sidebar-link active">Products</a>
-      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link ">Customers</a>
       <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
       <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      {% endif %}
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') == 'Super Admin' %}
+      {% if session.get('role') in ['Admin','Super Admin'] %}
       <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
       {% endif %}
     </nav>
@@ -54,10 +59,14 @@
 
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
 
+    <!-- ══ TOPBAR ══ -->
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <button id="menu-btn" onclick="toggleSidebar()"
+                class="md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
         </button>
         <div>
           <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Product Management</div>
@@ -73,7 +82,8 @@
           </label>
         </div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
 
@@ -81,13 +91,15 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
-          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">
+            {{ message }}
+          </div>
         {% endfor %}{% endif %}
       {% endwith %}
 
       <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
 
-        <!-- Add Product Form -->
+        <!-- ══ Add Product Form ══ -->
         <div class="agos-card overflow-hidden self-start">
           <div class="agos-card-header">
             <div class="agos-card-title">Add New Product</div>
@@ -111,7 +123,7 @@
               </div>
               <div>
                 <label class="agos-label">Low-Stock Threshold</label>
-                <input type="number" name="minimum_stock" min="1" value="10" placeholder="10" class="agos-input"/>
+                <input type="number" name="minimum_stock" min="1" value="10" class="agos-input"/>
                 <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">Dashboard will flag products below this count.</p>
               </div>
               <button type="submit" class="agos-btn-primary w-full py-3">Add Product</button>
@@ -119,20 +131,28 @@
           </div>
         </div>
 
-        <!-- Product Table -->
+        <!-- ══ Product Table ══ -->
         <div class="agos-card overflow-hidden">
-          <div class="agos-card-header flex items-center justify-between">
+          <div class="agos-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="agos-card-title">Product Catalog</div>
               <div class="agos-card-subtitle">{{ products|length }} product{{ 's' if products|length != 1 }}</div>
             </div>
             <input type="text" id="search-products" oninput="filterProducts()" placeholder="Search..."
-                   class="agos-input" style="width:9rem"/>
+                   class="agos-input w-full sm:w-40"/>
           </div>
           <div class="overflow-x-auto">
-            <table class="agos-table w-full border-collapse min-w-[580px]">
+            <table class="agos-table w-full border-collapse min-w-[600px]">
               <thead>
-                <tr><th>#</th><th>Product</th><th>Price</th><th>Unit</th><th>Min Stock</th><th>Status</th><th>Actions</th></tr>
+                <tr>
+                  <th class="w-8">#</th>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Unit</th>
+                  <th>Min Stock</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
               </thead>
               <tbody>
                 {% if products %}
@@ -141,7 +161,7 @@
                     <td style="color:var(--text-muted)">{{ loop.index }}</td>
                     <td class="font-medium product-name" style="color:var(--text-primary)">{{ product.product_name }}</td>
                     <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(product.price) }}</td>
-                    <td>{{ product.unit or '—' }}</td>
+                    <td style="color:var(--text-secondary)">{{ product.unit or '—' }}</td>
                     <td>{{ product.inventory.minimum_stock if product.inventory else '—' }}</td>
                     <td>
                       {% if product.is_active %}
@@ -151,22 +171,52 @@
                       {% endif %}
                     </td>
                     <td>
-                      <div class="flex items-center gap-1.5">
-                        <button onclick="openEditModal({{ product.product_id }}, '{{ product.product_name|replace("'","\\'") }}', {{ product.price }}, '{{ product.unit or '' }}', {{ product.inventory.minimum_stock if product.inventory else 10 }})"
-                                class="px-3 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                style="background:var(--info-bg);color:var(--info-text);">Edit</button>
-                        <form action="{{ url_for('toggle_product', product_id=product.product_id) }}" method="POST" style="display:inline">
-                          <button type="submit" class="px-3 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                  style="{% if product.is_active %}background:var(--danger-bg);color:var(--danger-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <!-- Edit -->
+                        <button onclick="openEditModal(
+                                  {{ product.product_id }},
+                                  '{{ product.product_name|replace("'","\\'") }}',
+                                  {{ product.price }},
+                                  '{{ product.unit or '' }}',
+                                  {{ product.inventory.minimum_stock if product.inventory else 10 }})"
+                                class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                                style="background:var(--info-bg);color:var(--info-text)">Edit</button>
+
+                        <!-- Toggle active/inactive -->
+                        <form action="{{ url_for('toggle_product', product_id=product.product_id) }}"
+                              method="POST" style="display:inline">
+                          <button type="submit"
+                                  class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                                  style="{% if product.is_active %}background:var(--warning-bg);color:var(--warning-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
                             {{ 'Deactivate' if product.is_active else 'Activate' }}
                           </button>
                         </form>
+
+                        <!-- Delete (Admin or Super Admin) -->
+                        {% if session.get('role') in ['Admin', 'Super Admin'] %}
+                          {# Hidden form — triggered by JS modal #}
+                          <form id="delete-product-form-{{ product.product_id }}"
+                                action="{{ url_for('delete_product', product_id=product.product_id) }}"
+                                method="POST" style="display:none"></form>
+                          <button type="button"
+                                  onclick="openDeleteProductModal(
+                                    {{ product.product_id }},
+                                    '{{ product.product_name|replace("'","\\'") }}',
+                                    {{ (product.inventory.minimum_stock if product.inventory else 0)|int }}
+                                  )"
+                                  class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                                  style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
+                        {% endif %}
                       </div>
                     </td>
                   </tr>
                   {% endfor %}
                 {% else %}
-                  <tr><td colspan="7" class="text-center py-10" style="color:var(--text-faint)">No products yet. Add one above.</td></tr>
+                  <tr>
+                    <td colspan="7" class="text-center py-10" style="color:var(--text-faint)">
+                      No products yet. Add one using the form.
+                    </td>
+                  </tr>
                 {% endif %}
               </tbody>
             </table>
@@ -213,16 +263,46 @@
   </div>
 </div>
 
+<!-- ══ DELETE PRODUCT MODAL ══ -->
+<div id="delete-product-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--danger-bg)">
+        <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--danger-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </div>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Product?</h3>
+      <p class="text-sm mb-2" id="delete-product-name" style="color:var(--text-primary);font-weight:600"></p>
+      <p class="text-sm mb-5" id="delete-product-warn" style="color:var(--text-muted)"></p>
+      <div class="flex gap-3 justify-center">
+        <button id="delete-product-confirm-btn"
+                class="agos-btn-primary px-7 py-2.5"
+                style="background:var(--danger-text)">Yes, Delete</button>
+        <button onclick="closeModal('delete-product-modal')"
+                class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ LOGOUT MODAL ══ -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
         <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
         </svg>
       </div>
-      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <h3 class="mb-2 text-2xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
       <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
       <div class="flex gap-3 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
@@ -234,25 +314,73 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
+  // ── Theme label sync ──────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  });
   const _orig = window.toggleTheme;
-  window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
+  window.toggleTheme = function () {
+    _orig();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  };
 
+  // ── Product search filter ─────────────────────────────────────────
   function filterProducts() {
     const q = document.getElementById('search-products').value.toLowerCase();
-    document.querySelectorAll('.product-row').forEach(r => { r.style.display = r.querySelector('.product-name').textContent.toLowerCase().includes(q) ? '' : 'none'; });
+    document.querySelectorAll('.product-row').forEach(r => {
+      r.style.display = r.querySelector('.product-name').textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
   }
 
+  // ── Edit modal ────────────────────────────────────────────────────
   function openEditModal(id, name, price, unit, minStock) {
     document.getElementById('edit-form').action = `/products/${id}/edit`;
-    document.getElementById('edit-name').value = name;
-    document.getElementById('edit-price').value = price;
-    document.getElementById('edit-unit').value = unit;
+    document.getElementById('edit-name').value      = name;
+    document.getElementById('edit-price').value     = price;
+    document.getElementById('edit-unit').value      = unit;
     document.getElementById('edit-min-stock').value = minStock;
     document.getElementById('edit-modal').classList.add('open');
   }
   function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
-  document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
+  document.getElementById('edit-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeEditModal();
+  });
+
+  // ── Delete product modal ──────────────────────────────────────────
+  const userRole = "{{ session.get('role') }}";
+
+  function openDeleteProductModal(id, name, minStock) {
+    document.getElementById('delete-product-name').textContent = `"${name}"`;
+
+    const warn = document.getElementById('delete-product-warn');
+    if (userRole === 'Super Admin') {
+      warn.textContent =
+        'You are force-deleting this product as Super Admin. ' +
+        'This is permanent and cannot be undone, even if the product has transaction history.';
+    } else {
+      warn.textContent =
+        'This action is permanent and cannot be undone. ' +
+        'If this product has transaction history, the server will reject the deletion.';
+    }
+
+    const btn = document.getElementById('delete-product-confirm-btn');
+    btn.onclick = () => document.getElementById('delete-product-form-' + id).submit();
+    openModal('delete-product-modal');
+  }
+
+  // ── Generic modal helpers (expected from agos-theme.js) ──────────
+  // Fallback if agos-theme.js doesn't expose openModal/closeModal
+  if (typeof openModal === 'undefined') {
+    window.openModal  = (id) => document.getElementById(id).classList.add('open');
+    window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+  }
+  document.getElementById('delete-product-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeModal('delete-product-modal');
+  });
 </script>
 </body>
 </html>

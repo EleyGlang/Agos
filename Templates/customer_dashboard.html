@@ -21,7 +21,6 @@
     .chart-title{font-size:.95rem;font-weight:700;color:var(--text-primary);font-family:'Inconsolata',monospace}
     .chart-sub{font-size:.68rem;color:var(--text-muted);margin-top:.1rem}
     canvas{max-height:240px}
-    .loyalty-ring{position:relative;display:flex;align-items:center;justify-content:center}
     .pb-track{height:8px;border-radius:999px;background:var(--accent-softer);overflow:hidden;margin-top:.3rem}
     .pb-fill{height:100%;border-radius:999px}
   </style>
@@ -33,6 +32,7 @@
   {% include '_sidebar_customer.html' %}
 
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
         <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
@@ -44,6 +44,13 @@
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" style="color:var(--text-muted)">Theme</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['customer_name'][0].upper() }}</div>
       </div>
@@ -97,14 +104,24 @@
         </div>
       </div>
 
-      <!-- Charts row: order history + order status donut -->
+      <!-- Charts row: order history + status donut -->
       <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
         <div class="chart-card">
-          <div class="chart-header"><div><div class="chart-title">Order History — Last 6 Months</div><div class="chart-sub">Number of orders placed per month</div></div></div>
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Order History — Last 6 Months</div>
+              <div class="chart-sub">Number of orders placed per month</div>
+            </div>
+          </div>
           <div class="p-4"><canvas id="custOrderHistory"></canvas></div>
         </div>
         <div class="chart-card">
-          <div class="chart-header"><div><div class="chart-title">Order Status</div><div class="chart-sub">Current status breakdown</div></div></div>
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Order Status</div>
+              <div class="chart-sub">Current status breakdown</div>
+            </div>
+          </div>
           <div class="p-4 flex flex-col items-center gap-4">
             <canvas id="custStatusDonut" style="max-height:170px;max-width:170px"></canvas>
             <div class="w-full flex flex-col gap-2">
@@ -116,20 +133,22 @@
         </div>
       </div>
 
-      <!-- Bottom: Spending trend + loyalty card + recent orders -->
+      <!-- Bottom row: spending + loyalty + recent orders -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        <!-- Spending per month bar -->
         <div class="chart-card">
-          <div class="chart-header"><div><div class="chart-title">Monthly Spending</div><div class="chart-sub">Your total spend per month</div></div></div>
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Monthly Spending</div>
+              <div class="chart-sub">Your total spend per month</div>
+            </div>
+          </div>
           <div class="p-4"><canvas id="custSpend"></canvas></div>
         </div>
 
-        <!-- Loyalty card -->
         <div class="chart-card">
           <div class="chart-header"><div class="chart-title">Loyalty Rewards</div></div>
           <div class="p-5 flex flex-col gap-4">
-            <!-- Ring progress -->
             <div class="flex items-center gap-4">
               <div style="position:relative;width:80px;height:80px;flex-shrink:0">
                 <canvas id="loyaltyRing" width="80" height="80"></canvas>
@@ -159,9 +178,11 @@
           </div>
         </div>
 
-        <!-- Recent orders -->
         <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Recent Orders</div><a href="{{ url_for('customer_deliveries') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a></div>
+          <div class="chart-header">
+            <div class="chart-title">Recent Orders</div>
+            <a href="{{ url_for('customer_deliveries') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a>
+          </div>
           <div class="p-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto">
             {% if recent_orders %}
               {% for order in recent_orders[:6] %}
@@ -189,59 +210,59 @@
   </div>
 </div>
 
-<!-- LOGOUT MODAL -->
+<!-- ══ LOGOUT MODAL ══ -->
 <div id="logout-modal" class="agos-modal-overlay">
-  <div class="p-4 w-full max-w-md"><div class="agos-modal-box p-8 text-center">
-    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
     </div>
-    <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
-    <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
-    <div class="flex items-center gap-4 justify-center">
-      <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
-      <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
-    </div>
-  </div></div>
+  </div>
 </div>
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-const OH_LABELS  = {{ order_history_labels  | tojson }};
-const OH_VALUES  = {{ order_history_values  | tojson }};
-const SP_LABELS  = {{ spend_labels  | tojson }};
-const SP_VALUES  = {{ spend_values  | tojson }};
-const DELIVERED  = {{ delivered_orders  | default(0) }};
-const PENDING    = {{ pending_orders    | default(0) }};
-const CANCELLED  = {{ cancelled_orders | default(0) }};
-const LOYALTY    = {{ customer.loyalty_points | default(0) }};
+const OH_LABELS = {{ order_history_labels | tojson }};
+const OH_VALUES = {{ order_history_values | tojson }};
+const SP_LABELS = {{ spend_labels | tojson }};
+const SP_VALUES = {{ spend_values | tojson }};
+const DELIVERED = {{ delivered_orders | default(0) }};
+const PENDING   = {{ pending_orders   | default(0) }};
+const CANCELLED = {{ cancelled_orders | default(0) }};
+const LOYALTY   = {{ customer.loyalty_points | default(0) }};
 
-let _c={};
-function gc(){ const d=document.documentElement.getAttribute('data-theme')==='dark'; return {grid:d?'rgba(45,136,184,0.12)':'rgba(45,136,184,0.07)',tick:d?'#5a8aaa':'#7a99ae'}; }
+let _c = {};
+function gc(){ const d = document.documentElement.getAttribute('data-theme') === 'dark'; return { grid: d ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)', tick: d ? '#5a8aaa' : '#7a99ae' }; }
 
 function build(){
-  Chart.defaults.font.family="'Outfit',sans-serif"; Chart.defaults.font.size=11;
-  Object.values(_c).forEach(c=>c.destroy()); _c={};
-  const c=gc();
+  Chart.defaults.font.family = "'Outfit',sans-serif"; Chart.defaults.font.size = 11;
+  Object.values(_c).forEach(c => c.destroy()); _c = {};
+  const c = gc();
 
-  _c.oh = new Chart('custOrderHistory',{type:'bar',data:{labels:OH_LABELS,datasets:[{label:'Orders',data:OH_VALUES,backgroundColor:'rgba(0,149,200,0.70)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.parsed.y+' orders'}}},scales:{x:{grid:{display:false},ticks:{color:c.tick}},y:{grid:{color:c.grid},ticks:{color:c.tick,stepSize:1},beginAtZero:true}}}});
+  _c.oh = new Chart('custOrderHistory', { type:'bar', data:{ labels:OH_LABELS, datasets:[{ label:'Orders', data:OH_VALUES, backgroundColor:'rgba(0,149,200,0.70)', borderRadius:5, borderSkipped:false }] }, options:{ responsive:true, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => x.parsed.y + ' orders' } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:c.tick } }, y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, stepSize:1 }, beginAtZero:true } } } });
 
-  _c.st = new Chart('custStatusDonut',{type:'doughnut',data:{labels:['Delivered','Pending','Cancelled'],datasets:[{data:[DELIVERED,PENDING,CANCELLED],backgroundColor:['#2eaa6e','#d4a843','#e05252'],borderWidth:0,hoverOffset:6}]},options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>x.parsed+' orders'}}}}});
+  _c.st = new Chart('custStatusDonut', { type:'doughnut', data:{ labels:['Delivered','Pending','Cancelled'], datasets:[{ data:[DELIVERED,PENDING,CANCELLED], backgroundColor:['#2eaa6e','#d4a843','#e05252'], borderWidth:0, hoverOffset:6 }] }, options:{ cutout:'65%', plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => x.parsed + ' orders' } } } } });
 
-  _c.sp = new Chart('custSpend',{type:'bar',data:{labels:SP_LABELS,datasets:[{label:'Spent (₱)',data:SP_VALUES,backgroundColor:'rgba(91,184,224,0.70)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>' ₱'+x.parsed.y.toFixed(2)}}},scales:{x:{grid:{display:false},ticks:{color:c.tick}},y:{grid:{color:c.grid},ticks:{color:c.tick,callback:v=>'₱'+v},beginAtZero:true}}}});
+  _c.sp = new Chart('custSpend', { type:'bar', data:{ labels:SP_LABELS, datasets:[{ label:'Spent (₱)', data:SP_VALUES, backgroundColor:'rgba(91,184,224,0.70)', borderRadius:5, borderSkipped:false }] }, options:{ responsive:true, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => '₱' + x.parsed.y.toFixed(2) } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:c.tick } }, y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, callback: v => '₱' + v }, beginAtZero:true } } } });
 
-  // Loyalty ring
   const loyCanvas = document.getElementById('loyaltyRing');
-  if(loyCanvas){
-    const isDark = document.documentElement.getAttribute('data-theme')==='dark';
-    const lCtx = loyCanvas.getContext('2d');
-    if(_c._loyRing) _c._loyRing.destroy();
+  if (loyCanvas){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (_c._loyRing) _c._loyRing.destroy();
     const progress = Math.min((LOYALTY % 10) / 10, 1);
-    _c._loyRing = new Chart(lCtx,{type:'doughnut',data:{datasets:[{data:[progress,1-progress],backgroundColor:[isDark?'#d4a843':'#d4a843',isDark?'rgba(45,136,184,0.15)':'rgba(45,136,184,0.08)'],borderWidth:0}]},options:{cutout:'75%',plugins:{legend:{display:false},tooltip:{enabled:false}},animation:{duration:800}}});
+    _c._loyRing = new Chart(loyCanvas.getContext('2d'), { type:'doughnut', data:{ datasets:[{ data:[progress, 1-progress], backgroundColor:[isDark ? '#d4a843' : '#d4a843', isDark ? 'rgba(45,136,184,0.15)' : 'rgba(45,136,184,0.08)'], borderWidth:0 }] }, options:{ cutout:'75%', plugins:{ legend:{ display:false }, tooltip:{ enabled:false } }, animation:{ duration:800 } } });
   }
 }
 
 document.addEventListener('DOMContentLoaded', build);
-const _oT=window.toggleTheme; window.toggleTheme=function(){ _oT(); setTimeout(build,280); };
+const _oT = window.toggleTheme; window.toggleTheme = function(){ _oT(); setTimeout(build, 280); };
 </script>
 </body>
 </html>

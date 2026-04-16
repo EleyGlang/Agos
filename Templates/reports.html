@@ -32,24 +32,27 @@
       </div>
     </div>
     <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
-      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
-      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
-      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
-      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
-      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link active">Reports</a>
-      {% if session.get('role') == 'Super Admin' %}
-      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
-      {% endif %}
-    </nav>
-    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+        <a href="{{ url_for('dashboard') }}"          class="agos-sidebar-link">Dashboard</a>
+        <a href="{{ url_for('sales') }}"              class="agos-sidebar-link">Record Sales</a>
+        <a href="{{ url_for('inventory') }}"          class="agos-sidebar-link">Inventory</a>
+        <a href="{{ url_for('products') }}"           class="agos-sidebar-link">Products</a>
+        <a href="{{ url_for('deliveries') }}"         class="agos-sidebar-link">Deliveries</a>
+
+        {% if session.get('role') in ['Admin', 'Super Admin'] %}
+        <a href="{{ url_for('user_management') }}" class="agos-sidebar-link">Users</a>
+        {% endif %}
+
+        <a href="{{ url_for('expenses') }}"           class="agos-sidebar-link">Expenses</a>
+        <a href="{{ url_for('reports') }}"            class="agos-sidebar-link active">Reports</a>
+
+        {% if session.get('role') in ('Super Admin', 'Admin') %}
+        <a href="{{ url_for('activity_log') }}"       class="agos-sidebar-link">Activity Log</a>
+        {% endif %}
+      </nav>
+     <div class="agos-sidebar-footer flex-shrink-0 p-3">
       <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
     </div>
   </aside>
-
   <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
 
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">

@@ -36,12 +36,13 @@
       <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
       <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
       <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
       <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('user_management') }}" class="agos-sidebar-link">Users</a>
+      {% endif %}      
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link active">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') == 'Super Admin' %}
+      {% if session.get('role') in ('Super Admin', 'Admin') %}
       <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
       {% endif %}
     </nav>
@@ -84,9 +85,10 @@
         {% endfor %}{% endif %}
       {% endwith %}
 
-      <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
+      <div class="grid gap-6 grid-cols-1 {% if can_edit %}lg:grid-cols-[1fr_1.8fr]{% endif %}">
 
-        <!-- Record Expense Form -->
+        <!-- Record Expense Form (Admin / Super Admin only) -->
+        {% if can_edit %}
         <div class="agos-card overflow-hidden self-start">
           <div class="agos-card-header">
             <div class="agos-card-title">Record Expense</div>
@@ -118,6 +120,7 @@
             </form>
           </div>
         </div>
+        {% endif %}
 
         <!-- Expense History -->
         <div class="agos-card overflow-hidden">
@@ -131,7 +134,7 @@
           <div class="overflow-x-auto">
             <table class="agos-table w-full border-collapse min-w-[560px]">
               <thead>
-                <tr><th>#</th><th>Category</th><th>Description</th><th>Amount</th><th>Date</th><th>Action</th></tr>
+                <tr><th>#</th><th>Category</th><th>Description</th><th>Amount</th><th>Date</th>{% if can_edit %}<th>Action</th>{% endif %}</tr>
               </thead>
               <tbody>
                 {% if expenses %}
@@ -142,6 +145,7 @@
                     <td>{{ expense.description }}</td>
                     <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(expense.amount) }}</td>
                     <td style="color:var(--text-muted)">{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}</td>
+                    {% if can_edit %}
                     <td>
                       <form id="delete-expense-form-{{ expense.expense_id }}" action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}" method="POST" style="display:none"></form>
                       <button type="button"
@@ -149,6 +153,7 @@
                               class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
                               style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
                     </td>
+                    {% endif %}
                   </tr>
                   {% endfor %}
                 {% else %}

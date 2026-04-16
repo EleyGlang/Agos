@@ -36,9 +36,10 @@
       <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
       <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
       <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
       <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link active">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('user_management') }}" class="agos-sidebar-link">Users</a>
+      {% endif %}      
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
       {% if session.get('role') == 'Super Admin' %}

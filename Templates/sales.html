@@ -37,15 +37,18 @@
       <a href="{{ url_for('sales') }}"            class="agos-sidebar-link active">Record Sales</a>
       <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
       <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
       <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
       <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') == 'Super Admin' %}
+      {% if session.get('role') in ['Admin',  'Super Admin'] %}
       <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
+      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
       {% endif %}
     </nav>
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
+    </div>
   </aside>
 
   <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
@@ -95,23 +98,22 @@
           <div class="p-5">
             <form action="{{ url_for('new_sale') }}" method="POST" id="sale-form" class="flex flex-col gap-4">
 
-              <!-- Sale type -->
+              <!-- Sale Mode — 3 options -->
               <div>
                 <label class="agos-label">Sale Type</label>
                 <div class="flex rounded-xl overflow-hidden" style="border:1.5px solid var(--border-input)">
-                  <button type="button" id="tab-walkin" onclick="setSaleType('Walk-in')"
+                  <button type="button" id="tab-walkin" onclick="setSaleMode('walkin')"
                           class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
                           style="background:var(--accent);color:#fff;font-family:'Outfit',sans-serif">Walk-in</button>
-                  <button type="button" id="tab-delivery" onclick="setSaleType('Delivery')"
+                  <button type="button" id="tab-existing" onclick="setSaleMode('existing')"
                           class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
-                          style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">Delivery</button>
+                          style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">Existing Customer</button>
+                  <button type="button" id="tab-new" onclick="setSaleMode('new')"
+                          class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
+                          style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">New Customer</button>
                 </div>
+                <!-- Hidden fields posted to backend -->
                 <input type="hidden" name="sale_type" id="sale-type-input" value="Walk-in"/>
-              </div>
-
-              <!-- Customer -->
-              <div>
-                <label class="agos-label">Customer <span id="customer-label-hint" class="normal-case tracking-normal font-normal text-[0.72rem]" style="color:var(--text-muted)">(optional for walk-in)</span></label>
                 <select name="customer_id" id="customer_id" style="display:none">
                   <option value="">Walk-In Customer</option>
                   <option value="new">New Customer</option>
@@ -119,19 +121,23 @@
                     <option value="{{ customer.customer_id }}">{{ customer.full_name }} ({{ customer.loyalty_points }} pts)</option>
                   {% endfor %}
                 </select>
+              </div>
+
+              <!-- Existing customer search (shown only in existing mode) -->
+              <div id="existing-customer-block" style="display:none">
+                <label class="agos-label">Select Customer</label>
                 <input type="text" id="customer-search" list="customers-list"
-                       placeholder="Type to search or leave blank for walk-in…"
+                       placeholder="Type to search customer…"
                        oninput="syncCustomerSelect(this.value)"
                        class="agos-input"/>
                 <datalist id="customers-list">
-                  <option value="New Customer">New Customer</option>
                   {% for customer in customers %}
                     <option value="{{ customer.full_name }} ({{ customer.loyalty_points }} pts)" data-id="{{ customer.customer_id }}">{{ customer.full_name }}</option>
                   {% endfor %}
                 </datalist>
               </div>
 
-              <!-- New Customer Fields -->
+              <!-- New customer fields (shown only in new mode) -->
               <div id="new-customer-fields" style="display:none;padding:1rem;border-radius:0.75rem;border:1.5px solid var(--border-input)">
                 <div class="text-[0.95rem] font-bold mb-3" style="font-family:'Inconsolata',monospace;color:var(--success-text)">New Customer Information</div>
                 <div class="mb-3">
@@ -304,41 +310,56 @@
   const _orig = window.toggleTheme;
   window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
 
-  function setSaleType(type) {
-    document.getElementById('sale-type-input').value = type;
-    const w = document.getElementById('tab-walkin'), d = document.getElementById('tab-delivery');
-    const hint = document.getElementById('customer-label-hint');
-    if (type === 'Walk-in') {
-      w.style.background = 'var(--accent)'; w.style.color = '#fff';
-      d.style.background = 'transparent'; d.style.color = 'var(--text-muted)';
-      hint.textContent = '(optional for walk-in)';
+  /* ── Sale mode: walkin | existing | new ── */
+  function setSaleMode(mode) {
+    // Update tab styles
+    const tabs = { walkin: 'tab-walkin', existing: 'tab-existing', new: 'tab-new' };
+    Object.entries(tabs).forEach(([key, id]) => {
+      const el = document.getElementById(id);
+      el.style.background = key === mode ? 'var(--accent)' : 'transparent';
+      el.style.color       = key === mode ? '#fff' : 'var(--text-muted)';
+    });
+
+    // Show/hide panels
+    document.getElementById('existing-customer-block').style.display = mode === 'existing' ? '' : 'none';
+    document.getElementById('new-customer-fields').style.display     = mode === 'new'      ? '' : 'none';
+
+    // Reset customer selection
+    const sel = document.getElementById('customer_id');
+    const nameField = document.getElementById('new_customer_name');
+
+    if (mode === 'walkin') {
+      sel.value = '';
+      document.getElementById('sale-type-input').value = 'Walk-in';
+      nameField.required = false;
+      clearNewCustomerFields();
+    } else if (mode === 'existing') {
+      sel.value = '';
+      document.getElementById('sale-type-input').value = 'Walk-in'; // backend type, customer presence makes it linked
+      nameField.required = false;
+      clearNewCustomerFields();
     } else {
-      d.style.background = 'var(--accent)'; d.style.color = '#fff';
-      w.style.background = 'transparent'; w.style.color = 'var(--text-muted)';
-      hint.textContent = '(required for delivery)';
-      if (!document.getElementById('customer_id').value) {
-        document.getElementById('customer-search').value = 'New Customer';
-        syncCustomerSelect('New Customer');
-      }
+      sel.value = 'new';
+      document.getElementById('sale-type-input').value = 'Walk-in';
+      nameField.required = true;
     }
+  }
+
+  function clearNewCustomerFields() {
+    ['new_customer_name','new_customer_number','new_customer_address'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
   }
 
   function syncCustomerSelect(val) {
     const sel = document.getElementById('customer_id');
-    if (!val) { sel.value = ''; toggleNewCustomerFields(); return; }
-    if (val === 'New Customer') { sel.value = 'new'; toggleNewCustomerFields(); return; }
+    if (!val) { sel.value = ''; return; }
     const matched = Array.from(sel.options).find(o => o.text.trim().startsWith(val.split(' (')[0]));
     sel.value = matched ? matched.value : '';
-    toggleNewCustomerFields();
   }
 
-  function toggleNewCustomerFields() {
-    const val = document.getElementById('customer_id').value;
-    const block = document.getElementById('new-customer-fields');
-    const nameField = document.getElementById('new_customer_name');
-    if (val === 'new') { block.style.display = 'block'; nameField.required = true; }
-    else { block.style.display = 'none'; nameField.required = false; document.getElementById('new_customer_name').value = ''; document.getElementById('new_customer_number').value = ''; document.getElementById('new_customer_address').value = ''; }
-  }
+  function toggleNewCustomerFields() { /* kept for compatibility */ }
 
   function syncProductSelect(input) {
     const row = input.closest('.item-row');
@@ -378,9 +399,12 @@
   }
 
   function validateForm() {
-    if (document.getElementById('sale-type-input').value === 'Delivery' && !document.getElementById('customer_id').value) { alert('Please select a customer for delivery sales.'); return false; }
-    if (document.getElementById('customer_id').value === 'new') {
-      const name = document.getElementById('new_customer_name').value.trim();
+    const mode = getActiveMode();
+    if (mode === 'existing' && !document.getElementById('customer_id').value) {
+      alert('Please select an existing customer.'); return false;
+    }
+    if (mode === 'new') {
+      const name  = document.getElementById('new_customer_name').value.trim();
       const phone = document.getElementById('new_customer_number').value.trim();
       if (!name || !/^[A-Za-z ]+$/.test(name)) { alert('Customer name must contain only letters and spaces.'); return false; }
       if (phone && !/^\d{11}$/.test(phone)) { alert('Contact Number must be exactly 11 digits.'); return false; }
@@ -392,13 +416,22 @@
     return true;
   }
 
+  function getActiveMode() {
+    if (document.getElementById('tab-new').style.background.includes('accent') ||
+        document.getElementById('new-customer-fields').style.display !== 'none') return 'new';
+    if (document.getElementById('tab-existing').style.background.includes('accent') ||
+        document.getElementById('existing-customer-block').style.display !== 'none') return 'existing';
+    return 'walkin';
+  }
+
   function openSaleConfirmModal() {
     if (!validateForm()) return;
     document.getElementById('receipt-sale-type').textContent = document.getElementById('sale-type-input').value;
     const customerSel = document.getElementById('customer_id');
+    const mode = getActiveMode();
     let customerLabel = 'Walk-In';
-    if (customerSel.value === 'new') { const n = document.getElementById('new_customer_name').value.trim(); customerLabel = n ? n + ' (New)' : 'New Customer'; }
-    else if (customerSel.value) { customerLabel = document.getElementById('customer-search').value.replace(/\s*\(.*pts\)/, '').trim(); }
+    if (mode === 'new') { const n = document.getElementById('new_customer_name').value.trim(); customerLabel = n ? n + ' (New)' : 'New Customer'; }
+    else if (mode === 'existing' && customerSel.value) { customerLabel = document.getElementById('customer-search').value.replace(/\s*\(.*pts\)/, '').trim(); }
     document.getElementById('receipt-customer').textContent = customerLabel;
     const itemsContainer = document.getElementById('receipt-items');
     itemsContainer.innerHTML = '';

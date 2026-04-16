@@ -1,0 +1,61 @@
+{
+  "hero_tagline": "EP-Bluelife Water Refilling Station",
+  "hero_headline": "Clean Water,",
+  "hero_subheadline": "Cleaner Records.",
+  "hero_desc": "Agos is the all-in-one management system for EP-Bluelife \u2014 handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.",
+  "hero_cta_text": "Get Started",
+  "features_title": "Everything in One Place",
+  "features_desc": "Built specifically for EP-Bluelife \u2014 from recording a single gallon sale to running monthly financial reports.",
+  "about_title": "About EP-Bluelife",
+  "about_body": "",
+  "contact_email": "",
+  "contact_phone": "",
+  "contact_address": "Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija",
+  "footer_tagline": "Built for EP-Bluelife Water Refilling Station",
+  "features": [
+    {
+      "emoji": "\ud83d\udca7",
+      "title": "Sales Management",
+      "desc": "Record walk-in and delivery sales instantly. Auto-computes totals and deducts from inventory in real time."
+    },
+    {
+      "emoji": "\ud83d\udce6",
+      "title": "Inventory Control",
+      "desc": "Track stock levels, get low-stock alerts, and manually adjust inventory with a full audit trail."
+    },
+    {
+      "emoji": "\ud83d\ude9a",
+      "title": "Delivery Orders",
+      "desc": "Customers can place delivery requests online. Staff confirms, routes, and marks deliveries in seconds."
+    },
+    {
+      "emoji": "\u2b50",
+      "title": "Loyalty Rewards",
+      "desc": "Automatically earn points on refills. Redeem for free deliveries \u2014 no manual tracking needed."
+    },
+    {
+      "emoji": "\ud83d\udcca",
+      "title": "Financial Reports",
+      "desc": "Monthly revenue vs. expenses, net profit, top products, and expense category breakdowns at a glance."
+    },
+    {
+      "emoji": "\ud83d\udd10",
+      "title": "Role-Based Access",
+      "desc": "Super Admin, Admin, Operator, and Customer \u2014 each sees only what they need with a full activity log."
+    }
+  ],
+  "stats": [
+    {
+      "num": "5,000+",
+      "label": "Gallons Delivered"
+    },
+    {
+      "num": "300+",
+      "label": "Regular Customers"
+    },
+    {
+      "num": "99.9%",
+      "label": "Uptime"
+    }
+  ]
+}

@@ -28,57 +28,103 @@
 <div class="flex min-h-screen">
 
   <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
-      </div>
-      <div>
-        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace">Agos</div>
-        <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
+  <!-- ══ SIDEBAR (ADMIN STYLE APPLIED TO OPERATOR) ══ -->
+<aside id="sidebar"
+  class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+
+  <!-- LOGO -->
+  <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+         style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+        <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+      </svg>
+    </div>
+    <div>
+      <div class="text-xl font-bold text-white leading-tight"
+           style="font-family:'Inconsolata',monospace">Agos</div>
+      <div class="text-[0.6rem] font-medium tracking-widest uppercase"
+           style="color:var(--sidebar-badge-text)">
+        EP-Bluelife System
       </div>
     </div>
-    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      <div>
-        <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
-      </div>
+  </div>
+
+  <!-- USER -->
+  <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+         style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+      {{ session['full_name'][0].upper() }}
     </div>
-    <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"      class="agos-sidebar-link active">Dashboard</a>
-      <a href="{{ url_for('sales') }}"           class="agos-sidebar-link">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"       class="agos-sidebar-link">Inventory</a>
-      <a href="{{ url_for('customers') }}"       class="agos-sidebar-link">Customers</a>
-      <a href="{{ url_for('deliveries') }}"      class="agos-sidebar-link">Deliveries</a>
+    <div>
+      <div class="text-[0.82rem] font-medium leading-tight"
+           style="color:rgba(204,234,247,0.90)">
+        {{ session['full_name'] }}
+      </div>
+      <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="flex-1 py-2">
+      <a href="{{ url_for('dashboard') }}"        class="agos-sidebar-link active">Dashboard</a>
+      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
+      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
+      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
+      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
+      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+        <a href="{{ url_for('user_management') }}" class="agos-sidebar-link">Users</a>
+      {% endif %}      
+      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
+      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
     </nav>
-    <div class="agos-sidebar-footer flex-shrink-0 p-3 flex flex-col gap-2">
-      <div class="flex items-center justify-between px-2 py-1.5 rounded-xl" style="background:rgba(255,255,255,0.04)">
-        <div class="flex items-center gap-2"><span style="font-size:.82rem">☀️</span><span class="text-[0.69rem] font-medium" style="color:var(--sidebar-link)">Theme</span></div>
-        <label class="agos-theme-toggle"><input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label>
-        <span style="font-size:.82rem">🌙</span>
-      </div>
-      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
-    </div>
-  </aside>
+
+  <!-- FOOTER (ADMIN STYLE) -->
+  <div class="agos-sidebar-footer flex-shrink-0 p-3">
+
+    <!-- THEME TOGGLE (moved from operator style into admin style) -->
+   
+
+    <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
+  </div>
+</aside>
   <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
 
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
-    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
-      <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
-        <div>
-          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Operator Dashboard</div>
-          <div class="text-xs" style="color:var(--text-muted)">EP-Bluelife Water Refilling Station</div>
-        </div>
-      </div>
-      <div class="flex items-center gap-2 md:gap-3">
-        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      </div>
-    </header>
+   
+    <header class="agos-topbar flex items-center justify-between px-6 py-3">
+
+  <div>
+    <div class="text-xl font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">
+      Operator Dashboard
+    </div>
+    <div class="text-xs" style="color:var(--text-muted)">
+      EP-Bluelife Water Refilling Station
+    </div>
+  </div>
+
+  <div class="flex items-center gap-4">
+
+    <!-- THEME -->
+    <div class="flex items-center gap-2">
+      <span id="theme-label" class="text-xs" style="color:var(--text-muted)">Dark</span>
+      <label class="agos-theme-toggle">
+        <input type="checkbox" onchange="toggleTheme()"/>
+        <span class="agos-theme-track"></span>
+      </label>
+    </div>
+
+    <div id="topbar-date" class="text-xs px-3 py-1 rounded-md agos-topbar-date"></div>
+
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+         style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
+      {{ session['full_name'][0].upper() }}
+    </div>
+
+  </div>
+
+</header>
 
     <main class="flex-1 p-4 md:p-5 lg:p-7 flex flex-col gap-5">
 
@@ -293,6 +339,22 @@ document.addEventListener('DOMContentLoaded', build);
 
 const _oT = window.toggleTheme;
 window.toggleTheme = function() { _oT(); setTimeout(build, 280); };
+
+document.addEventListener('DOMContentLoaded', function() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+});
+
+const _origToggle = window.toggleTheme;
+
+window.toggleTheme = function() {
+  _origToggle();
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+};
 </script>
 </body>
 </html>
