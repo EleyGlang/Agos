@@ -18,14 +18,21 @@
 
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
 
+    <!-- ══ TOPBAR ══ -->
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <button id="menu-btn" onclick="toggleSidebar()"
+                class="md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">My Profile</div>
-          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Manage your personal information and password</div>
+          <div class="text-lg md:text-2xl font-bold leading-tight"
+               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">My Profile</div>
+          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">
+            Manage your personal information and password
+          </div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
@@ -37,7 +44,10 @@
           </label>
         </div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['customer_name'][0].upper() }}</div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
+          {{ session['customer_name'][0].upper() }}
+        </div>
       </div>
     </header>
 
@@ -45,49 +55,102 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
-          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">
+            {{ message }}
+          </div>
         {% endfor %}{% endif %}
       {% endwith %}
 
       <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
 
-        <!-- Left: Forms -->
+        <!-- ══ LEFT: Forms ══ -->
         <div class="flex flex-col gap-5">
 
-          <!-- Personal Information -->
+          <!-- ── Personal Information ── -->
           <div class="agos-card overflow-hidden">
             <div class="agos-card-header">
               <div class="agos-card-title">Personal Information</div>
               <div class="agos-card-subtitle">Update your name, contact, and delivery address</div>
             </div>
-            <form method="POST" action="{{ url_for('customer_profile_update') }}">
+            <form id="info-form" method="POST" action="{{ url_for('customer_profile_update') }}"
+                  novalidate onsubmit="return validateInfoForm(event)">
               <input type="hidden" name="form_type" value="info"/>
               <div class="p-5 flex flex-col gap-4">
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label class="agos-label">Full Name <span style="color:#d32f2f">*</span></label>
-                    <input type="text" name="full_name" required class="agos-input"
-                           value="{{ customer.full_name or '' }}" placeholder="e.g. Juan dela Cruz"/>
-                  </div>
-                  <div>
-                    <label class="agos-label">Phone Number</label>
-                    <input type="tel" name="phone" class="agos-input"
-                           value="{{ customer.phone or '' }}" placeholder="e.g. 09171234567"/>
-                  </div>
-                </div>
-
+                <!-- Name row — split into 3 -->
                 <div>
-                  <label class="agos-label">Email Address</label>
-                  <input type="email" name="email" class="agos-input"
-                         value="{{ customer.email or '' }}" placeholder="you@example.com"/>
+                  <label class="agos-label">
+                    Full Name <span style="color:#d32f2f">*</span>
+                    <span class="text-[0.65rem] font-normal ml-1" style="color:var(--text-muted)">(letters only)</span>
+                  </label>
+                  <div class="grid grid-cols-1 sm:grid-cols-[1fr_80px_1fr] gap-2">
+                    <div class="flex flex-col gap-1">
+                      <input type="text" name="first_name" id="prof-first" required
+                             value="{{ customer.first_name or '' }}"
+                             placeholder="First Name"
+                             oninput="validateNameField(this)"
+                             class="agos-input"
+                             pattern="[A-Za-z\s]+" title="Letters only"/>
+                      <span id="err-first" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <input type="text" name="middle_initial" id="prof-mi"
+                             value="{{ customer.middle_initial or '' }}"
+                             placeholder="M.I." maxlength="2"
+                             oninput="validateMI(this)"
+                             class="agos-input text-center"
+                             title="One letter (optional)"/>
+                      <span id="err-mi" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <input type="text" name="last_name" id="prof-last" required
+                             value="{{ customer.last_name or '' }}"
+                             placeholder="Last Name"
+                             oninput="validateNameField(this)"
+                             class="agos-input"
+                             pattern="[A-Za-z\s]+" title="Letters only"/>
+                      <span id="err-last" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                    </div>
+                  </div>
+                  <!-- live preview of assembled name -->
+                  <div id="name-preview" class="mt-2 text-[0.72rem] px-3 py-1.5 rounded-lg hidden"
+                       style="background:var(--accent-soft);color:var(--accent)">
+                    <span class="font-semibold">Preview: </span><span id="name-preview-text"></span>
+                  </div>
                 </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <!-- Phone -->
+                  <div class="flex flex-col gap-1">
+                    <label class="agos-label">Phone Number</label>
+                    <input type="tel" name="phone" id="prof-phone"
+                           value="{{ customer.phone or customer.contact_number or '' }}"
+                           placeholder="e.g. 09171234567"
+                           maxlength="11"
+                           oninput="validatePhone(this)"
+                           class="agos-input"/>
+                    <span id="err-phone" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                  </div>
+                  <!-- Email -->
+                  <div class="flex flex-col gap-1">
+                    <label class="agos-label">Email Address</label>
+                    <input type="email" name="email" id="prof-email"
+                           value="{{ customer.email or '' }}"
+                           placeholder="you@example.com"
+                           oninput="validateEmail(this)"
+                           class="agos-input"/>
+                    <span id="err-email" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                  </div>
+                </div>
+
+                <!-- Address -->
                 <div>
                   <label class="agos-label">Default Delivery Address</label>
                   <textarea name="address" rows="2" class="agos-input" style="resize:none"
                             placeholder="e.g. Blk 5 Lot 12 Sampaguita St., Brgy. San Jose">{{ customer.address or '' }}</textarea>
-                  <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">This will be pre-filled when placing orders.</div>
+                  <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">
+                    This will be pre-filled when placing orders.
+                  </div>
                 </div>
 
                 <div class="flex justify-end pt-1">
@@ -98,52 +161,93 @@
             </form>
           </div>
 
-          <!-- Change Password -->
+          <!-- ── Change Password ── -->
           <div class="agos-card overflow-hidden">
             <div class="agos-card-header">
               <div class="agos-card-title">Change Password</div>
-              <div class="agos-card-subtitle">Leave blank if you don't want to change your password</div>
+              <div class="agos-card-subtitle">Update your login password below</div>
             </div>
-            <form method="POST" action="{{ url_for('customer_profile_update') }}" id="pw-form">
+            <form method="POST" action="{{ url_for('customer_profile_update') }}" id="pw-form"
+                  novalidate onsubmit="return validatePwForm(event)">
               <input type="hidden" name="form_type" value="password"/>
               <div class="p-5 flex flex-col gap-4">
 
-                <div>
+                <div class="flex flex-col gap-1">
                   <label class="agos-label">Current Password <span style="color:#d32f2f">*</span></label>
                   <div class="relative">
-                    <input type="password" name="current_password" id="pw-current" class="agos-input pr-10" placeholder="Enter current password"/>
-                    <button type="button" onclick="togglePw('pw-current', 'eye-current')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
-                      <svg id="eye-current" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <input type="password" name="current_password" id="pw-current"
+                           class="agos-input" style="padding-right:2.5rem"
+                           placeholder="Enter current password"/>
+                    <button type="button" onclick="togglePw('pw-current')"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0"
+                            style="color:var(--text-muted)">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                      </svg>
                     </button>
                   </div>
                 </div>
 
-                <div>
+                <div class="flex flex-col gap-1">
                   <label class="agos-label">New Password <span style="color:#d32f2f">*</span></label>
                   <div class="relative">
-                    <input type="password" name="new_password" id="pw-new" class="agos-input pr-10" placeholder="At least 8 characters"/>
-                    <button type="button" onclick="togglePw('pw-new', 'eye-new')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
-                      <svg id="eye-new" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <input type="password" name="new_password" id="pw-new"
+                           class="agos-input" style="padding-right:2.5rem"
+                           placeholder="At least 8 characters"
+                           oninput="checkStrength(this.value); checkMatch()"/>
+                    <button type="button" onclick="togglePw('pw-new')"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0"
+                            style="color:var(--text-muted)">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                      </svg>
                     </button>
                   </div>
-                  <!-- Password strength bar -->
-                  <div class="mt-2">
+                  <!-- Strength bar -->
+                  <div class="mt-1.5">
                     <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--bg-input)">
-                      <div id="pw-strength-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:#e05252"></div>
+                      <div id="pw-strength-bar"
+                           class="h-full rounded-full transition-all duration-300" style="width:0%;background:#e05252"></div>
                     </div>
-                    <div id="pw-strength-label" class="text-[0.65rem] mt-1" style="color:var(--text-muted)"></div>
+                    <div class="flex justify-between mt-1">
+                      <span id="pw-strength-label" class="text-[0.65rem]" style="color:var(--text-muted)"></span>
+                      <span id="pw-length-hint" class="text-[0.65rem]" style="color:var(--text-muted)"></span>
+                    </div>
+                  </div>
+                  <!-- Requirements checklist -->
+                  <div id="pw-checklist" class="mt-2 grid grid-cols-2 gap-1 hidden">
+                    <div id="req-len"  class="req-item text-[0.68rem] flex items-center gap-1.5" style="color:var(--text-muted)"><span class="req-dot">●</span> 8+ characters</div>
+                    <div id="req-up"   class="req-item text-[0.68rem] flex items-center gap-1.5" style="color:var(--text-muted)"><span class="req-dot">●</span> Uppercase letter</div>
+                    <div id="req-num"  class="req-item text-[0.68rem] flex items-center gap-1.5" style="color:var(--text-muted)"><span class="req-dot">●</span> Number</div>
+                    <div id="req-sym"  class="req-item text-[0.68rem] flex items-center gap-1.5" style="color:var(--text-muted)"><span class="req-dot">●</span> Symbol (!@#…)</div>
                   </div>
                 </div>
 
-                <div>
+                <div class="flex flex-col gap-1">
                   <label class="agos-label">Confirm New Password <span style="color:#d32f2f">*</span></label>
                   <div class="relative">
-                    <input type="password" name="confirm_password" id="pw-confirm" class="agos-input pr-10" placeholder="Re-enter new password"/>
-                    <button type="button" onclick="togglePw('pw-confirm', 'eye-confirm')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
-                      <svg id="eye-confirm" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    <input type="password" name="confirm_password" id="pw-confirm"
+                           class="agos-input" style="padding-right:2.5rem"
+                           placeholder="Re-enter new password"
+                           oninput="checkMatch()"/>
+                    <button type="button" onclick="togglePw('pw-confirm')"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0"
+                            style="color:var(--text-muted)">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                      </svg>
                     </button>
                   </div>
-                  <div id="pw-match-msg" class="text-[0.68rem] mt-1" style="color:var(--text-muted)"></div>
+                  <div id="pw-match-msg" class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)"></div>
                 </div>
 
                 <div class="flex justify-end pt-1">
@@ -155,65 +259,122 @@
           </div>
 
         </div>
+        <!-- end left column -->
 
-        <!-- Right: Account card -->
+        <!-- ══ RIGHT: Account card ══ -->
         <div class="flex flex-col gap-4">
 
-          <!-- Avatar / account overview -->
+          <!-- Avatar / overview -->
           <div class="agos-card overflow-hidden">
-            <div class="p-6 flex flex-col items-center gap-3 text-center" style="border-bottom:1px solid var(--border-section)">
-              <div class="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white"
-                   style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
-                {{ session['customer_name'][0].upper() }}
+            <div class="p-6 flex flex-col items-center gap-3 text-center"
+                 style="border-bottom:1px solid var(--border-section)">
+              <!-- Avatar with initials -->
+              <div class="relative">
+                <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                     style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
+                  {{ session['customer_name'][0].upper() }}
+                </div>
+                <div class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
+                     style="background:var(--success-text);border:2px solid var(--bg-card)">
+                  <svg width="10" height="10" fill="white" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
               </div>
               <div>
-                <div class="text-[1rem] font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ customer.full_name }}</div>
-                <div class="text-[0.72rem] mt-0.5" style="color:var(--text-muted)">{{ customer.email or 'No email set' }}</div>
+                <div class="text-[1rem] font-bold"
+                     style="font-family:'Inconsolata',monospace;color:var(--text-primary)">
+                  {{ customer.full_name }}
+                </div>
+                <div class="text-[0.72rem] mt-0.5" style="color:var(--text-muted)">
+                  @{{ customer.username or 'no username' }}
+                </div>
+                <div class="text-[0.7rem] mt-0.5" style="color:var(--text-muted)">
+                  {{ customer.email or 'No email set' }}
+                </div>
               </div>
               <span class="agos-badge agos-badge-info">Customer</span>
             </div>
+
             <div class="p-5 flex flex-col gap-3">
               <div class="flex items-center justify-between text-[0.78rem]">
+                <span style="color:var(--text-muted)">First Name</span>
+                <span class="font-medium" style="color:var(--text-primary)">
+                  {{ customer.first_name or '—' }}
+                </span>
+              </div>
+              <div style="border-top:1px solid var(--border-section)"></div>
+              <div class="flex items-center justify-between text-[0.78rem]">
+                <span style="color:var(--text-muted)">Middle Initial</span>
+                <span class="font-medium" style="color:var(--text-primary)">
+                  {{ customer.middle_initial or '—' }}
+                </span>
+              </div>
+              <div style="border-top:1px solid var(--border-section)"></div>
+              <div class="flex items-center justify-between text-[0.78rem]">
+                <span style="color:var(--text-muted)">Last Name</span>
+                <span class="font-medium" style="color:var(--text-primary)">
+                  {{ customer.last_name or '—' }}
+                </span>
+              </div>
+              <div style="border-top:1px solid var(--border-section)"></div>
+              <div class="flex items-center justify-between text-[0.78rem]">
                 <span style="color:var(--text-muted)">Phone</span>
-                <span class="font-medium" style="color:var(--text-primary)">{{ customer.phone or '—' }}</span>
+                <span class="font-medium" style="color:var(--text-primary)">
+                  {{ customer.phone or customer.contact_number or '—' }}
+                </span>
               </div>
               <div style="border-top:1px solid var(--border-section)"></div>
               <div class="flex items-center justify-between text-[0.78rem]">
                 <span style="color:var(--text-muted)">Loyalty Points</span>
-                <span class="font-bold" style="color:var(--warning-text)">⭐ {{ customer.loyalty_points }}</span>
+                <span class="font-bold" style="color:var(--warning-text)">
+                  ⭐ {{ customer.loyalty_points }}
+                </span>
               </div>
               <div style="border-top:1px solid var(--border-section)"></div>
               <div class="flex items-start justify-between text-[0.78rem] gap-2">
                 <span style="color:var(--text-muted);flex-shrink:0">Address</span>
-                <span class="font-medium text-right" style="color:var(--text-primary)">{{ customer.address or '—' }}</span>
+                <span class="font-medium text-right" style="color:var(--text-primary)">
+                  {{ customer.address or '—' }}
+                </span>
               </div>
               {% if customer.created_at %}
               <div style="border-top:1px solid var(--border-section)"></div>
               <div class="flex items-center justify-between text-[0.78rem]">
                 <span style="color:var(--text-muted)">Member since</span>
-                <span class="font-medium" style="color:var(--text-primary)">{{ customer.created_at.strftime('%b %Y') }}</span>
+                <span class="font-medium" style="color:var(--text-primary)">
+                  {{ customer.created_at.strftime('%b %Y') }}
+                </span>
               </div>
               {% endif %}
             </div>
           </div>
 
-          <!-- Quick links -->
-          <div class="agos-card p-4 flex flex-col gap-2">
-            <div class="text-[0.72rem] uppercase font-semibold tracking-wider mb-1" style="color:var(--text-muted)">Quick Links</div>
-            <a href="{{ url_for('customer_order') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl no-underline text-[0.82rem] font-medium transition-colors" style="color:var(--text-primary);background:var(--bg-input)">
-              <span>🛒</span> Place a New Order
-            </a>
-            <a href="{{ url_for('customer_deliveries') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl no-underline text-[0.82rem] font-medium transition-colors" style="color:var(--text-primary);background:var(--bg-input)">
-              <span>🚚</span> View My Deliveries
-            </a>
-            <a href="{{ url_for('customer_dashboard') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl no-underline text-[0.82rem] font-medium transition-colors" style="color:var(--text-primary);background:var(--bg-input)">
-              <span>📊</span> Go to Dashboard
-            </a>
+          <!-- Loyalty points progress card -->
+          <div class= "agos-card p-5">
+            <div class="text-[0.72rem] uppercase font-semibold tracking-wider mb-3"
+                 style="color:var(--text-muted)">Loyalty Progress</div>
+            {% set pts = customer.loyalty_points %}
+            {% set next_milestone = ((pts // 10) + 1) * 10 %}
+            {% set progress_pct = ((pts % 10) / 10 * 100)|int %}
+            <div class="flex items-end justify-between mb-1.5">
+              <span class="text-2xl font-bold" style="color:var(--warning-text)">{{ pts }}</span>
+              <span class="text-[0.7rem]" style="color:var(--text-muted)">Next: {{ next_milestone }} pts</span>
+            </div>
+            <div class="h-2 rounded-full overflow-hidden" style="background:var(--bg-input)">
+              <div class="h-full rounded-full transition-all duration-500"
+                   style="width:{{ progress_pct }}%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+            </div>
+            <div class="text-[0.68rem] mt-1.5" style="color:var(--text-muted)">
+              Every 10 refills = 1 free refill redeemed automatically
+            </div>
           </div>
 
+      
         </div>
-      </div>
+        <!-- end right column -->
 
+      </div>
     </main>
   </div>
 </div>
@@ -222,10 +383,16 @@
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
       </div>
-      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <h3 class="mb-2 text-2xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
       <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
       <div class="flex items-center gap-4 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
@@ -237,63 +404,194 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  /* ── Show/hide password toggle ── */
-  function togglePw(inputId, iconId) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    input.type = input.type === 'password' ? 'text' : 'password';
+// ── Password toggle ──────────────────────────────────────────────────
+function togglePw(id) {
+  const el = document.getElementById(id);
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+// ── Name field validation ────────────────────────────────────────────
+function validateNameField(input) {
+  const errMap = { 'prof-first': 'err-first', 'prof-last': 'err-last' };
+  const errEl  = document.getElementById(errMap[input.id]);
+  const val    = input.value.trim();
+  if (!val) {
+    showErr(errEl, 'This field is required.');
+    input.style.borderColor = '#e05252';
+  } else if (!/^[A-Za-z\s]+$/.test(val)) {
+    showErr(errEl, 'Letters only — no numbers or symbols.');
+    input.style.borderColor = '#e05252';
+  } else {
+    hideErr(errEl);
+    input.style.borderColor = '';
   }
+  updateNamePreview();
+}
 
-  /* ── Password strength ── */
-  const pwInput = document.getElementById('pw-new');
-  const pwBar   = document.getElementById('pw-strength-bar');
-  const pwLabel = document.getElementById('pw-strength-label');
-
-  if (pwInput) {
-    pwInput.addEventListener('input', function() {
-      const v = this.value;
-      let score = 0;
-      if (v.length >= 8)            score++;
-      if (/[A-Z]/.test(v))          score++;
-      if (/[0-9]/.test(v))          score++;
-      if (/[^A-Za-z0-9]/.test(v))   score++;
-
-      const levels = [
-        { pct: '0%',   color: '#e05252', label: '' },
-        { pct: '25%',  color: '#e05252', label: 'Weak' },
-        { pct: '50%',  color: '#d4a843', label: 'Fair' },
-        { pct: '75%',  color: '#0095c8', label: 'Good' },
-        { pct: '100%', color: '#2eaa6e', label: 'Strong' },
-      ];
-      const l = levels[score];
-      pwBar.style.width = l.pct;
-      pwBar.style.background = l.color;
-      pwLabel.textContent = l.label;
-      pwLabel.style.color = l.color;
-    });
+function validateMI(input) {
+  const errEl = document.getElementById('err-mi');
+  const val   = input.value.trim();
+  if (val && !/^[A-Za-z]\.?$/.test(val)) {
+    showErr(errEl, 'One letter only.');
+    input.style.borderColor = '#e05252';
+  } else {
+    hideErr(errEl);
+    input.style.borderColor = '';
   }
+  updateNamePreview();
+}
 
-  /* ── Password match ── */
-  const pwConfirm = document.getElementById('pw-confirm');
-  const pwMatchMsg = document.getElementById('pw-match-msg');
-
-  if (pwConfirm) {
-    pwConfirm.addEventListener('input', function() {
-      const match = this.value === pwInput.value;
-      pwMatchMsg.textContent = this.value ? (match ? '✓ Passwords match' : '✗ Passwords do not match') : '';
-      pwMatchMsg.style.color = match ? 'var(--success-text)' : '#e05252';
-    });
+function validatePhone(input) {
+  const errEl = document.getElementById('err-phone');
+  const val   = input.value.trim();
+  // Allow only digits while typing
+  input.value = val.replace(/\D/g, '');
+  if (val && (!/^\d{11}$/.test(val))) {
+    showErr(errEl, 'Must be exactly 11 digits.');
+    input.style.borderColor = '#e05252';
+  } else {
+    hideErr(errEl);
+    input.style.borderColor = '';
   }
+}
 
-  /* ── Validate password form before submit ── */
-  document.getElementById('pw-form').addEventListener('submit', function(e) {
-    const newPw  = document.getElementById('pw-new').value;
-    const conf   = document.getElementById('pw-confirm').value;
-    const curr   = document.getElementById('pw-current').value;
-    if (!curr) { e.preventDefault(); alert('Please enter your current password.'); return; }
-    if (newPw.length < 8) { e.preventDefault(); alert('New password must be at least 8 characters.'); return; }
-    if (newPw !== conf) { e.preventDefault(); alert('New passwords do not match.'); return; }
-  });
+function validateEmail(input) {
+  const errEl = document.getElementById('err-email');
+  const val   = input.value.trim();
+  const re    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (val && !re.test(val)) {
+    showErr(errEl, 'Enter a valid email address.');
+    input.style.borderColor = '#e05252';
+  } else {
+    hideErr(errEl);
+    input.style.borderColor = '';
+  }
+}
+
+function showErr(el, msg) { if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
+function hideErr(el)       { if (el) { el.textContent = '';   el.classList.add('hidden'); } }
+
+// ── Live name preview ────────────────────────────────────────────────
+function updateNamePreview() {
+  const first   = document.getElementById('prof-first').value.trim();
+  const mi      = document.getElementById('prof-mi').value.trim();
+  const last    = document.getElementById('prof-last').value.trim();
+  const preview = document.getElementById('name-preview');
+  const text    = document.getElementById('name-preview-text');
+  if (first || last) {
+    const parts = [first];
+    if (mi) parts.push(mi.replace('.', '') + '.');
+    if (last) parts.push(last);
+    text.textContent = parts.join(' ');
+    preview.classList.remove('hidden');
+  } else {
+    preview.classList.add('hidden');
+  }
+}
+
+// ── Info form validation on submit ───────────────────────────────────
+function validateInfoForm(e) {
+  const first = document.getElementById('prof-first').value.trim();
+  const last  = document.getElementById('prof-last').value.trim();
+  const mi    = document.getElementById('prof-mi').value.trim();
+  const phone = document.getElementById('prof-phone').value.trim();
+  const email = document.getElementById('prof-email').value.trim();
+  let ok = true;
+
+  if (!first || !/^[A-Za-z\s]+$/.test(first)) {
+    showErr(document.getElementById('err-first'), 'First name is required (letters only).');
+    ok = false;
+  }
+  if (!last || !/^[A-Za-z\s]+$/.test(last)) {
+    showErr(document.getElementById('err-last'), 'Last name is required (letters only).');
+    ok = false;
+  }
+  if (mi && !/^[A-Za-z]\.?$/.test(mi)) {
+    showErr(document.getElementById('err-mi'), 'One letter only.');
+    ok = false;
+  }
+  if (phone && !/^\d{11}$/.test(phone)) {
+    showErr(document.getElementById('err-phone'), 'Must be exactly 11 digits.');
+    ok = false;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showErr(document.getElementById('err-email'), 'Enter a valid email address.');
+    ok = false;
+  }
+  if (!ok) e.preventDefault();
+  return ok;
+}
+
+// ── Password strength ────────────────────────────────────────────────
+function checkStrength(v) {
+  const bar      = document.getElementById('pw-strength-bar');
+  const label    = document.getElementById('pw-strength-label');
+  const hint     = document.getElementById('pw-length-hint');
+  const list     = document.getElementById('pw-checklist');
+  const hasLen   = v.length >= 8;
+  const hasUp    = /[A-Z]/.test(v);
+  const hasNum   = /[0-9]/.test(v);
+  const hasSym   = /[^A-Za-z0-9]/.test(v);
+  const score    = [hasLen, hasUp, hasNum, hasSym].filter(Boolean).length;
+
+  setReq('req-len', hasLen);
+  setReq('req-up',  hasUp);
+  setReq('req-num', hasNum);
+  setReq('req-sym', hasSym);
+
+  if (v.length > 0) list.classList.remove('hidden');
+  else              list.classList.add('hidden');
+
+  const levels = [
+    { pct: '0%',   color: '#e05252', text: '' },
+    { pct: '25%',  color: '#e05252', text: 'Weak' },
+    { pct: '50%',  color: '#d4a843', text: 'Fair' },
+    { pct: '75%',  color: '#0095c8', text: 'Good' },
+    { pct: '100%', color: '#2eaa6e', text: 'Strong ✓' },
+  ];
+  const l = levels[score];
+  bar.style.width      = l.pct;
+  bar.style.background = l.color;
+  label.textContent    = l.text;
+  label.style.color    = l.color;
+  hint.textContent     = v.length > 0 ? `${v.length} chars` : '';
+}
+
+function setReq(id, met) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.color = met ? 'var(--success-text)' : 'var(--text-muted)';
+  el.querySelector('.req-dot').textContent = met ? '✓' : '●';
+}
+
+// ── Password match ───────────────────────────────────────────────────
+function checkMatch() {
+  const nw   = document.getElementById('pw-new').value;
+  const conf = document.getElementById('pw-confirm').value;
+  const msg  = document.getElementById('pw-match-msg');
+  if (!conf) { msg.textContent = ''; return; }
+  if (nw === conf) {
+    msg.textContent = '✓ Passwords match';
+    msg.style.color = 'var(--success-text)';
+  } else {
+    msg.textContent = '✗ Passwords do not match';
+    msg.style.color = '#e05252';
+  }
+}
+
+// ── Password form submit validation ─────────────────────────────────
+function validatePwForm(e) {
+  const curr = document.getElementById('pw-current').value;
+  const nw   = document.getElementById('pw-new').value;
+  const conf = document.getElementById('pw-confirm').value;
+  if (!curr)           { e.preventDefault(); alert('Please enter your current password.'); return false; }
+  if (nw.length < 8)   { e.preventDefault(); alert('New password must be at least 8 characters.'); return false; }
+  if (nw !== conf)     { e.preventDefault(); alert('New passwords do not match.'); return false; }
+  return true;
+}
+
+// ── Init name preview on page load ───────────────────────────────────
+updateNamePreview();
 </script>
 </body>
 </html>

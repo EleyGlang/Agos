@@ -211,7 +211,6 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
 
-        # 🔹 Try admin/user first
         user = User.query.filter_by(username=username).first()
         if user and user.password and check_password_hash(user.password, password):
             session['user_id'] = user.user_id
@@ -219,7 +218,6 @@ def login():
             session['role'] = user.role
             return redirect(url_for('dashboard'))
 
-        # 🔹 THEN try customer
         customer = Customer.query.filter_by(username=username).first()
         if customer and customer.password and check_password_hash(customer.password, password):
             session['customer_id'] = customer.customer_id
@@ -229,6 +227,7 @@ def login():
         flash('Invalid username or password.', 'error')
 
     return render_template('login.html')
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -459,11 +458,6 @@ def toggle_product(product_id):
 @login_required
 @admin_required
 def delete_product(product_id):
-    """
-    Hard-delete a product.
-    - Admin: only products with no sales/delivery history.
-    - Super Admin: force-delete any product (FK-safe cascade assumed, or handled below).
-    """
     product = Product.query.get_or_404(product_id)
     name    = product.product_name
 
@@ -673,6 +667,10 @@ def toggle_user_status(user_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
+    # Return to profile if request came from there
+    referrer = request.referrer or ''
+    if 'profile' in referrer:
+        return redirect(url_for('profile'))
     return redirect(url_for('user_management'))
 
 @app.route('/admin/users/<int:user_id>/reset-password', methods=['POST'])
@@ -683,7 +681,7 @@ def reset_user_password(user_id):
     new_password = request.form.get('new_password', '').strip()
     if len(new_password) < 8:
         flash('Password must be at least 8 characters.', 'error')
-        return redirect(url_for('user_management'))
+        return redirect(url_for('profile'))
     user.password = generate_password_hash(new_password)
     log_activity('RESET_PASSWORD', 'Users', f'Password reset for @{user.username}', 'User', user_id)
     try:
@@ -692,6 +690,9 @@ def reset_user_password(user_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
+    referrer = request.referrer or ''
+    if 'profile' in referrer:
+        return redirect(url_for('profile'))
     return redirect(url_for('user_management'))
 
 @app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
@@ -738,6 +739,280 @@ def change_password():
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('user_management'))
+
+
+# ══════════════════════════════════════════════════════
+#  STAFF PROFILE  (Admin / Super Admin / Operator)
+# ══════════════════════════════════════════════════════
+
+@app.route('/profile')
+@login_required
+def profile():
+    """
+    Unified profile page for all staff roles.
+    Super Admin → sees Admins + Operators + Customers in management section.
+    Admin       → sees Operators + Customers.
+    Operator    → sees only own profile (no management section).
+    """
+    user = User.query.get_or_404(session['user_id'])
+
+    # Own stats
+    sales_count     = Sale.query.filter_by(user_id=user.user_id).count()
+    recent_activity = ActivityLog.query.filter_by(
+        user_id=user.user_id
+    ).order_by(ActivityLog.created_at.desc()).limit(8).all()
+
+    # Management data (Admin / Super Admin)
+    admin_users      = []
+    operator_users   = []
+    managed_customers = []
+    managed_users_count = 0
+
+    if is_super_admin():
+        admin_users    = User.query.filter_by(role='Admin').order_by(User.created_at.desc()).all()
+        operator_users = User.query.filter_by(role='Operator').order_by(User.created_at.desc()).all()
+        managed_customers = Customer.query.order_by(Customer.full_name).all()
+        managed_users_count = len(admin_users) + len(operator_users)
+    elif is_admin_or_above():
+        operator_users = User.query.filter_by(role='Operator').order_by(User.created_at.desc()).all()
+        managed_customers = Customer.query.order_by(Customer.full_name).all()
+        managed_users_count = len(operator_users)
+
+    return render_template('profile.html',
+        user=user,
+        sales_count=sales_count,
+        recent_activity=recent_activity,
+        admin_users=admin_users,
+        operator_users=operator_users,
+        managed_customers=managed_customers,
+        managed_users_count=managed_users_count,
+        active_page='profile'
+    )
+
+
+@app.route('/profile/update', methods=['POST'])
+@login_required
+def profile_update():
+    """Update own profile info or password."""
+    user      = User.query.get_or_404(session['user_id'])
+    form_type = request.form.get('form_type')
+
+    if form_type == 'info':
+        import re
+        first_name     = request.form.get('first_name', '').strip()
+        middle_initial = request.form.get('middle_initial', '').strip()
+        last_name      = request.form.get('last_name', '').strip()
+
+        if not first_name or not re.match(r'^[A-Za-z\s]+$', first_name):
+            flash('First name is required (letters only).', 'error')
+            return redirect(url_for('profile'))
+        if not last_name or not re.match(r'^[A-Za-z\s]+$', last_name):
+            flash('Last name is required (letters only).', 'error')
+            return redirect(url_for('profile'))
+        if middle_initial and not re.match(r'^[A-Za-z]\.?$', middle_initial):
+            flash('Middle initial must be a single letter.', 'error')
+            return redirect(url_for('profile'))
+
+        parts = [first_name]
+        if middle_initial:
+            parts.append(middle_initial.rstrip('.') + '.')
+        parts.append(last_name)
+        full_name = ' '.join(parts)
+
+        user.first_name     = first_name
+        user.middle_initial = middle_initial.rstrip('.') if middle_initial else None
+        user.last_name      = last_name
+        # Update full_name if it's a stored column; harmless if it's a property
+        try:
+            user.full_name = full_name
+        except AttributeError:
+            pass
+        session['full_name'] = full_name
+
+        log_activity('EDIT_PROFILE', 'Profile',
+                     f'{full_name} updated their profile info', 'User', user.user_id)
+        try:
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error: {str(e)}', 'error')
+
+    elif form_type == 'password':
+        current_password = request.form.get('current_password', '')
+        new_password     = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if not check_password_hash(user.password, current_password):
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('profile'))
+        if len(new_password) < 8:
+            flash('New password must be at least 8 characters.', 'error')
+            return redirect(url_for('profile'))
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'error')
+            return redirect(url_for('profile'))
+
+        user.password = generate_password_hash(new_password)
+        log_activity('CHANGE_PASSWORD', 'Profile',
+                     f'{user.full_name} changed their own password', 'User', user.user_id)
+        try:
+            db.session.commit()
+            flash('Password updated successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating password: {str(e)}', 'error')
+    else:
+        flash('Invalid request.', 'error')
+
+    return redirect(url_for('profile'))
+
+
+@app.route('/admin/users/<int:user_id>/update-info', methods=['POST'])
+@login_required
+@admin_required
+def admin_update_user_info(user_id):
+    """
+    Admin / Super Admin can update name fields for staff below them.
+    Super Admin → can edit Admins and Operators.
+    Admin       → can only edit Operators.
+    """
+    import re
+    target = User.query.get_or_404(user_id)
+
+    # Protect Super Admin accounts from any modification
+    if target.role == 'Super Admin':
+        flash('Super Admin accounts cannot be modified.', 'error')
+        return redirect(url_for('profile'))
+    # Admin cannot touch other Admins
+    if target.role == 'Admin' and not is_super_admin():
+        flash('Only Super Admin can modify Admin accounts.', 'error')
+        return redirect(url_for('profile'))
+    # Nobody can self-edit via this endpoint (use /profile/update instead)
+    if target.user_id == session['user_id']:
+        flash('Use the profile form to update your own information.', 'error')
+        return redirect(url_for('profile'))
+
+    first_name     = request.form.get('first_name', '').strip()
+    middle_initial = request.form.get('middle_initial', '').strip()
+    last_name      = request.form.get('last_name', '').strip()
+
+    if not first_name or not re.match(r'^[A-Za-z\s]+$', first_name):
+        flash('First name is required (letters only).', 'error')
+        return redirect(url_for('profile'))
+    if not last_name or not re.match(r'^[A-Za-z\s]+$', last_name):
+        flash('Last name is required (letters only).', 'error')
+        return redirect(url_for('profile'))
+    if middle_initial and not re.match(r'^[A-Za-z]\.?$', middle_initial):
+        flash('Middle initial must be a single letter.', 'error')
+        return redirect(url_for('profile'))
+
+    parts = [first_name]
+    if middle_initial:
+        parts.append(middle_initial.rstrip('.') + '.')
+    parts.append(last_name)
+    full_name = ' '.join(parts)
+
+    target.first_name     = first_name
+    target.middle_initial = middle_initial.rstrip('.') if middle_initial else None
+    target.last_name      = last_name
+    try:
+        target.full_name = full_name
+    except AttributeError:
+        pass
+
+    log_activity('EDIT_USER_INFO', 'Profile',
+                 f'Updated name for {full_name} (@{target.username}) [{target.role}]',
+                 'User', user_id)
+    try:
+        db.session.commit()
+        flash(f'Profile for {full_name} updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+
+    return redirect(url_for('profile'))
+
+
+@app.route('/admin/customers/<int:customer_id>/update-info', methods=['POST'])
+@login_required
+@admin_required
+def admin_update_customer_info(customer_id):
+    """Admin / Super Admin can update a customer's name, phone, and address."""
+    import re
+    customer = Customer.query.get_or_404(customer_id)
+
+    first_name     = request.form.get('first_name', '').strip()
+    middle_initial = request.form.get('middle_initial', '').strip()
+    last_name      = request.form.get('last_name', '').strip()
+    contact        = request.form.get('contact_number', '').strip()
+    address        = request.form.get('address', '').strip()
+
+    if not first_name:
+        flash('First name is required.', 'error')
+        return redirect(url_for('profile'))
+    if not last_name:
+        flash('Last name is required.', 'error')
+        return redirect(url_for('profile'))
+    if contact and (not contact.isdigit() or len(contact) != 11):
+        flash('Phone number must be exactly 11 digits.', 'error')
+        return redirect(url_for('profile'))
+
+    parts = [first_name]
+    if middle_initial:
+        parts.append(middle_initial.rstrip('.') + '.')
+    parts.append(last_name)
+    full_name = ' '.join(parts)
+
+    customer.first_name     = first_name
+    customer.middle_initial = middle_initial.rstrip('.') if middle_initial else None
+    customer.last_name      = last_name
+    customer.full_name      = full_name
+    if contact:
+        customer.contact_number = contact
+    if address:
+        customer.address = address
+
+    log_activity('EDIT_CUSTOMER_INFO', 'Profile',
+                 f'Updated customer info for {full_name} (ID:{customer_id})',
+                 'Customer', customer_id)
+    try:
+        db.session.commit()
+        flash(f'Customer {full_name} updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+
+    return redirect(url_for('profile'))
+
+
+@app.route('/admin/customers/<int:customer_id>/reset-password', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_customer_password(customer_id):
+    """Admin / Super Admin can reset a customer's portal password."""
+    customer     = Customer.query.get_or_404(customer_id)
+    new_password = request.form.get('new_password', '').strip()
+
+    if not customer.username:
+        flash('This customer does not have a portal account.', 'error')
+        return redirect(url_for('profile'))
+    if len(new_password) < 8:
+        flash('Password must be at least 8 characters.', 'error')
+        return redirect(url_for('profile'))
+
+    customer.password = generate_password_hash(new_password)
+    log_activity('RESET_CUSTOMER_PASSWORD', 'Profile',
+                 f'Password reset for customer {customer.full_name} (@{customer.username})',
+                 'Customer', customer_id)
+    try:
+        db.session.commit()
+        flash(f'Password for {customer.full_name} has been reset.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+
+    return redirect(url_for('profile'))
 
 
 # ══════════════════════════════════════════════════════
@@ -824,15 +1099,10 @@ def delete_customer(customer_id):
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('customers'))
 
-# ── Delete customer account from Users page ─────────────────────────
 @app.route('/admin/customers/<int:customer_id>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_customer_account(customer_id):
-    """
-    Admins: only delete customers with no order/sale history.
-    Super Admins: force-delete any customer.
-    """
     c    = Customer.query.get_or_404(customer_id)
     name = c.full_name
     orders = DeliveryOrder.query.filter_by(customer_id=customer_id).count()
@@ -855,8 +1125,6 @@ def delete_customer_account(customer_id):
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('user_management'))
 
-
-# ── Create customer account (from Users page) ────────────────────────
 @app.route('/customers/create', methods=['POST'])
 @login_required
 @admin_required
@@ -996,6 +1264,15 @@ def deliveries():
 def update_delivery_status(delivery_id):
     delivery   = DeliveryOrder.query.get_or_404(delivery_id)
     new_status = request.form.get('status')
+    if new_status == 'Cancelled':
+        flash('Use the cancel endpoint to cancel a delivery.', 'error')
+        return redirect(url_for('deliveries'))
+    if new_status == 'Confirmed' and delivery.status not in ('Pending', 'Confirmed'):
+        flash('Only Pending deliveries can be confirmed.', 'error')
+        return redirect(url_for('deliveries'))
+    if new_status == 'Delivered' and delivery.status not in ('Pending', 'Confirmed'):
+        flash('Only Pending or Confirmed deliveries can be marked as delivered.', 'error')
+        return redirect(url_for('deliveries'))
     if new_status == 'Delivered' and delivery.status != 'Delivered':
         sale = Sale(user_id=session['user_id'], customer_id=delivery.customer_id,
                     sale_type='Delivery', total_amount=delivery.total_amount, sale_date=datetime.now())
@@ -1011,7 +1288,30 @@ def update_delivery_status(delivery_id):
     log_activity('UPDATE_DELIVERY', 'Deliveries', f'Delivery #{delivery_id} → {new_status}', 'DeliveryOrder', delivery_id)
     try:
         db.session.commit()
-        flash(f'Delivery updated to {new_status}.', 'success')
+        flash(f'Delivery #{delivery_id} updated to {new_status}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    return redirect(url_for('deliveries'))
+
+
+@app.route('/deliveries/<int:delivery_id>/cancel', methods=['POST'])
+@login_required
+def cancel_delivery(delivery_id):
+    delivery = DeliveryOrder.query.get_or_404(delivery_id)
+    if delivery.status in ('Delivered', 'Cancelled'):
+        flash(f'Delivery #{delivery_id} cannot be cancelled — it is already {delivery.status}.', 'error')
+        return redirect(url_for('deliveries'))
+    reason = request.form.get('cancel_reason', '').strip()
+    delivery.status = 'Cancelled'
+    log_activity(
+        'CANCEL_DELIVERY', 'Deliveries',
+        f'Delivery #{delivery_id} cancelled' + (f' — Reason: {reason}' if reason else ''),
+        'DeliveryOrder', delivery_id
+    )
+    try:
+        db.session.commit()
+        flash(f'Delivery #{delivery_id} has been cancelled.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
@@ -1233,8 +1533,6 @@ def reports():
 #  CUSTOMER PORTAL
 # ══════════════════════════════════════════════════════
 
-
-
 @app.route('/customer/logout')
 def customer_logout():
     session.pop('customer_id', None)
@@ -1254,6 +1552,14 @@ def customer_dashboard():
     delivered_orders = DeliveryOrder.query.filter_by(customer_id=cid, status='Delivered').count()
     cancelled_orders = DeliveryOrder.query.filter_by(customer_id=cid, status='Cancelled').count()
     recent_orders    = DeliveryOrder.query.filter_by(customer_id=cid).order_by(DeliveryOrder.delivery_date.desc()).limit(6).all()
+
+    # Most recent active (Pending or Confirmed) delivery — used by the Delivery Tracker card.
+    # Ordered by created_at so we show what was placed last, not what is scheduled furthest.
+    active_delivery  = DeliveryOrder.query.filter(
+        DeliveryOrder.customer_id == cid,
+        DeliveryOrder.status.in_(['Pending', 'Confirmed'])
+    ).order_by(DeliveryOrder.created_at.desc()).first()
+
     order_history_labels, order_history_values, spend_labels, spend_values = [], [], [], []
     for i in range(5, -1, -1):
         ref   = (datetime.now().replace(day=1) - timedelta(days=i * 28)).replace(day=1)
@@ -1271,7 +1577,8 @@ def customer_dashboard():
     return render_template('customer_dashboard.html',
         customer=customer, total_orders=total_orders, pending_orders=pending_orders,
         delivered_orders=delivered_orders, cancelled_orders=cancelled_orders,
-        recent_orders=recent_orders, order_history_labels=order_history_labels,
+        recent_orders=recent_orders, active_delivery=active_delivery,
+        order_history_labels=order_history_labels,
         order_history_values=order_history_values, spend_labels=spend_labels,
         spend_values=spend_values, active_page='customer_dashboard')
 
@@ -1362,23 +1669,64 @@ def customer_profile_update():
         return redirect(url_for('customer_login'))
     customer  = Customer.query.get_or_404(session['customer_id'])
     form_type = request.form.get('form_type')
+
     if form_type == 'info':
-        full_name = request.form.get('full_name', '').strip()
-        if not full_name:
-            flash('Full name is required.', 'error')
+        import re
+        first_name     = request.form.get('first_name', '').strip()
+        middle_initial = request.form.get('middle_initial', '').strip()
+        last_name      = request.form.get('last_name', '').strip()
+        phone          = request.form.get('phone', '').strip()
+        email          = request.form.get('email', '').strip()
+        address        = request.form.get('address', '').strip()
+
+        if not first_name:
+            flash('First name is required.', 'error')
             return redirect(url_for('customer_profile'))
-        customer.full_name = full_name
-        customer.phone     = request.form.get('phone', '').strip() or customer.phone
-        customer.email     = request.form.get('email', '').strip() or None
-        customer.address   = request.form.get('address', '').strip() or customer.address
+        if not re.match(r'^[A-Za-z\s]+$', first_name):
+            flash('First name must contain letters only.', 'error')
+            return redirect(url_for('customer_profile'))
+        if not last_name:
+            flash('Last name is required.', 'error')
+            return redirect(url_for('customer_profile'))
+        if not re.match(r'^[A-Za-z\s]+$', last_name):
+            flash('Last name must contain letters only.', 'error')
+            return redirect(url_for('customer_profile'))
+        if middle_initial and not re.match(r'^[A-Za-z]\.?$', middle_initial):
+            flash('Middle initial must be a single letter.', 'error')
+            return redirect(url_for('customer_profile'))
+        if phone and (not phone.isdigit() or len(phone) != 11):
+            flash('Phone number must be exactly 11 digits.', 'error')
+            return redirect(url_for('customer_profile'))
+        if email and not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+            flash('Please enter a valid email address.', 'error')
+            return redirect(url_for('customer_profile'))
+
+        parts = [first_name]
+        if middle_initial:
+            mi_clean = middle_initial.rstrip('.')
+            parts.append(mi_clean + '.')
+        parts.append(last_name)
+        full_name = ' '.join(parts)
+
+        customer.first_name     = first_name
+        customer.middle_initial = middle_initial.rstrip('.') if middle_initial else None
+        customer.last_name      = last_name
+        customer.full_name      = full_name
+        customer.phone          = phone or customer.phone
+        customer.email          = email or None
+        customer.address        = address or customer.address
         session['customer_name'] = full_name
-        log_activity('EDIT_PROFILE', 'Profile', f'Customer {full_name} updated info', 'Customer', customer.customer_id)
+
+        log_activity('EDIT_PROFILE', 'Profile',
+                     f'Customer {full_name} updated profile info',
+                     'Customer', customer.customer_id)
         try:
             db.session.commit()
             flash('Your information has been updated!', 'success')
         except Exception as e:
             db.session.rollback()
             flash(f'Error: {str(e)}', 'error')
+
     elif form_type == 'password':
         current_password = request.form.get('current_password', '')
         new_password     = request.form.get('new_password', '')
@@ -1393,7 +1741,9 @@ def customer_profile_update():
             flash('New passwords do not match.', 'error')
             return redirect(url_for('customer_profile'))
         customer.password = generate_password_hash(new_password)
-        log_activity('CHANGE_PASSWORD', 'Profile', f'Customer {customer.full_name} changed password', 'Customer', customer.customer_id)
+        log_activity('CHANGE_PASSWORD', 'Profile',
+                     f'Customer {customer.full_name} changed password',
+                     'Customer', customer.customer_id)
         try:
             db.session.commit()
             flash('Password updated successfully!', 'success')

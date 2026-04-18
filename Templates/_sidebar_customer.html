@@ -1,45 +1,214 @@
+{#
+  _sidebar_customer.html — Agos Customer Sidebar
+  ================================================
+  Include in every customer page with:
+      {% include '_sidebar_customer.html' %}
+
+  Requires in the calling template:
+    - session['customer_name']
+    - active_page variable
+    - url_for('logout') accessible
+
+  IMPORTANT: Replace ml-0 md:ml-[260px] on your main content wrapper with
+             class="agos-main-wrap" so the collapse transition works.
+
+  Icons: Material Symbols Rounded — https://fonts.google.com/icons
+#}
+
+<!-- Material Symbols Rounded -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet">
+
+<style>
+  /* ── Material Symbol base ── */
+  .agos-nav-icon {
+    font-family: 'Material Symbols Rounded', sans-serif;
+    font-size: 18px;
+    line-height: 1;
+    letter-spacing: normal;
+    font-style: normal;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: inherit;
+    user-select: none;
+  }
+
+  /* Width managed here so CSS can transition it */
+  #sidebar {
+    width: 260px;
+    transition: width 0.3s ease, transform 0.3s ease;
+  }
+
+  /* ════ Desktop collapse state ════ */
+  @media (min-width: 768px) {
+
+    body.sidebar-collapsed #sidebar {
+      width: 64px;
+      overflow-x: hidden;
+    }
+
+    /* Hide text-only elements */
+    body.sidebar-collapsed .sidebar-brand-text,
+    body.sidebar-collapsed .sidebar-user-info,
+    body.sidebar-collapsed .sidebar-label {
+      display: none;
+    }
+
+    /* Nav links: icon centred */
+    body.sidebar-collapsed .agos-sidebar-link {
+      justify-content: center;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    /* User card: avatar only */
+    body.sidebar-collapsed .agos-sidebar-user-wrap {
+      justify-content: center;
+      padding: 10px 8px;
+      margin: 8px;
+    }
+
+    /* Logout: icon only */
+    body.sidebar-collapsed .agos-logout-btn {
+      justify-content: center;
+      padding: 10px 8px;
+    }
+
+    /* Chevron flips when collapsed */
+    .sidebar-collapse-icon { transition: transform 0.3s ease; }
+    body.sidebar-collapsed .sidebar-collapse-icon { transform: rotate(180deg); }
+
+    /* Toggle button slides with the sidebar edge */
+    #sidebar-collapse-btn {
+      left: 247px; /* 260px - 13px (half of 26px btn) */
+      transition: left 0.3s ease;
+    }
+    body.sidebar-collapsed #sidebar-collapse-btn {
+      left: 51px;  /* 64px - 13px */
+    }
+
+    /* Main content shifts to match sidebar width */
+    .agos-main-wrap {
+      margin-left: 260px;
+      transition: margin-left 0.3s ease;
+    }
+    body.sidebar-collapsed .agos-main-wrap {
+      margin-left: 64px;
+    }
+  }
+</style>
+
 <!-- ══ CUSTOMER SIDEBAR ══ -->
-<aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+<aside id="sidebar"
+  class="agos-sidebar fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto md:translate-x-0 -translate-x-full">
+
+  <!-- ── Brand ── -->
   <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-    <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
-      <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
+    <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+         style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+      <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+        <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+      </svg>
     </div>
-    <div>
-      <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace">Agos</div>
-      <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
+    <div class="sidebar-brand-text">
+      <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+      <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text,#5bb8e0)">EP-Bluelife System</div>
     </div>
   </div>
 
+  <!-- ── User Card ── -->
   <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3">
-    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['customer_name'][0].upper() }}</div>
-    <div class="min-w-0">
-      <div class="text-[0.82rem] font-medium truncate" style="color:rgba(204,234,247,0.90)">{{ session['customer_name'] }}</div>
+    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+         style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
+      {{ session['customer_name'][0].upper() }}
+    </div>
+    <div class="min-w-0 sidebar-user-info">
+      <div class="text-[0.82rem] font-medium truncate" style="color:rgba(204,234,247,0.90)">
+        {{ session['customer_name'] }}
+      </div>
       <span class="agos-sidebar-role-badge">Customer</span>
     </div>
   </div>
 
+  <!-- ── Navigation ── -->
   <nav class="flex-1 py-2">
-    <a href="{{ url_for('customer_dashboard') }}" class="agos-sidebar-link {% if active_page == 'customer_dashboard' %}active{% endif %}">
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" class="mr-2.5 flex-shrink-0"><rect x="2" y="2" width="7" height="7" rx="1.5" fill="currentColor" opacity=".8"/><rect x="11" y="2" width="7" height="7" rx="1.5" fill="currentColor" opacity=".8"/><rect x="2" y="11" width="7" height="7" rx="1.5" fill="currentColor" opacity=".8"/><rect x="11" y="11" width="7" height="7" rx="1.5" fill="currentColor" opacity=".8"/></svg>
-      Dashboard
+
+    <a href="{{ url_for('customer_dashboard') }}" title="Dashboard"
+       class="agos-sidebar-link {% if active_page == 'customer_dashboard' %}active{% endif %}">
+      <span class="agos-nav-icon">dashboard</span>
+      <span class="sidebar-label">Dashboard</span>
     </a>
-    <a href="{{ url_for('customer_order') }}" class="agos-sidebar-link {% if active_page == 'customer_order' %}active{% endif %}">
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" class="mr-2.5 flex-shrink-0"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      Place Order
+
+    <a href="{{ url_for('customer_order') }}" title="Place Order"
+       class="agos-sidebar-link {% if active_page == 'customer_order' %}active{% endif %}">
+      <span class="agos-nav-icon">shopping_cart</span>
+      <span class="sidebar-label">Place Order</span>
     </a>
-    <a href="{{ url_for('customer_deliveries') }}" class="agos-sidebar-link {% if active_page == 'customer_deliveries' %}active{% endif %}">
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" class="mr-2.5 flex-shrink-0"><path d="M3 7h9v8H3zM12 9l5 2v4h-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6" cy="16" r="1.5" fill="currentColor"/><circle cx="15" cy="16" r="1.5" fill="currentColor"/></svg>
-      My Deliveries
+
+    <a href="{{ url_for('customer_deliveries') }}" title="My Deliveries"
+       class="agos-sidebar-link {% if active_page == 'customer_deliveries' %}active{% endif %}">
+      <span class="agos-nav-icon">local_shipping</span>
+      <span class="sidebar-label">My Deliveries</span>
     </a>
-    <a href="{{ url_for('customer_profile') }}" class="agos-sidebar-link {% if active_page == 'customer_profile' %}active{% endif %}">
-      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" class="mr-2.5 flex-shrink-0"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      My Profile
+
+    <a href="{{ url_for('customer_profile') }}" title="My Profile"
+       class="agos-sidebar-link {% if active_page == 'customer_profile' %}active{% endif %}">
+      <span class="agos-nav-icon">account_circle</span>
+      <span class="sidebar-label">My Profile</span>
     </a>
+
   </nav>
 
+  <!-- ── Footer ── -->
   <div class="agos-sidebar-footer flex-shrink-0 p-3">
-    <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
+    <button class="agos-logout-btn flex items-center gap-2.5" onclick="openLogoutModal()">
+      <span class="agos-nav-icon" style="font-size:16px">logout</span>
+      <span class="sidebar-label">Log Out</span>
+    </button>
   </div>
+
 </aside>
 
+<!-- Sidebar Overlay (mobile) -->
 <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
+
+<!--
+  Collapse toggle — floats at the right edge of the sidebar.
+  Fixed-position so it stays visible even when the nav scrolls.
+-->
+<button id="sidebar-collapse-btn"
+        onclick="toggleSidebarCollapse()"
+        title="Toggle sidebar"
+        class="hidden md:flex items-center justify-center"
+        style="
+          position: fixed;
+          top: 22px;
+          z-index: 50;
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          background: rgba(0,149,200,0.85);
+          border: 2px solid rgba(91,184,224,0.45);
+          cursor: pointer;
+          color: #fff;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+          padding: 0;
+        ">
+  <span class="agos-nav-icon sidebar-collapse-icon" style="font-size:14px">chevron_left</span>
+</button>
+
+<script>
+/* ══ Sidebar Collapse (desktop) ══ */
+function toggleSidebarCollapse() {
+  const collapsed = document.body.classList.toggle('sidebar-collapsed');
+  localStorage.setItem('agos-sidebar-collapsed', String(collapsed));
+}
+
+/* Restore saved state immediately so there's no flash on load */
+(function () {
+  if (localStorage.getItem('agos-sidebar-collapsed') === 'true') {
+    document.body.classList.add('sidebar-collapsed');
+  }
+})();
+</script>

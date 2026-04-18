@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Page-level card overrides ────────────────────────── */
+    .stat-chip{display:flex;flex-direction:column;align-items:center;gap:.2rem;padding:.85rem .5rem;background:var(--bg-input);border-radius:.75rem;flex:1;min-width:0}
+    .stat-chip-val{font-size:1.35rem;font-weight:800;line-height:1;color:var(--text-primary);font-family:'Inconsolata',monospace}
+    .stat-chip-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-family:'Outfit',sans-serif;text-align:center}
+    .tab-btn{padding:.45rem 1rem;border-radius:.5rem;font-size:.8rem;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;transition:background .15s,color .15s;border:1px solid transparent;background:transparent;color:var(--text-muted)}
+    .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .tab-btn:not(.active):hover{background:var(--accent-soft);color:var(--accent)}
+    .tab-pane{display:none}.tab-pane.active{display:block}
+    .mgmt-row{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid var(--border-section);transition:background .12s}
+    .mgmt-row:hover{background:var(--bg-input)}
+    .mgmt-row:last-child{border-bottom:none}
+    .role-dot{width:.55rem;height:.55rem;border-radius:50%;flex-shrink:0}
+    .pb-track{height:6px;border-radius:999px;background:var(--accent-softer);overflow:hidden;margin-top:.3rem}
+    .pb-fill{height:100%;border-radius:999px}
+    /* ── Modals ───────────────────────────────────────────── */
+    .agos-modal-overlay{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
+    .agos-modal-overlay.open{display:flex}
+  </style>
+</head>
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+
+<div class="flex min-h-screen">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar"
+    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+        </svg>
+      </div>
+      <div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
+      </div>
+    </div>
+
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+           style="background:{% if session.get('role') == 'Super Admin' %}linear-gradient(135deg,#7c3aed,#a855f7){% elif session.get('role') == 'Admin' %}linear-gradient(135deg,#2d88b8,#5bb8e0){% else %}linear-gradient(135deg,#0095c8,#38bdf8){% endif %}">
+        {{ session['full_name'][0].upper() }}
+      </div>
+      <div>
+        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,.90)">{{ session['full_name'] }}</div>
+        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
+      </div>
+    </div>
+
+    <nav class="flex-1 py-2">
+      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
+      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
+      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
+      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
+      {% if session.get('role') in ['Admin','Super Admin'] %}
+      <a href="{{ url_for('customers') }}"        class="agos-sidebar-link">Customers</a>
+      {% endif %}
+      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
+      {% if session.get('role') in ['Admin','Super Admin'] %}
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
+      {% endif %}
+      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
+      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
+      {% if session.get('role') in ['Admin','Super Admin'] %}
+      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
+      <a href="{{ url_for('landing_editor') }}"   class="agos-sidebar-link">Landing Editor</a>
+      {% endif %}
+      <a href="{{ url_for('profile') }}"          class="agos-sidebar-link active">My Profile</a>
+    </nav>
+
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
+    </div>
+  </aside>
+
+  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
+
+  <!-- ══ MAIN SHELL ══ -->
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+
+    <!-- TOPBAR -->
+    <header class="agos-topbar flex items-center justify-between px-5 py-3">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()"
+                class="md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div>
+          <div class="text-xl font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">My Profile</div>
+          <div class="text-xs" style="color:var(--text-muted)">EP-Bluelife Water Refilling Station</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span id="theme-label" class="text-xs hidden sm:inline" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle">
+            <input type="checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div id="topbar-date" class="text-xs px-3 py-1 rounded-md agos-topbar-date hidden sm:block"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+             style="background:{% if session.get('role') == 'Super Admin' %}linear-gradient(135deg,#7c3aed,#a855f7){% elif session.get('role') == 'Admin' %}linear-gradient(135deg,#2d88b8,#5bb8e0){% else %}linear-gradient(135deg,#0095c8,#38bdf8){% endif %}">
+          {{ session['full_name'][0].upper() }}
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="flex-1 p-4 md:p-5 lg:p-7 flex flex-col gap-5">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+        <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <!-- ── Welcome Banner ── -->
+      <div class="agos-welcome-banner relative overflow-hidden rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="absolute rounded-full pointer-events-none" style="width:220px;height:220px;right:-40px;top:-60px;background:rgba(91,184,224,.07)"></div>
+        <div class="relative z-10 flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
+               style="background:{% if session.get('role') == 'Super Admin' %}linear-gradient(135deg,#7c3aed,#a855f7);box-shadow:0 6px 18px rgba(124,58,237,.45){% elif session.get('role') == 'Admin' %}linear-gradient(135deg,#2d88b8,#5bb8e0);box-shadow:0 6px 18px rgba(45,136,184,.40){% else %}linear-gradient(135deg,#0095c8,#38bdf8);box-shadow:0 6px 18px rgba(0,149,200,.40){% endif %}">
+            {{ session['full_name'][0].upper() }}
+          </div>
+          <div>
+            <div class="text-xl md:text-2xl font-bold text-white mb-0.5" style="font-family:'Inconsolata',monospace">{{ user.full_name }}</div>
+            <div class="text-[0.75rem]" style="color:rgba(184,218,240,.65)">@{{ user.username }} · Member since {{ user.created_at.strftime('%B %Y') if user.created_at else 'N/A' }}</div>
+          </div>
+        </div>
+        <div class="relative z-10">
+          {% if session.get('role') == 'Super Admin' %}
+          <span class="text-[0.7rem] font-bold tracking-widest uppercase px-3 py-1.5 rounded-lg" style="background:rgba(124,58,237,.35);border:1px solid rgba(167,139,250,.40);color:#c084fc">⚡ Super Admin</span>
+          {% elif session.get('role') == 'Admin' %}
+          <span class="text-[0.7rem] font-bold tracking-widest uppercase px-3 py-1.5 rounded-lg" style="background:rgba(0,149,200,.30);border:1px solid rgba(91,184,224,.40);color:#5bb8e0">🛡 Admin</span>
+          {% else %}
+          <span class="text-[0.7rem] font-bold tracking-widest uppercase px-3 py-1.5 rounded-lg" style="background:rgba(0,149,200,.20);border:1px solid rgba(91,184,224,.30);color:#93c5d8">Operator</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ── Two-Column Grid ── -->
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
+
+        <!-- LEFT: Edit Forms -->
+        <div class="flex flex-col gap-5">
+
+          <!-- Personal Information Form -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Personal Information</div>
+              <div class="agos-card-subtitle">Update your display name (letters only)</div>
+            </div>
+            <form method="POST" action="{{ url_for('profile_update') }}" novalidate onsubmit="return validateInfoForm(event)">
+              <input type="hidden" name="form_type" value="info"/>
+              <div class="p-5 flex flex-col gap-4">
+
+                <!-- Name Row -->
+                <div>
+                  <label class="agos-label">Full Name <span style="color:#d32f2f">*</span></label>
+                  <div class="grid grid-cols-1 sm:grid-cols-[1fr_90px_1fr] gap-2">
+                    <div class="flex flex-col gap-1">
+                      <input type="text" name="first_name" id="p-first" required
+                             value="{{ user.first_name or '' }}" placeholder="First Name"
+                             oninput="validateNameField(this); updatePreview()"
+                             class="agos-input" pattern="[A-Za-z\s]+" title="Letters only"/>
+                      <span id="err-first" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <input type="text" name="middle_initial" id="p-mi"
+                             value="{{ user.middle_initial or '' }}" placeholder="M.I."
+                             maxlength="2" oninput="validateMI(this); updatePreview()"
+                             class="agos-input text-center" title="Optional single letter"/>
+                      <span id="err-mi" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                      <input type="text" name="last_name" id="p-last" required
+                             value="{{ user.last_name or '' }}" placeholder="Last Name"
+                             oninput="validateNameField(this); updatePreview()"
+                             class="agos-input" pattern="[A-Za-z\s]+" title="Letters only"/>
+                      <span id="err-last" class="text-[0.65rem] hidden" style="color:#e05252"></span>
+                    </div>
+                  </div>
+                  <div id="name-preview" class="mt-2 text-[0.72rem] px-3 py-1.5 rounded-lg hidden"
+                       style="background:var(--accent-soft);color:var(--accent)">
+                    <span class="font-semibold">Preview: </span><span id="name-preview-text"></span>
+                  </div>
+                </div>
+
+                <!-- Username (read-only display) -->
+                <div>
+                  <label class="agos-label">Username</label>
+                  <div class="agos-input flex items-center gap-2 opacity-70 cursor-default select-none" style="pointer-events:none">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--text-muted);flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <span style="color:var(--text-secondary)">@{{ user.username }}</span>
+                    <span class="ml-auto text-[0.6rem] px-1.5 py-0.5 rounded" style="background:var(--bg-card);color:var(--text-faint);border:1px solid var(--border-card)">Read-only</span>
+                  </div>
+                  <div class="text-[0.65rem] mt-1" style="color:var(--text-muted)">Username changes must be done by an Admin via User Management.</div>
+                </div>
+
+                <div class="flex justify-end">
+                  <button type="submit" class="agos-btn-primary px-7 py-2.5">Save Changes</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Change Password Form -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Change Password</div>
+              <div class="agos-card-subtitle">Keep your account secure — min. 8 characters</div>
+            </div>
+            <form method="POST" action="{{ url_for('profile_update') }}" novalidate onsubmit="return validatePwForm(event)">
+              <input type="hidden" name="form_type" value="password"/>
+              <div class="p-5 flex flex-col gap-4">
+
+                <div class="flex flex-col gap-1">
+                  <label class="agos-label">Current Password <span style="color:#d32f2f">*</span></label>
+                  <div class="relative">
+                    <input type="password" name="current_password" id="pw-cur" class="agos-input" style="padding-right:2.75rem" placeholder="Enter current password"/>
+                    <button type="button" onclick="togglePw('pw-cur')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label class="agos-label">New Password <span style="color:#d32f2f">*</span></label>
+                  <div class="relative">
+                    <input type="password" name="new_password" id="pw-new" class="agos-input" style="padding-right:2.75rem"
+                           placeholder="At least 8 characters"
+                           oninput="checkStrength(this.value); checkMatch()"/>
+                    <button type="button" onclick="togglePw('pw-new')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
+                  <!-- Strength meter -->
+                  <div class="mt-1">
+                    <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--bg-input)">
+                      <div id="str-bar" class="h-full rounded-full transition-all duration-300" style="width:0%;background:#e05252"></div>
+                    </div>
+                    <div class="flex justify-between mt-0.5">
+                      <span id="str-lbl" class="text-[0.64rem]" style="color:var(--text-muted)"></span>
+                      <span id="str-len" class="text-[0.64rem]" style="color:var(--text-muted)"></span>
+                    </div>
+                  </div>
+                  <div id="pw-checklist" class="mt-1.5 grid grid-cols-2 gap-1 hidden">
+                    <div id="req-len" class="text-[0.66rem] flex items-center gap-1" style="color:var(--text-muted)"><span id="dot-len">●</span> 8+ characters</div>
+                    <div id="req-up"  class="text-[0.66rem] flex items-center gap-1" style="color:var(--text-muted)"><span id="dot-up">●</span>  Uppercase</div>
+                    <div id="req-num" class="text-[0.66rem] flex items-center gap-1" style="color:var(--text-muted)"><span id="dot-num">●</span> Number</div>
+                    <div id="req-sym" class="text-[0.66rem] flex items-center gap-1" style="color:var(--text-muted)"><span id="dot-sym">●</span> Symbol</div>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label class="agos-label">Confirm New Password <span style="color:#d32f2f">*</span></label>
+                  <div class="relative">
+                    <input type="password" name="confirm_password" id="pw-conf" class="agos-input" style="padding-right:2.75rem"
+                           placeholder="Re-enter new password" oninput="checkMatch()"/>
+                    <button type="button" onclick="togglePw('pw-conf')" class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer p-0" style="color:var(--text-muted)">
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                  </div>
+                  <div id="pw-match" class="text-[0.66rem] mt-0.5" style="color:var(--text-muted)"></div>
+                </div>
+
+                <div class="flex justify-end">
+                  <button type="submit" class="agos-btn-primary px-7 py-2.5">Update Password</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+        <!-- end left col -->
+
+        <!-- RIGHT: Summary Cards -->
+        <div class="flex flex-col gap-4">
+
+          <!-- Profile Summary -->
+          <div class="agos-card overflow-hidden">
+            <div class="p-5 flex flex-col items-center text-center gap-3" style="border-bottom:1px solid var(--border-section)">
+              <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold text-white"
+                   style="background:{% if session.get('role') == 'Super Admin' %}linear-gradient(135deg,#7c3aed,#a855f7){% elif session.get('role') == 'Admin' %}linear-gradient(135deg,#2d88b8,#5bb8e0){% else %}linear-gradient(135deg,#0095c8,#38bdf8){% endif %}">
+                {{ user.full_name[0].upper() }}
+              </div>
+              <div>
+                <div class="text-[1rem] font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ user.full_name }}</div>
+                <div class="text-[0.72rem] mt-0.5" style="color:var(--text-muted)">@{{ user.username }}</div>
+              </div>
+              {% if session.get('role') == 'Super Admin' %}
+              <span class="agos-badge" style="background:rgba(124,58,237,.25);color:#c084fc;border-color:rgba(124,58,237,.40)">⚡ Super Admin</span>
+              {% elif session.get('role') == 'Admin' %}
+              <span class="agos-badge agos-badge-info">🛡 Admin</span>
+              {% else %}
+              <span class="agos-badge" style="background:rgba(0,149,200,.15);color:var(--accent);border-color:rgba(0,149,200,.30)">Operator</span>
+              {% endif %}
+            </div>
+
+            <!-- Stat chips -->
+            <div class="p-4 flex gap-2">
+              <div class="stat-chip">
+                <span class="stat-chip-val">{{ sales_count }}</span>
+                <span class="stat-chip-lbl">Sales</span>
+              </div>
+              <div class="stat-chip">
+                <span class="stat-chip-val">{{ user.status }}</span>
+                <span class="stat-chip-lbl">Status</span>
+              </div>
+              {% if session.get('role') in ['Admin','Super Admin'] %}
+              <div class="stat-chip">
+                <span class="stat-chip-val">{{ managed_users_count }}</span>
+                <span class="stat-chip-lbl">Managed</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="px-5 pb-4 flex flex-col gap-2" style="border-top:1px solid var(--border-section)">
+              {% if user.created_at %}
+              <div class="flex justify-between text-[0.76rem] pt-3">
+                <span style="color:var(--text-muted)">Member Since</span>
+                <span class="font-medium" style="color:var(--text-primary)">{{ user.created_at.strftime('%b %d, %Y') }}</span>
+              </div>
+              <div style="border-top:1px solid var(--border-section)"></div>
+              {% endif %}
+              <div class="flex justify-between text-[0.76rem]">
+                <span style="color:var(--text-muted)">Role</span>
+                <span class="font-medium" style="color:var(--text-primary)">{{ user.role }}</span>
+              </div>
+              <div style="border-top:1px solid var(--border-section)"></div>
+              <div class="flex justify-between text-[0.76rem]">
+                <span style="color:var(--text-muted)">Account Status</span>
+                <span class="font-medium" style="color:{% if user.status == 'Active' %}var(--success-text){% else %}var(--danger-text){% endif %}">{{ user.status }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity Feed -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Recent Activity</div>
+              {% if session.get('role') in ['Admin','Super Admin'] %}
+              <a href="{{ url_for('activity_log') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a>
+              {% endif %}
+            </div>
+            <div class="p-3 flex flex-col gap-1 max-h-[280px] overflow-y-auto">
+              {% if recent_activity %}
+                {% for log in recent_activity %}
+                <div class="flex items-start gap-2.5 py-2" style="border-bottom:1px solid var(--border-section)">
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white flex-shrink-0 mt-0.5"
+                       style="background:linear-gradient(135deg,#2d88b8,#0095c8)">
+                    {{ log.actor_name[0].upper() if log.actor_name else '?' }}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-[0.72rem] font-semibold truncate" style="color:var(--text-primary)">{{ log.action }}</div>
+                    <div class="text-[0.66rem] truncate" style="color:var(--text-muted)">{{ log.description }}</div>
+                    <div class="text-[0.62rem] mt-0.5" style="color:var(--text-faint)">{{ log.created_at.strftime('%b %d, %I:%M %p') }}</div>
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="text-center py-8 text-xs" style="color:var(--text-faint)">No activity yet.</div>
+              {% endif %}
+            </div>
+          </div>
+
+        </div>
+        <!-- end right col -->
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           MANAGEMENT SECTION — Admin & Super Admin only
+      ══════════════════════════════════════════════════════ -->
+      {% if session.get('role') in ['Admin','Super Admin'] %}
+
+      <div class="agos-card overflow-hidden">
+        <div class="agos-card-header flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div>
+            <div class="agos-card-title">
+              {% if session.get('role') == 'Super Admin' %}⚡ User Management{% else %}🛡 Staff &amp; Customer Management{% endif %}
+            </div>
+            <div class="agos-card-subtitle">
+              {% if session.get('role') == 'Super Admin' %}Manage all Admins, Operators, and Customer accounts{% else %}Edit Operators and Customer account info{% endif %}
+            </div>
+          </div>
+          <!-- Tabs -->
+          <div class="flex gap-1.5 ml-auto flex-wrap">
+            {% if session.get('role') == 'Super Admin' %}
+            <button class="tab-btn active" onclick="switchTab('admins',this)">Admins</button>
+            {% endif %}
+            <button class="tab-btn {% if session.get('role') != 'Super Admin' %}active{% endif %}" onclick="switchTab('operators',this)">Operators</button>
+            <button class="tab-btn" onclick="switchTab('customers',this)">Customers</button>
+          </div>
+        </div>
+
+        <div class="p-0">
+
+          <!-- ── ADMINS TAB (Super Admin only) ── -->
+          {% if session.get('role') == 'Super Admin' %}
+          <div id="tab-admins" class="tab-pane active">
+            {% if admin_users %}
+            <div class="overflow-x-auto">
+              <table class="agos-table w-full border-collapse min-w-[520px]">
+                <thead><tr><th>Name</th><th>Username</th><th>Status</th><th>Since</th><th class="text-center">Actions</th></tr></thead>
+                <tbody>
+                  {% for u in admin_users %}
+                  <tr>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white flex-shrink-0"
+                             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ u.full_name[0].upper() }}</div>
+                        <div>
+                          <div class="text-[0.8rem] font-medium" style="color:var(--text-primary)">{{ u.full_name }}</div>
+                          <div class="text-[0.65rem]" style="color:var(--text-muted)">Admin</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="color:var(--text-secondary);font-size:.78rem">@{{ u.username }}</td>
+                    <td>
+                      <span class="agos-badge {% if u.status == 'Active' %}agos-badge-success{% else %}agos-badge-danger{% endif %}">
+                        {{ u.status }}
+                      </span>
+                    </td>
+                    <td style="font-size:.72rem;color:var(--text-muted)">{{ u.created_at.strftime('%b %d, %Y') if u.created_at else '—' }}</td>
+                    <td>
+                      <div class="flex gap-1.5 justify-center flex-wrap">
+                        <button onclick="openEditUser({{ u.user_id }},'{{ u.first_name or '' }}','{{ u.middle_initial or '' }}','{{ u.last_name or '' }}')"
+                                class="agos-btn-ghost text-[0.7rem] px-2 py-1">Edit</button>
+                        <button onclick="openResetPw({{ u.user_id }},'{{ u.full_name }}')"
+                                class="agos-btn-ghost text-[0.7rem] px-2 py-1" style="color:var(--warning-text)">Reset PW</button>
+                        <form method="POST" action="{{ url_for('toggle_user_status', user_id=u.user_id) }}" style="display:inline">
+                          <button type="submit" class="agos-btn-ghost text-[0.7rem] px-2 py-1"
+                                  style="color:{% if u.status == 'Active' %}var(--danger-text){% else %}var(--success-text){% endif %}"
+                                  onclick="return confirm('Toggle status for {{ u.full_name }}?')">
+                            {% if u.status == 'Active' %}Deactivate{% else %}Activate{% endif %}
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="flex items-center justify-center py-12 text-sm" style="color:var(--text-faint)">No admin accounts found.</div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- ── OPERATORS TAB ── -->
+          <div id="tab-operators" class="tab-pane {% if session.get('role') != 'Super Admin' %}active{% endif %}">
+            {% if operator_users %}
+            <div class="overflow-x-auto">
+              <table class="agos-table w-full border-collapse min-w-[520px]">
+                <thead><tr><th>Name</th><th>Username</th><th>Status</th><th>Since</th><th class="text-center">Actions</th></tr></thead>
+                <tbody>
+                  {% for u in operator_users %}
+                  <tr>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white flex-shrink-0"
+                             style="background:linear-gradient(135deg,#0095c8,#38bdf8)">{{ u.full_name[0].upper() }}</div>
+                        <div>
+                          <div class="text-[0.8rem] font-medium" style="color:var(--text-primary)">{{ u.full_name }}</div>
+                          <div class="text-[0.65rem]" style="color:var(--text-muted)">Operator</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="color:var(--text-secondary);font-size:.78rem">@{{ u.username }}</td>
+                    <td>
+                      <span class="agos-badge {% if u.status == 'Active' %}agos-badge-success{% else %}agos-badge-danger{% endif %}">{{ u.status }}</span>
+                    </td>
+                    <td style="font-size:.72rem;color:var(--text-muted)">{{ u.created_at.strftime('%b %d, %Y') if u.created_at else '—' }}</td>
+                    <td>
+                      <div class="flex gap-1.5 justify-center flex-wrap">
+                        <button onclick="openEditUser({{ u.user_id }},'{{ u.first_name or '' }}','{{ u.middle_initial or '' }}','{{ u.last_name or '' }}')"
+                                class="agos-btn-ghost text-[0.7rem] px-2 py-1">Edit</button>
+                        {% if session.get('role') == 'Super Admin' %}
+                        <button onclick="openResetPw({{ u.user_id }},'{{ u.full_name }}')"
+                                class="agos-btn-ghost text-[0.7rem] px-2 py-1" style="color:var(--warning-text)">Reset PW</button>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('toggle_user_status', user_id=u.user_id) }}" style="display:inline">
+                          <button type="submit" class="agos-btn-ghost text-[0.7rem] px-2 py-1"
+                                  style="color:{% if u.status == 'Active' %}var(--danger-text){% else %}var(--success-text){% endif %}"
+                                  onclick="return confirm('Toggle status for {{ u.full_name }}?')">
+                            {% if u.status == 'Active' %}Deactivate{% else %}Activate{% endif %}
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="flex items-center justify-center py-12 text-sm" style="color:var(--text-faint)">No operator accounts found.</div>
+            {% endif %}
+          </div>
+
+          <!-- ── CUSTOMERS TAB ── -->
+          <div id="tab-customers" class="tab-pane">
+            <!-- Search bar -->
+            <div class="px-4 pt-3 pb-2">
+              <input type="text" id="cust-search" placeholder="Search customers by name or username…"
+                     oninput="filterCustomers(this.value)"
+                     class="agos-input" style="max-width:360px"/>
+            </div>
+            {% if managed_customers %}
+            <div class="overflow-x-auto">
+              <table class="agos-table w-full border-collapse min-w-[560px]">
+                <thead><tr><th>Name</th><th>Username</th><th>Phone</th><th>⭐ Points</th><th class="text-center">Actions</th></tr></thead>
+                <tbody id="cust-tbody">
+                  {% for c in managed_customers %}
+                  <tr data-name="{{ c.full_name | lower }}" data-user="{{ (c.username or '') | lower }}">
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white flex-shrink-0"
+                             style="background:linear-gradient(135deg,#d4a843,#f59e0b)">{{ c.full_name[0].upper() }}</div>
+                        <div class="text-[0.8rem] font-medium" style="color:var(--text-primary)">{{ c.full_name }}</div>
+                      </div>
+                    </td>
+                    <td style="color:var(--text-secondary);font-size:.78rem">{{ ('@' + c.username) if c.username else '—' }}</td>
+                    <td style="font-size:.78rem;color:var(--text-secondary)">{{ c.contact_number or c.phone or '—' }}</td>
+                    <td><span class="agos-badge agos-badge-warning">{{ c.loyalty_points }}</span></td>
+                    <td>
+                      <div class="flex gap-1.5 justify-center flex-wrap">
+                        <button onclick="openEditCustomer({{ c.customer_id }},'{{ c.first_name or '' }}','{{ c.middle_initial or '' }}','{{ c.last_name or '' }}','{{ c.contact_number or c.phone or '' }}','{{ c.address or '' }}')"
+                                class="agos-btn-ghost text-[0.7rem] px-2 py-1">Edit</button>
+                        {% if c.username %}
+                        <button onclick="openResetCustPw({{ c.customer_id }},'{{ c.full_name }}')"
+                                class="agos-btn-ghost text-[0.7rem] px-2 py-1" style="color:var(--warning-text)">Reset PW</button>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="flex items-center justify-center py-12 text-sm" style="color:var(--text-faint)">No customer accounts found.</div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+
+      {% endif %}
+      <!-- END management section -->
+
+    </main>
+  </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Edit Staff User Modal -->
+<div id="modal-edit-user" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-lg">
+    <div class="agos-modal-box p-0 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div>
+          <div class="text-base font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Edit Staff Info</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-muted)">Update name fields for this account</div>
+        </div>
+        <button onclick="closeModal('modal-edit-user')" class="bg-transparent border-none cursor-pointer p-1.5 rounded-lg hover:bg-[var(--bg-input)]" style="color:var(--text-muted)">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form method="POST" id="form-edit-user">
+        <div class="p-6 flex flex-col gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-[1fr_90px_1fr] gap-2">
+            <div class="flex flex-col gap-1">
+              <label class="agos-label">First Name <span style="color:#d32f2f">*</span></label>
+              <input type="text" name="first_name" id="eu-first" class="agos-input" placeholder="First Name" required/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="agos-label">M.I.</label>
+              <input type="text" name="middle_initial" id="eu-mi" class="agos-input text-center" placeholder="M.I." maxlength="2"/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="agos-label">Last Name <span style="color:#d32f2f">*</span></label>
+              <input type="text" name="last_name" id="eu-last" class="agos-input" placeholder="Last Name" required/>
+            </div>
+          </div>
+          <div class="p-3 rounded-xl text-xs" style="background:var(--bg-input);color:var(--text-muted)">
+            ℹ️ Username and role changes must be done via <a href="{{ url_for('user_management') }}" style="color:var(--accent)" class="underline">User Management</a>.
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end px-6 py-4" style="border-top:1px solid var(--border-section)">
+          <button type="button" onclick="closeModal('modal-edit-user')" class="agos-btn-ghost px-5 py-2">Cancel</button>
+          <button type="submit" class="agos-btn-primary px-7 py-2">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Staff Password Modal (Super Admin only) -->
+{% if session.get('role') == 'Super Admin' %}
+<div id="modal-reset-pw" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-0 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div>
+          <div class="text-base font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Reset Password</div>
+          <div id="rpw-subtitle" class="text-xs mt-0.5" style="color:var(--text-muted)">Set a new password for this account</div>
+        </div>
+        <button onclick="closeModal('modal-reset-pw')" class="bg-transparent border-none cursor-pointer p-1.5 rounded-lg hover:bg-[var(--bg-input)]" style="color:var(--text-muted)">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form method="POST" id="form-reset-pw">
+        <div class="p-6 flex flex-col gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="agos-label">New Password <span style="color:#d32f2f">*</span></label>
+            <input type="password" name="new_password" id="rpw-new" class="agos-input"
+                   placeholder="Min. 8 characters" minlength="8" required/>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="agos-label">Confirm Password <span style="color:#d32f2f">*</span></label>
+            <input type="password" name="confirm_password" id="rpw-conf" class="agos-input"
+                   placeholder="Re-enter password" required oninput="checkRpwMatch()"/>
+            <span id="rpw-match" class="text-[0.66rem]" style="color:var(--text-muted)"></span>
+          </div>
+          <div class="p-3 rounded-xl text-xs" style="background:var(--warning-bg);color:var(--warning-text)">
+            ⚠️ The user will need to use this new password on their next login.
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end px-6 py-4" style="border-top:1px solid var(--border-section)">
+          <button type="button" onclick="closeModal('modal-reset-pw')" class="agos-btn-ghost px-5 py-2">Cancel</button>
+          <button type="submit" class="agos-btn-primary px-7 py-2">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Edit Customer Modal -->
+<div id="modal-edit-cust" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-lg">
+    <div class="agos-modal-box p-0 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div>
+          <div class="text-base font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Edit Customer Info</div>
+          <div class="text-xs mt-0.5" style="color:var(--text-muted)">Update customer name, phone, and address</div>
+        </div>
+        <button onclick="closeModal('modal-edit-cust')" class="bg-transparent border-none cursor-pointer p-1.5 rounded-lg hover:bg-[var(--bg-input)]" style="color:var(--text-muted)">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form method="POST" id="form-edit-cust">
+        <div class="p-6 flex flex-col gap-4">
+          <div>
+            <label class="agos-label">Full Name <span style="color:#d32f2f">*</span></label>
+            <div class="grid grid-cols-1 sm:grid-cols-[1fr_90px_1fr] gap-2">
+              <input type="text" name="first_name" id="ec-first" class="agos-input" placeholder="First Name" required/>
+              <input type="text" name="middle_initial" id="ec-mi" class="agos-input text-center" placeholder="M.I." maxlength="2"/>
+              <input type="text" name="last_name" id="ec-last" class="agos-input" placeholder="Last Name" required/>
+            </div>
+          </div>
+          <div>
+            <label class="agos-label">Phone Number</label>
+            <input type="tel" name="contact_number" id="ec-phone" class="agos-input" placeholder="09XXXXXXXXX" maxlength="11"/>
+          </div>
+          <div>
+            <label class="agos-label">Delivery Address</label>
+            <textarea name="address" id="ec-addr" rows="2" class="agos-input" style="resize:none" placeholder="Street, Barangay, City"></textarea>
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end px-6 py-4" style="border-top:1px solid var(--border-section)">
+          <button type="button" onclick="closeModal('modal-edit-cust')" class="agos-btn-ghost px-5 py-2">Cancel</button>
+          <button type="submit" class="agos-btn-primary px-7 py-2">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Customer Password Modal -->
+<div id="modal-reset-cust-pw" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-0 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div>
+          <div class="text-base font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Reset Customer Password</div>
+          <div id="rcpw-subtitle" class="text-xs mt-0.5" style="color:var(--text-muted)">Set a new password for this customer</div>
+        </div>
+        <button onclick="closeModal('modal-reset-cust-pw')" class="bg-transparent border-none cursor-pointer p-1.5 rounded-lg hover:bg-[var(--bg-input)]" style="color:var(--text-muted)">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form method="POST" id="form-reset-cust-pw">
+        <div class="p-6 flex flex-col gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="agos-label">New Password <span style="color:#d32f2f">*</span></label>
+            <input type="password" name="new_password" id="rcpw-new" class="agos-input" placeholder="Min. 8 characters" minlength="8" required/>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="agos-label">Confirm Password <span style="color:#d32f2f">*</span></label>
+            <input type="password" name="confirm_password" id="rcpw-conf" class="agos-input" placeholder="Re-enter password" required oninput="checkRcpwMatch()"/>
+            <span id="rcpw-match" class="text-[0.66rem]" style="color:var(--text-muted)"></span>
+          </div>
+          <div class="p-3 rounded-xl text-xs" style="background:var(--warning-bg);color:var(--warning-text)">
+            ⚠️ The customer will need to use this new password on their next login.
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end px-6 py-4" style="border-top:1px solid var(--border-section)">
+          <button type="button" onclick="closeModal('modal-reset-cust-pw')" class="agos-btn-ghost px-5 py-2">Cancel</button>
+          <button type="submit" class="agos-btn-primary px-7 py-2">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Modal -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+// ── Theme label sync ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+});
+const _origToggle = window.toggleTheme;
+window.toggleTheme = function() {
+  _origToggle();
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+};
+
+// ── Tab system ───────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const pane = document.getElementById('tab-' + name);
+  if (pane) pane.classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── Modal helpers ────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.agos-modal-overlay').forEach(el => {
+  el.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+});
+
+// ── Edit Staff User ──────────────────────────────────────────────────
+function openEditUser(userId, first, mi, last) {
+  document.getElementById('eu-first').value = first;
+  document.getElementById('eu-mi').value    = mi;
+  document.getElementById('eu-last').value  = last;
+  document.getElementById('form-edit-user').action = '/admin/users/' + userId + '/update-info';
+  openModal('modal-edit-user');
+}
+
+// ── Reset Staff PW ───────────────────────────────────────────────────
+function openResetPw(userId, name) {
+  document.getElementById('rpw-subtitle').textContent = 'Setting new password for ' + name;
+  document.getElementById('rpw-new').value  = '';
+  document.getElementById('rpw-conf').value = '';
+  document.getElementById('rpw-match').textContent = '';
+  document.getElementById('form-reset-pw').action = '/admin/users/' + userId + '/reset-password';
+  openModal('modal-reset-pw');
+}
+function checkRpwMatch() {
+  const nw = document.getElementById('rpw-new').value;
+  const cf = document.getElementById('rpw-conf').value;
+  const el = document.getElementById('rpw-match');
+  if (!cf) { el.textContent=''; return; }
+  el.textContent = nw === cf ? '✓ Passwords match' : '✗ Does not match';
+  el.style.color = nw === cf ? 'var(--success-text)' : '#e05252';
+}
+
+// ── Edit Customer ────────────────────────────────────────────────────
+function openEditCustomer(custId, first, mi, last, phone, addr) {
+  document.getElementById('ec-first').value = first;
+  document.getElementById('ec-mi').value    = mi;
+  document.getElementById('ec-last').value  = last;
+  document.getElementById('ec-phone').value = phone;
+  document.getElementById('ec-addr').value  = addr;
+  document.getElementById('form-edit-cust').action = '/admin/customers/' + custId + '/update-info';
+  openModal('modal-edit-cust');
+}
+
+// ── Reset Customer PW ─────────────────────────────────────────────────
+function openResetCustPw(custId, name) {
+  document.getElementById('rcpw-subtitle').textContent = 'Setting new password for ' + name;
+  document.getElementById('rcpw-new').value  = '';
+  document.getElementById('rcpw-conf').value = '';
+  document.getElementById('rcpw-match').textContent = '';
+  document.getElementById('form-reset-cust-pw').action = '/admin/customers/' + custId + '/reset-password';
+  openModal('modal-reset-cust-pw');
+}
+function checkRcpwMatch() {
+  const nw = document.getElementById('rcpw-new').value;
+  const cf = document.getElementById('rcpw-conf').value;
+  const el = document.getElementById('rcpw-match');
+  if (!cf) { el.textContent=''; return; }
+  el.textContent = nw === cf ? '✓ Passwords match' : '✗ Does not match';
+  el.style.color = nw === cf ? 'var(--success-text)' : '#e05252';
+}
+
+// ── Customer search ──────────────────────────────────────────────────
+function filterCustomers(q) {
+  const v = q.toLowerCase().trim();
+  document.querySelectorAll('#cust-tbody tr').forEach(row => {
+    const n = row.dataset.name || '';
+    const u = row.dataset.user || '';
+    row.style.display = (!v || n.includes(v) || u.includes(v)) ? '' : 'none';
+  });
+}
+
+// ── Own profile — name validation ────────────────────────────────────
+function validateNameField(input) {
+  const errIds = { 'p-first': 'err-first', 'p-last': 'err-last' };
+  const errEl  = document.getElementById(errIds[input.id]);
+  const val    = input.value.trim();
+  if (!val) { showErr(errEl, 'Required.'); input.style.borderColor = '#e05252'; }
+  else if (!/^[A-Za-z\s]+$/.test(val)) { showErr(errEl, 'Letters only.'); input.style.borderColor = '#e05252'; }
+  else { hideErr(errEl); input.style.borderColor = ''; }
+}
+function validateMI(input) {
+  const errEl = document.getElementById('err-mi');
+  const val   = input.value.trim();
+  if (val && !/^[A-Za-z]\.?$/.test(val)) { showErr(errEl, 'One letter only.'); input.style.borderColor = '#e05252'; }
+  else { hideErr(errEl); input.style.borderColor = ''; }
+}
+function showErr(el, msg) { if (el) { el.textContent = msg; el.classList.remove('hidden'); } }
+function hideErr(el)       { if (el) { el.textContent = '';   el.classList.add('hidden');    } }
+
+// ── Name preview ─────────────────────────────────────────────────────
+function updatePreview() {
+  const first = document.getElementById('p-first').value.trim();
+  const mi    = document.getElementById('p-mi').value.trim();
+  const last  = document.getElementById('p-last').value.trim();
+  const prev  = document.getElementById('name-preview');
+  const text  = document.getElementById('name-preview-text');
+  if (first || last) {
+    const parts = [first];
+    if (mi) parts.push(mi.replace('.','') + '.');
+    if (last) parts.push(last);
+    text.textContent = parts.join(' ');
+    prev.classList.remove('hidden');
+  } else {
+    prev.classList.add('hidden');
+  }
+}
+updatePreview();
+
+// ── Info form submit guard ────────────────────────────────────────────
+function validateInfoForm(e) {
+  const first = document.getElementById('p-first').value.trim();
+  const last  = document.getElementById('p-last').value.trim();
+  const mi    = document.getElementById('p-mi').value.trim();
+  let ok = true;
+  if (!first || !/^[A-Za-z\s]+$/.test(first)) { showErr(document.getElementById('err-first'), 'First name is required (letters only).'); ok = false; }
+  if (!last  || !/^[A-Za-z\s]+$/.test(last))  { showErr(document.getElementById('err-last'),  'Last name is required (letters only).');  ok = false; }
+  if (mi && !/^[A-Za-z]\.?$/.test(mi))         { showErr(document.getElementById('err-mi'),    'One letter only.');                       ok = false; }
+  if (!ok) e.preventDefault();
+  return ok;
+}
+
+// ── Password utils ────────────────────────────────────────────────────
+function togglePw(id) {
+  const el = document.getElementById(id);
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+}
+function checkStrength(v) {
+  const bar  = document.getElementById('str-bar');
+  const lbl  = document.getElementById('str-lbl');
+  const len  = document.getElementById('str-len');
+  const list = document.getElementById('pw-checklist');
+  const hasLen = v.length >= 8, hasUp = /[A-Z]/.test(v), hasNum = /\d/.test(v), hasSym = /[^A-Za-z0-9]/.test(v);
+  const score  = [hasLen, hasUp, hasNum, hasSym].filter(Boolean).length;
+  setDot('dot-len', hasLen); setDot('dot-up', hasUp); setDot('dot-num', hasNum); setDot('dot-sym', hasSym);
+  const colors = ['#e05252','#e05252','#d4a843','#0095c8','#2eaa6e'];
+  const labels = ['','Weak','Fair','Good','Strong ✓'];
+  bar.style.width = (score * 25) + '%'; bar.style.background = colors[score];
+  lbl.textContent = labels[score]; lbl.style.color = colors[score];
+  len.textContent = v.length > 0 ? v.length + ' chars' : '';
+  v.length > 0 ? list.classList.remove('hidden') : list.classList.add('hidden');
+}
+function setDot(id, met) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = met ? '✓' : '●';
+  el.parentElement.style.color = met ? 'var(--success-text)' : 'var(--text-muted)';
+}
+function checkMatch() {
+  const nw  = document.getElementById('pw-new').value;
+  const cf  = document.getElementById('pw-conf').value;
+  const msg = document.getElementById('pw-match');
+  if (!cf) { msg.textContent = ''; return; }
+  msg.textContent = nw === cf ? '✓ Passwords match' : '✗ Passwords do not match';
+  msg.style.color = nw === cf ? 'var(--success-text)' : '#e05252';
+}
+function validatePwForm(e) {
+  const cur = document.getElementById('pw-cur').value;
+  const nw  = document.getElementById('pw-new').value;
+  const cf  = document.getElementById('pw-conf').value;
+  if (!cur)         { e.preventDefault(); alert('Please enter your current password.'); return false; }
+  if (nw.length < 8){ e.preventDefault(); alert('New password must be at least 8 characters.'); return false; }
+  if (nw !== cf)    { e.preventDefault(); alert('Passwords do not match.'); return false; }
+  return true;
+}
+</script>
+</body>
+</html>

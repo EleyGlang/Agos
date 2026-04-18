@@ -37,13 +37,12 @@
       <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
       <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
       <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link active">Deliveries</a>
-      {% if session.get('role') in ['Admin', 'Super Admin'] %}
-      <a href="{{ url_for('user_management') }}" class="agos-sidebar-link">Users</a>
-      {% endif %}      
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') == 'Super Admin' %}
+      {% if session.get('role') in ['Admin',  'Super Admin'] %}
       <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
+      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
       {% endif %}
     </nav>
     <div class="agos-sidebar-footer flex-shrink-0 p-3">
@@ -186,19 +185,44 @@
                     <td>
                       {% if delivery.status == 'Delivered' %}
                         <span class="agos-badge agos-badge-info">Delivered</span>
+                      {% elif delivery.status == 'Confirmed' %}
+                        <span class="agos-badge agos-badge-success">Confirmed</span>
+                      {% elif delivery.status == 'Cancelled' %}
+                        <span class="agos-badge agos-badge-danger">Cancelled</span>
                       {% else %}
                         <span class="agos-badge agos-badge-warning">Pending</span>
                       {% endif %}
                     </td>
                     <td>
-                      {% if delivery.status == 'Pending' %}
-                        <button type="button"
-                                onclick="openMarkDeliveredModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
-                                class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
-                                style="background:var(--info-bg);color:var(--info-text)">Mark Delivered</button>
-                        <form id="mark-form-{{ delivery.delivery_id }}" action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}" method="POST" style="display:none">
-                          <input type="hidden" name="status" value="Delivered"/>
-                        </form>
+                      {% if delivery.status in ('Pending', 'Confirmed') %}
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          {% if delivery.status == 'Pending' %}
+                            <!-- Confirm button -->
+                            <button type="button"
+                                    onclick="openConfirmOrderModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
+                                    class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
+                                    style="background:var(--success-bg);color:var(--success-text)">Confirm</button>
+                            <form id="confirm-form-{{ delivery.delivery_id }}" action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}" method="POST" style="display:none">
+                              <input type="hidden" name="status" value="Confirmed"/>
+                            </form>
+                          {% endif %}
+                          <!-- Mark Delivered button -->
+                          <button type="button"
+                                  onclick="openMarkDeliveredModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
+                                  class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
+                                  style="background:var(--info-bg);color:var(--info-text)">Mark Delivered</button>
+                          <form id="mark-form-{{ delivery.delivery_id }}" action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}" method="POST" style="display:none">
+                            <input type="hidden" name="status" value="Delivered"/>
+                          </form>
+                          <!-- Cancel button -->
+                          <button type="button"
+                                  onclick="openCancelModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
+                                  class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
+                                  style="background:var(--danger-bg);color:var(--danger-text)">Cancel</button>
+                          <form id="cancel-form-{{ delivery.delivery_id }}" action="{{ url_for('cancel_delivery', delivery_id=delivery.delivery_id) }}" method="POST" style="display:none">
+                            <input type="hidden" name="cancel_reason" id="cancel-reason-{{ delivery.delivery_id }}" value=""/>
+                          </form>
+                        </div>
                       {% else %}
                         <span style="color:var(--text-faint)">—</span>
                       {% endif %}
@@ -252,6 +276,46 @@
       <div class="flex items-center gap-4 justify-center">
         <button id="mark-delivered-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--success-text)">Yes, Mark Delivered</button>
         <button onclick="closeMarkDeliveredModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRM ORDER MODAL ══ -->
+<div id="confirm-order-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--success-bg)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--success-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Delivery Order?</h3>
+      <p class="text-sm mb-5" id="confirm-order-message" style="color:var(--text-muted)"></p>
+      <div class="flex items-center gap-4 justify-center">
+        <button id="confirm-order-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--success-text)">Yes, Confirm Order</button>
+        <button onclick="closeConfirmOrderModal()" class="agos-btn-ghost px-7 py-2.5">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CANCEL DELIVERY MODAL ══ -->
+<div id="cancel-delivery-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--danger-bg)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--danger-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </div>
+      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Cancel Delivery?</h3>
+      <p class="text-sm mb-4" id="cancel-delivery-message" style="color:var(--text-muted)"></p>
+      <textarea id="cancel-reason-input" rows="2" placeholder="Reason for cancellation (optional)"
+                class="agos-input w-full mb-5 text-sm" style="resize:none"></textarea>
+      <div class="flex items-center gap-4 justify-center">
+        <button id="cancel-delivery-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--danger-text)">Yes, Cancel Order</button>
+        <button onclick="closeCancelModal()" class="agos-btn-ghost px-7 py-2.5">Back</button>
       </div>
     </div>
   </div>
@@ -331,7 +395,28 @@
   function closeDeliveryConfirm() { document.getElementById('delivery-confirm-modal').classList.remove('open'); }
   function submitDeliveryForm() { document.getElementById('delivery-form').submit(); }
 
-  function openMarkDeliveredModal(id, customerName) {
+  function openConfirmOrderModal(id, customerName) {
+    document.getElementById('confirm-order-message').textContent = `Confirm the delivery order for "${customerName}"? The customer will be notified that their order is confirmed.`;
+    document.getElementById('confirm-order-btn').onclick = function() { document.getElementById('confirm-form-' + id).submit(); };
+    document.getElementById('confirm-order-modal').classList.add('open');
+  }
+  function closeConfirmOrderModal() { document.getElementById('confirm-order-modal').classList.remove('open'); }
+
+  let _cancelDeliveryId = null;
+  function openCancelModal(id, customerName) {
+    _cancelDeliveryId = id;
+    document.getElementById('cancel-delivery-message').textContent = `You're about to cancel the delivery for "${customerName}". This action cannot be undone.`;
+    document.getElementById('cancel-reason-input').value = '';
+    document.getElementById('cancel-delivery-confirm-btn').onclick = function() {
+      const reason = document.getElementById('cancel-reason-input').value.trim();
+      document.getElementById('cancel-reason-' + id).value = reason;
+      document.getElementById('cancel-form-' + id).submit();
+    };
+    document.getElementById('cancel-delivery-modal').classList.add('open');
+  }
+  function closeCancelModal() { document.getElementById('cancel-delivery-modal').classList.remove('open'); _cancelDeliveryId = null; }
+
+
     document.getElementById('mark-delivered-message').textContent = `You're about to mark the delivery for "${customerName}" as delivered. This cannot be undone.`;
     document.getElementById('mark-delivered-confirm-btn').onclick = function() { document.getElementById('mark-form-' + id).submit(); };
     document.getElementById('mark-delivered-modal').classList.add('open');

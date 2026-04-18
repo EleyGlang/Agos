@@ -37,13 +37,12 @@
       <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
       <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
       <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      {% if session.get('role') in ['Admin', 'Super Admin'] %}
-      <a href="{{ url_for('user_management') }}" class="agos-sidebar-link">Users</a>
-      {% endif %}      
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link active">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') in ('Super Admin', 'Admin') %}
+      {% if session.get('role') in ['Admin',  'Super Admin'] %}
       <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
+      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
       {% endif %}
     </nav>
     <div class="agos-sidebar-footer flex-shrink-0 p-3">

@@ -8,21 +8,82 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
+    /* ── KPI cards ── */
     .kpi-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;padding:1.1rem 1.25rem;transition:transform .2s,background .25s;display:flex;flex-direction:column;gap:.2rem}
     .kpi-card:hover{transform:translateY(-2px)}
     .kpi-icon{width:2.25rem;height:2.25rem;border-radius:.625rem;display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.35rem}
     .kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);font-family:'Outfit',sans-serif}
     .kpi-value{font-size:1.75rem;font-weight:800;line-height:1.1;color:var(--text-primary);font-family:'Inconsolata',monospace}
     .kpi-sub{font-size:.68rem;color:var(--text-muted)}
+
+    /* ── Generic chart / content cards ── */
     .chart-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;overflow:hidden;transition:background .25s,border-color .25s}
-    .chart-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border-section);display:flex;align-items:center;justify-content:space-between}
+    .chart-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border-section);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
     .chart-title{font-size:.95rem;font-weight:700;color:var(--text-primary);font-family:'Inconsolata',monospace}
     .chart-sub{font-size:.68rem;color:var(--text-muted);margin-top:.1rem}
     canvas{max-height:240px}
+
+    /* ── Loyalty progress bar ── */
     .pb-track{height:8px;border-radius:999px;background:var(--accent-softer);overflow:hidden;margin-top:.3rem}
     .pb-fill{height:100%;border-radius:999px}
+
+    /* ── Tracker Material Symbol icons ── */
+    .tracker-icon {
+      font-family: 'Material Symbols Rounded', sans-serif;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      font-style: normal;
+      user-select: none;
+      color: inherit;
+    }
+
+    /* ── Delivery Tracker ── */
+    .tracker-step-circle{
+      width:3rem;height:3rem;
+      border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .3s,border-color .3s,color .3s;
+      position:relative;z-index:2;
+      flex-shrink:0;
+    }
+    .tracker-step-inactive{
+      background:var(--bg-input);
+      border:2px solid var(--border-card);
+      color:var(--text-faint);
+    }
+    .tracker-step-active{
+      background:var(--accent);
+      border:2px solid var(--accent);
+      color:#fff;
+      animation:tracker-pulse 2s ease-in-out infinite;
+    }
+    .tracker-step-done{
+      background:var(--success-bg);
+      border:2px solid var(--success-text);
+      color:var(--success-text);
+    }
+    @keyframes tracker-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(0,149,200,.35);}
+      50%     {box-shadow:0 0 0 8px rgba(0,149,200,0);}
+    }
+    /* The thin connector line between steps */
+    .tracker-connector{
+      flex:1;
+      height:2px;
+      position:relative;
+      top:calc(1.5rem - 1px); /* vertically centers the 2px bar with the 3rem circles */
+      background:var(--border-card);
+      overflow:hidden;
+    }
+    .tracker-connector-fill{
+      height:100%;
+      transition:width .7s ease;
+      background:linear-gradient(90deg,var(--accent),rgba(91,184,224,.8));
+    }
   </style>
 </head>
 <body class="agos-body m-0 p-0">
@@ -31,11 +92,12 @@
 
   {% include '_sidebar_customer.html' %}
 
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
 
+    <!-- ═══ TOP BAR ═══ -->
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+        <button id="menu-btn" onclick="toggleSidebar()" class="md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
@@ -56,6 +118,7 @@
       </div>
     </header>
 
+    <!-- ═══ MAIN ═══ -->
     <main class="flex-1 p-4 md:p-5 lg:p-7 flex flex-col gap-5">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -64,7 +127,7 @@
         {% endfor %}{% endif %}
       {% endwith %}
 
-      <!-- Welcome banner -->
+      <!-- ── Welcome banner ── -->
       <div class="agos-welcome-banner relative overflow-hidden rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div class="absolute rounded-full pointer-events-none" style="width:180px;height:180px;right:-20px;top:-40px;background:rgba(91,184,224,0.07)"></div>
         <div class="relative z-10">
@@ -76,36 +139,98 @@
         </div>
       </div>
 
-      <!-- KPI strip -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--accent-soft)">🚚</div>
-          <div class="kpi-label">Total Orders</div>
-          <div class="kpi-value">{{ total_orders }}</div>
-          <div class="kpi-sub">All time</div>
+      <!-- ══════════════════════════════════════════════════
+           ROW 2 — KPI 2×2  |  Loyalty Rewards (ABOVE FOLD)
+           ══════════════════════════════════════════════════ -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- KPI 2×2 grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--accent-soft)">🚚</div>
+            <div class="kpi-label">Total Orders</div>
+            <div class="kpi-value">{{ total_orders }}</div>
+            <div class="kpi-sub">All time</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--warning-bg)">⏳</div>
+            <div class="kpi-label">Pending</div>
+            <div class="kpi-value" style="color:{% if pending_orders > 0 %}var(--warning-text){% else %}var(--success-text){% endif %}">{{ pending_orders }}</div>
+            <div class="kpi-sub">Awaiting delivery</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--success-bg)">✅</div>
+            <div class="kpi-label">Delivered</div>
+            <div class="kpi-value">{{ delivered_orders }}</div>
+            <div class="kpi-sub">Completed</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon" style="background:var(--warning-bg)">⭐</div>
+            <div class="kpi-label">Loyalty Pts</div>
+            <div class="kpi-value" style="color:var(--warning-text)">{{ customer.loyalty_points }}</div>
+            <div class="kpi-sub">Redeemable</div>
+          </div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--warning-bg)">⏳</div>
-          <div class="kpi-label">Pending</div>
-          <div class="kpi-value" style="color:{% if pending_orders > 0 %}var(--warning-text){% else %}var(--success-text){% endif %}">{{ pending_orders }}</div>
-          <div class="kpi-sub">Awaiting delivery</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--success-bg)">✅</div>
-          <div class="kpi-label">Delivered</div>
-          <div class="kpi-value">{{ delivered_orders }}</div>
-          <div class="kpi-sub">Completed</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--warning-bg)">⭐</div>
-          <div class="kpi-label">Loyalty Pts</div>
-          <div class="kpi-value" style="color:var(--warning-text)">{{ customer.loyalty_points }}</div>
-          <div class="kpi-sub">Redeemable</div>
+
+        <!-- ── Loyalty Rewards (full detail) — MOVED HERE for above-fold visibility ── -->
+        <div class="chart-card flex flex-col">
+          <div class="chart-header">
+            <div class="chart-title">⭐ Loyalty Rewards</div>
+            <a href="{{ url_for('customer_order') }}" class="text-xs font-semibold no-underline" style="color:var(--accent)">Redeem →</a>
+          </div>
+          <div class="p-5 flex flex-col gap-4 flex-1 justify-between">
+
+            <!-- Ring + summary -->
+            <div class="flex items-center gap-4">
+              <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+                <canvas id="loyaltyRing" width="80" height="80"></canvas>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
+                  <span class="text-lg font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary);line-height:1">{{ customer.loyalty_points }}</span>
+                  <span class="text-[0.58rem]" style="color:var(--text-muted)">pts</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-[0.85rem] font-semibold mb-1" style="color:var(--text-primary)">{{ customer.loyalty_points }} point{{ 's' if customer.loyalty_points != 1 }}</div>
+                <div class="text-[0.72rem] leading-relaxed" style="color:var(--text-muted)">Earn 1 point per 10 refills.<br>Points are auto-applied at checkout.</div>
+              </div>
+            </div>
+
+            <!-- Progress to next free refill -->
+            {% set next_reward = 10 - (customer.loyalty_points % 10) if customer.loyalty_points % 10 != 0 else 10 %}
+            <div>
+              <div class="flex justify-between text-[0.72rem] mb-1" style="color:var(--text-muted)">
+                <span>Progress to next free refill</span>
+                <span>{{ 10 - next_reward }}/10</span>
+              </div>
+              <div class="pb-track">
+                <div class="pb-fill" style="width:{{ ((10 - next_reward) / 10 * 100)|round }}%;background:linear-gradient(90deg,#d4a843,#f0c040)"></div>
+              </div>
+              <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">
+                {{ next_reward }} more order{{ 's' if next_reward != 1 }} to earn your next free refill
+              </div>
+            </div>
+
+            <!-- Redemption note -->
+            {% if customer.loyalty_points > 0 %}
+            <div class="rounded-xl p-2.5 text-[0.72rem]" style="background:var(--warning-bg);color:var(--warning-text);border:1px solid rgba(212,168,67,0.18)">
+              🎁 You can redeem <strong>{{ customer.loyalty_points }}</strong> free refill{{ 's' if customer.loyalty_points != 1 }} — applied automatically at checkout!
+            </div>
+            {% else %}
+            <div class="rounded-xl p-2.5 text-[0.72rem]" style="background:var(--accent-softer);color:var(--accent);border:1px solid var(--accent-border)">
+              💧 Keep ordering to earn free refills!
+            </div>
+            {% endif %}
+
+          </div>
         </div>
       </div>
 
-      <!-- Charts row: order history + status donut -->
+      <!-- ══════════════════════════════════════════════════
+           ROW 3 — Order History  |  Delivery Tracker (NEW)
+           ══════════════════════════════════════════════════ -->
       <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
+
+        <!-- Order History bar chart (unchanged) -->
         <div class="chart-card">
           <div class="chart-header">
             <div>
@@ -115,27 +240,161 @@
           </div>
           <div class="p-4"><canvas id="custOrderHistory"></canvas></div>
         </div>
-        <div class="chart-card">
+
+        <!-- ── DELIVERY PROGRESS TRACKER ── -->
+        {#
+          active_delivery is injected by app.py (the latest Pending/Confirmed order).
+          Falls back to scanning recent_orders via namespace in case the variable isn't
+          present (e.g., older app.py without the update).
+        #}
+        {% if active_delivery is defined %}
+          {% set disp = active_delivery %}
+        {% else %}
+          {% set ns = namespace(disp=none) %}
+          {% for o in recent_orders %}
+            {% if o.status in ('Pending','Confirmed') and ns.disp is none %}{% set ns.disp = o %}{% endif %}
+          {% endfor %}
+          {% set disp = ns.disp %}
+        {% endif %}
+
+        <div class="chart-card flex flex-col min-h-[280px]">
           <div class="chart-header">
             <div>
-              <div class="chart-title">Order Status</div>
-              <div class="chart-sub">Current status breakdown</div>
+              <div class="chart-title">Delivery Tracker</div>
+              <div class="chart-sub">
+                {% if disp %}
+                  REF-{{ '%06d' % disp.delivery_id }} &nbsp;·&nbsp; {{ disp.delivery_date.strftime('%b %d, %Y') }}
+                {% else %}
+                  No active delivery
+                {% endif %}
+              </div>
             </div>
+            {% if disp %}
+              <span class="agos-badge {% if disp.status == 'Confirmed' %}agos-badge-info{% else %}agos-badge-warning{% endif %} text-[0.65rem]">
+                {{ disp.status }}
+              </span>
+            {% endif %}
           </div>
-          <div class="p-4 flex flex-col items-center gap-4">
-            <canvas id="custStatusDonut" style="max-height:170px;max-width:170px"></canvas>
-            <div class="w-full flex flex-col gap-2">
-              <div class="flex justify-between text-[0.78rem]"><div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#2eaa6e"></span><span style="color:var(--text-secondary)">Delivered</span></div><span class="font-bold" style="color:var(--text-primary)">{{ delivered_orders }}</span></div>
-              <div class="flex justify-between text-[0.78rem]"><div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#d4a843"></span><span style="color:var(--text-secondary)">Pending</span></div><span class="font-bold" style="color:var(--text-primary)">{{ pending_orders }}</span></div>
-              <div class="flex justify-between text-[0.78rem]"><div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded-sm" style="background:#e05252"></span><span style="color:var(--text-secondary)">Cancelled</span></div><span class="font-bold" style="color:var(--text-primary)">{{ cancelled_orders | default(0) }}</span></div>
-            </div>
+
+          <div class="p-5 flex flex-col gap-5 flex-1 justify-center">
+
+            {% if disp %}
+              {# Map status → step number #}
+              {% if disp.status == 'Confirmed' %}{% set t_step = 2 %}
+              {% elif disp.status == 'Delivered' %}{% set t_step = 3 %}
+              {% else %}{% set t_step = 1 %}{% endif %}
+
+              <!-- ── Tracker row: circles + connectors ── -->
+              <div class="flex items-start w-full px-2">
+
+                <!-- Step 1: Water Station -->
+                <div class="flex flex-col items-center gap-2 flex-1">
+                  <div class="tracker-step-circle
+                    {% if t_step > 1 %}tracker-step-done
+                    {% elif t_step == 1 %}tracker-step-active
+                    {% else %}tracker-step-inactive{% endif %}">
+                    <span class="tracker-icon">water_drop</span>
+                  </div>
+                  <span class="text-[0.65rem] font-semibold text-center leading-tight"
+                        style="color:{% if t_step >= 1 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
+                    Water<br>Station
+                  </span>
+                </div>
+
+                <!-- Connector 1 → 2 -->
+                <div class="tracker-connector">
+                  <div class="tracker-connector-fill" style="width:{% if t_step >= 2 %}100{% else %}0{% endif %}%"></div>
+                </div>
+
+                <!-- Step 2: On the Way (Tricycle) -->
+                <div class="flex flex-col items-center gap-2 flex-1">
+                  <div class="tracker-step-circle
+                    {% if t_step > 2 %}tracker-step-done
+                    {% elif t_step == 2 %}tracker-step-active
+                    {% else %}tracker-step-inactive{% endif %}">
+                    <span class="tracker-icon">local_shipping</span>
+                  </div>
+                  <span class="text-[0.65rem] font-semibold text-center leading-tight"
+                        style="color:{% if t_step >= 2 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
+                    On the<br>Way
+                  </span>
+                </div>
+
+                <!-- Connector 2 → 3 -->
+                <div class="tracker-connector">
+                  <div class="tracker-connector-fill" style="width:{% if t_step >= 3 %}100{% else %}0{% endif %}%"></div>
+                </div>
+
+                <!-- Step 3: Home Delivery -->
+                <div class="flex flex-col items-center gap-2 flex-1">
+                  <div class="tracker-step-circle
+                    {% if t_step >= 3 %}tracker-step-active
+                    {% else %}tracker-step-inactive{% endif %}">
+                    <span class="tracker-icon">home</span>
+                  </div>
+                  <span class="text-[0.65rem] font-semibold text-center leading-tight"
+                        style="color:{% if t_step >= 3 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
+                    Home<br>Delivery
+                  </span>
+                </div>
+
+              </div><!-- /tracker row -->
+
+              <!-- Status message banner -->
+              <div class="rounded-xl p-3 text-center"
+                   style="background:{% if t_step == 1 %}var(--warning-bg){% elif t_step == 2 %}var(--accent-softer){% else %}var(--success-bg){% endif %};
+                          border:1px solid {% if t_step == 1 %}rgba(212,168,67,.18){% elif t_step == 2 %}var(--accent-border){% else %}rgba(46,170,110,.2){% endif %}">
+                <div class="text-[0.80rem] font-semibold"
+                     style="color:{% if t_step == 1 %}var(--warning-text){% elif t_step == 2 %}var(--accent){% else %}var(--success-text){% endif %}">
+                  {% if t_step == 1 %}
+                    ⏳ Your order is being prepared at the station
+                  {% elif t_step == 2 %}
+                    🛺 Your delivery is on its way!
+                  {% else %}
+                    ✅ Delivered — Enjoy your water!
+                  {% endif %}
+                </div>
+                <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">
+                  Expected: {{ disp.delivery_date.strftime('%B %d, %Y') }}
+                </div>
+              </div>
+
+              <!-- Items summary -->
+              <div class="text-[0.72rem] leading-relaxed" style="color:var(--text-muted)">
+                <span class="font-semibold" style="color:var(--text-secondary)">Items: </span>
+                {% for item in disp.delivery_items %}
+                  {{ item.quantity }}× {{ item.product.product_name }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                <span class="font-bold ml-1" style="color:var(--accent)">· ₱{{ "%.2f"|format(disp.total_amount) }}</span>
+              </div>
+
+            {% else %}
+              <!-- ── Empty state: no active delivery ── -->
+              <div class="flex flex-col items-center justify-center py-6 gap-4 text-center">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:var(--accent-soft)">
+                  <span style="font-family:'Material Symbols Rounded',sans-serif;font-size:32px;color:var(--accent);line-height:1;font-style:normal;user-select:none">water_drop</span>
+                </div>
+                <div>
+                  <div class="text-[0.85rem] font-semibold mb-1" style="color:var(--text-primary)">No Active Delivery</div>
+                  <div class="text-[0.72rem]" style="color:var(--text-muted)">
+                    Place an order to start tracking<br>your delivery here.
+                  </div>
+                </div>
+                <a href="{{ url_for('customer_order') }}" class="agos-btn-primary px-5 py-2 text-sm no-underline">Order Now</a>
+              </div>
+            {% endif %}
+
           </div>
-        </div>
+        </div><!-- /tracker card -->
+
       </div>
 
-      <!-- Bottom row: spending + loyalty + recent orders -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- ══════════════════════════════════════════════════
+           ROW 4 — Monthly Spending  |  Recent Orders
+           ══════════════════════════════════════════════════ -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
+        <!-- Monthly Spending chart -->
         <div class="chart-card">
           <div class="chart-header">
             <div>
@@ -146,38 +405,7 @@
           <div class="p-4"><canvas id="custSpend"></canvas></div>
         </div>
 
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Loyalty Rewards</div></div>
-          <div class="p-5 flex flex-col gap-4">
-            <div class="flex items-center gap-4">
-              <div style="position:relative;width:80px;height:80px;flex-shrink:0">
-                <canvas id="loyaltyRing" width="80" height="80"></canvas>
-                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
-                  <span class="text-lg font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary);line-height:1">{{ customer.loyalty_points }}</span>
-                  <span class="text-[0.58rem]" style="color:var(--text-muted)">pts</span>
-                </div>
-              </div>
-              <div>
-                <div class="text-[0.82rem] font-semibold mb-1" style="color:var(--text-primary)">{{ customer.loyalty_points }} point{{ 's' if customer.loyalty_points != 1 }}</div>
-                <div class="text-[0.72rem] leading-relaxed" style="color:var(--text-muted)">Earn 1 point per 10 refills. Auto-applied at checkout.</div>
-              </div>
-            </div>
-            {% set next_reward = 10 - (customer.loyalty_points % 10) if customer.loyalty_points % 10 != 0 else 10 %}
-            <div>
-              <div class="flex justify-between text-[0.72rem] mb-1" style="color:var(--text-muted)">
-                <span>Progress to next free refill</span><span>{{ 10 - next_reward }}/10</span>
-              </div>
-              <div class="pb-track"><div class="pb-fill" style="width:{{ ((10 - next_reward) / 10 * 100)|round }}%;background:linear-gradient(90deg,#d4a843,#f0c040)"></div></div>
-              <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">{{ next_reward }} more order{{ 's' if next_reward != 1 }} to earn your next free refill</div>
-            </div>
-            {% if customer.loyalty_points > 0 %}
-            <div class="rounded-xl p-2.5 text-[0.72rem]" style="background:var(--warning-bg);color:var(--warning-text);border:1px solid rgba(212,168,67,0.18)">
-              🎁 You can redeem {{ customer.loyalty_points }} free refill{{ 's' if customer.loyalty_points != 1 }} now!
-            </div>
-            {% endif %}
-          </div>
-        </div>
-
+        <!-- Recent Orders list -->
         <div class="chart-card">
           <div class="chart-header">
             <div class="chart-title">Recent Orders</div>
@@ -189,7 +417,13 @@
               <div class="py-2" style="border-bottom:1px solid var(--border-section)">
                 <div class="flex items-center justify-between mb-1">
                   <span class="text-[0.76rem] font-semibold" style="color:var(--text-primary)">{{ order.delivery_date.strftime('%b %d, %Y') }}</span>
-                  <span class="agos-badge {% if order.status == 'Delivered' %}agos-badge-success{% elif order.status == 'Pending' %}agos-badge-warning{% else %}agos-badge-danger{% endif %} text-[0.64rem]">{{ order.status }}</span>
+                  <span class="agos-badge
+                    {% if order.status == 'Delivered' %}agos-badge-success
+                    {% elif order.status == 'Confirmed' %}agos-badge-info
+                    {% elif order.status == 'Pending'   %}agos-badge-warning
+                    {% else %}agos-badge-danger{% endif %} text-[0.64rem]">
+                    {{ order.status }}
+                  </span>
                 </div>
                 <div class="text-[0.7rem]" style="color:var(--text-muted)">
                   {% for item in order.delivery_items %}{{ item.quantity }}× {{ item.product.product_name }}{% if not loop.last %}, {% endif %}{% endfor %}
@@ -199,7 +433,8 @@
               {% endfor %}
             {% else %}
               <div class="text-center py-8 text-xs" style="color:var(--text-faint)">
-                No orders yet.<br><a href="{{ url_for('customer_order') }}" style="color:var(--accent)">Place your first order →</a>
+                No orders yet.<br>
+                <a href="{{ url_for('customer_order') }}" style="color:var(--accent)">Place your first order →</a>
               </div>
             {% endif %}
           </div>
@@ -229,40 +464,107 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
+/* ── Chart data injected by Flask ── */
 const OH_LABELS = {{ order_history_labels | tojson }};
 const OH_VALUES = {{ order_history_values | tojson }};
 const SP_LABELS = {{ spend_labels | tojson }};
 const SP_VALUES = {{ spend_values | tojson }};
-const DELIVERED = {{ delivered_orders | default(0) }};
-const PENDING   = {{ pending_orders   | default(0) }};
-const CANCELLED = {{ cancelled_orders | default(0) }};
 const LOYALTY   = {{ customer.loyalty_points | default(0) }};
 
 let _c = {};
-function gc(){ const d = document.documentElement.getAttribute('data-theme') === 'dark'; return { grid: d ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)', tick: d ? '#5a8aaa' : '#7a99ae' }; }
+
+function gc(){
+  const d = document.documentElement.getAttribute('data-theme') === 'dark';
+  return {
+    grid: d ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)',
+    tick: d ? '#5a8aaa' : '#7a99ae'
+  };
+}
 
 function build(){
-  Chart.defaults.font.family = "'Outfit',sans-serif"; Chart.defaults.font.size = 11;
-  Object.values(_c).forEach(c => c.destroy()); _c = {};
+  Chart.defaults.font.family = "'Outfit',sans-serif";
+  Chart.defaults.font.size   = 11;
+  Object.values(_c).forEach(c => c.destroy());
+  _c = {};
   const c = gc();
 
-  _c.oh = new Chart('custOrderHistory', { type:'bar', data:{ labels:OH_LABELS, datasets:[{ label:'Orders', data:OH_VALUES, backgroundColor:'rgba(0,149,200,0.70)', borderRadius:5, borderSkipped:false }] }, options:{ responsive:true, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => x.parsed.y + ' orders' } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:c.tick } }, y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, stepSize:1 }, beginAtZero:true } } } });
+  /* Order History bar */
+  _c.oh = new Chart('custOrderHistory', {
+    type: 'bar',
+    data: {
+      labels: OH_LABELS,
+      datasets:[{
+        label: 'Orders',
+        data: OH_VALUES,
+        backgroundColor: 'rgba(0,149,200,0.70)',
+        borderRadius: 5,
+        borderSkipped: false
+      }]
+    },
+    options:{
+      responsive: true,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => x.parsed.y + ' orders' } } },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ color:c.tick } },
+        y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, stepSize:1 }, beginAtZero:true }
+      }
+    }
+  });
 
-  _c.st = new Chart('custStatusDonut', { type:'doughnut', data:{ labels:['Delivered','Pending','Cancelled'], datasets:[{ data:[DELIVERED,PENDING,CANCELLED], backgroundColor:['#2eaa6e','#d4a843','#e05252'], borderWidth:0, hoverOffset:6 }] }, options:{ cutout:'65%', plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => x.parsed + ' orders' } } } } });
+  /* Monthly Spending bar */
+  _c.sp = new Chart('custSpend', {
+    type: 'bar',
+    data:{
+      labels: SP_LABELS,
+      datasets:[{
+        label: 'Spent (₱)',
+        data: SP_VALUES,
+        backgroundColor: 'rgba(91,184,224,0.70)',
+        borderRadius: 5,
+        borderSkipped: false
+      }]
+    },
+    options:{
+      responsive: true,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => '₱' + x.parsed.y.toFixed(2) } } },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ color:c.tick } },
+        y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, callback: v => '₱' + v }, beginAtZero:true }
+      }
+    }
+  });
 
-  _c.sp = new Chart('custSpend', { type:'bar', data:{ labels:SP_LABELS, datasets:[{ label:'Spent (₱)', data:SP_VALUES, backgroundColor:'rgba(91,184,224,0.70)', borderRadius:5, borderSkipped:false }] }, options:{ responsive:true, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => '₱' + x.parsed.y.toFixed(2) } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:c.tick } }, y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, callback: v => '₱' + v }, beginAtZero:true } } } });
-
+  /* Loyalty ring (small donut) */
   const loyCanvas = document.getElementById('loyaltyRing');
-  if (loyCanvas){
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    if (_c._loyRing) _c._loyRing.destroy();
+  if(loyCanvas){
+    const isDark   = document.documentElement.getAttribute('data-theme') === 'dark';
     const progress = Math.min((LOYALTY % 10) / 10, 1);
-    _c._loyRing = new Chart(loyCanvas.getContext('2d'), { type:'doughnut', data:{ datasets:[{ data:[progress, 1-progress], backgroundColor:[isDark ? '#d4a843' : '#d4a843', isDark ? 'rgba(45,136,184,0.15)' : 'rgba(45,136,184,0.08)'], borderWidth:0 }] }, options:{ cutout:'75%', plugins:{ legend:{ display:false }, tooltip:{ enabled:false } }, animation:{ duration:800 } } });
+    _c._loyRing = new Chart(loyCanvas.getContext('2d'), {
+      type: 'doughnut',
+      data:{
+        datasets:[{
+          data: [progress, 1 - progress],
+          backgroundColor: [
+            '#d4a843',
+            isDark ? 'rgba(45,136,184,0.15)' : 'rgba(45,136,184,0.08)'
+          ],
+          borderWidth: 0
+        }]
+      },
+      options:{
+        cutout: '75%',
+        plugins:{ legend:{ display:false }, tooltip:{ enabled:false } },
+        animation:{ duration:800 }
+      }
+    });
   }
 }
 
 document.addEventListener('DOMContentLoaded', build);
-const _oT = window.toggleTheme; window.toggleTheme = function(){ _oT(); setTimeout(build, 280); };
+
+/* Rebuild charts on theme toggle to update grid/tick colors */
+const _oT = window.toggleTheme;
+window.toggleTheme = function(){ _oT(); setTimeout(build, 280); };
 </script>
 </body>
 </html>

@@ -40,7 +40,10 @@
       <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
       <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
       <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
+      {% if session.get('role') in ['Admin',  'Super Admin'] %}
       <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link active">Activity Log</a>
+      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
+      {% endif %}
     </nav>
     <div class="agos-sidebar-footer flex-shrink-0 p-3">
       <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
