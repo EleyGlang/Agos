@@ -53,9 +53,21 @@ def upgrade():
             {'first': first, 'mi': mi, 'last': last, 'cid': customer_id}
         )
 
-    # 3. Make first_name / last_name non-nullable now that data is backfilled
-    op.alter_column('customers', 'first_name', nullable=False, server_default=None)
-    op.alter_column('customers', 'last_name',  nullable=False, server_default=None)
+        op.alter_column(
+            'customers',
+            'first_name',
+            existing_type=sa.String(length=100),
+            nullable=False,
+            server_default=None
+        )
+
+        op.alter_column(
+            'customers',
+            'last_name',
+            existing_type=sa.String(length=100),
+            nullable=False,
+            server_default=None
+        )
 
     # 4. Drop the old full_name column
     op.drop_column('customers', 'full_name')

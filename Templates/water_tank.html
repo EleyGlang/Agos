@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Water Tank Monitor — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* ── Tank SVG gauge ── */
+    .tank-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .tank-svg-container {
+      position: relative;
+      width: 180px;
+      height: 280px;
+    }
+
+    .tank-level-fill {
+      transition: height 1.2s cubic-bezier(.4,0,.2,1),
+                  y 1.2s cubic-bezier(.4,0,.2,1),
+                  fill .6s ease;
+    }
+
+    /* water ripple animation */
+    @keyframes wave {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .wave-path { animation: wave 2.8s linear infinite; }
+
+    /* status colours */
+    .tank-status-full    { color: #0284c7; }
+    .tank-status-ok      { color: #0ea5e9; }
+    .tank-status-low     { color: #f59e0b; }
+    .tank-status-critical{ color: #ef4444; }
+
+    /* log table */
+    .tank-log-chip {
+      display: inline-flex; align-items: center; gap: .3rem;
+      font-size: .7rem; font-weight: 700; padding: .2rem .55rem;
+      border-radius: 9999px;
+    }
+    .chip-refill { background: var(--info-bg);    color: var(--info-text); }
+    .chip-usage  { background: var(--warning-bg); color: var(--warning-text); }
+
+    /* quick action cards */
+    .action-card {
+      border-radius: 1rem;
+      padding: 1.25rem;
+      border: 1px solid var(--border-card);
+      background: var(--bg-card);
+      display: flex;
+      flex-direction: column;
+      gap: .875rem;
+    }
+    .action-card-title {
+      font-size: .82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-muted);
+    }
+
+    .gauge-label {
+      font-family: 'Inconsolata', monospace;
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .tank-marker-line {
+      stroke: var(--border-card);
+      stroke-width: 1;
+      stroke-dasharray: 4 3;
+    }
+
+    .agos-sidebar-link { display: flex; align-items: center; gap: .6rem; }
+
+    .log-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  </style>
+</head>
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+<div class="flex min-h-screen">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
+    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
+        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
+        </svg>
+      </div>
+      <div>
+        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
+        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
+      </div>
+    </div>
+    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
+      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      <div>
+        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
+        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
+      </div>
+    </div>
+    <nav class="flex-1 py-2">
+      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link {% if active_page=='dashboard' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link {% if active_page=='sales' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 3h18M3 9h18M3 15h11M3 21h8"/></svg>
+        Record Sales
+      </a>
+      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link {% if active_page=='inventory' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg>
+        Inventory
+      </a>
+      <a href="{{ url_for('products') }}"         class="agos-sidebar-link {% if active_page=='products' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        Products
+      </a>
+      <a href="{{ url_for('water_tank') }}"       class="agos-sidebar-link active">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0014 0C19 9 12 2 12 2z"/></svg>
+        Water Tank
+      </a>
+      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link {% if active_page=='deliveries' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Deliveries
+      </a>
+      <a href="{{ url_for('returns') }}"          class="agos-sidebar-link {% if active_page=='returns' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/></svg>
+        Returns &amp; Refunds
+      </a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link {% if active_page=='user_management' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Users
+      </a>
+      {% endif %}
+      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link {% if active_page=='expenses' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Expenses
+      </a>
+      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link {% if active_page=='reports' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Reports
+      </a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link {% if active_page=='activity_log' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Activity Log
+      </a>
+      <a href="{{ url_for('landing_editor') }}"   class="agos-sidebar-link {% if active_page=='landing_editor' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Landing Editor
+      </a>
+      {% endif %}
+    </nav>
+    <div class="agos-sidebar-footer flex-shrink-0 p-3">
+      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
+    </div>
+  </aside>
+
+  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
+
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+
+    <!-- ══ TOPBAR ══ -->
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
+      <div class="flex items-center gap-4">
+        <button id="menu-btn" onclick="toggleSidebar()"
+                class="md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div>
+          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Water Tank Monitor</div>
+          <div class="text-xs" style="color:var(--text-muted)">Track your 20-gallon tank capacity in real time</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle" title="Toggle dark/light mode">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+      </div>
+    </header>
+
+    <main class="flex-1 p-4 md:p-6 lg:p-8">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      {# Compute derived values for the template #}
+      {% set pct        = ((level / capacity) * 100)|round(1) %}
+      {% set remaining  = (capacity - level)|round(2) %}
+      {% set status     = 'Full' if pct >= 95 else ('OK' if pct >= 40 else ('Low' if pct >= 15 else 'Critical')) %}
+
+      <!-- ── ALERT BANNER when critical ── -->
+      {% if pct < 15 %}
+      <div class="mb-5 flex items-start gap-3 p-4 rounded-xl"
+           style="background:var(--danger-bg);border:1px solid rgba(239,68,68,.25);">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" style="color:var(--danger-text);flex-shrink:0;margin-top:1px">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+        <div>
+          <p class="font-bold text-sm m-0" style="color:var(--danger-text)">⚠ Critical Water Level</p>
+          <p class="text-xs mt-0.5 m-0" style="color:var(--danger-text);opacity:.8">
+            Only <strong>{{ level|round(1) }} gallons</strong> remaining ({{ pct }}%). Schedule a refill immediately.
+          </p>
+        </div>
+      </div>
+      {% elif pct < 40 %}
+      <div class="mb-5 flex items-start gap-3 p-4 rounded-xl"
+           style="background:var(--warning-bg);border:1px solid rgba(245,158,11,.25);">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" style="color:var(--warning-text);flex-shrink:0;margin-top:1px">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+        </svg>
+        <div>
+          <p class="font-bold text-sm m-0" style="color:var(--warning-text)">Low Water Level</p>
+          <p class="text-xs mt-0.5 m-0" style="color:var(--warning-text);opacity:.8">
+            {{ level|round(1) }} gallons left ({{ pct }}%). Consider scheduling a refill soon.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ── MAIN GRID ── -->
+      <div class="grid gap-6 grid-cols-1 lg:grid-cols-[auto_1fr]">
+
+        <!-- LEFT: Visual Tank + Stats -->
+        <div class="flex flex-col gap-5 items-center lg:items-start">
+
+          <!-- Gauge card -->
+          <div class="agos-card p-6 flex flex-col items-center gap-4 w-full max-w-xs mx-auto lg:mx-0" style="min-width:260px;">
+
+            <!-- SVG Tank Gauge -->
+            <div class="tank-svg-container">
+              <svg width="180" height="280" viewBox="0 0 180 280" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <!-- clip path for the tank body -->
+                  <clipPath id="tank-clip">
+                    <rect x="28" y="30" width="124" height="218" rx="18" ry="18"/>
+                  </clipPath>
+                  <!-- water gradient -->
+                  <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#38bdf8" stop-opacity=".85"/>
+                    <stop offset="100%" stop-color="#0284c7" stop-opacity=".95"/>
+                  </linearGradient>
+                  <!-- low water gradient -->
+                  <linearGradient id="water-grad-low" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#fbbf24" stop-opacity=".75"/>
+                    <stop offset="100%" stop-color="#d97706" stop-opacity=".9"/>
+                  </linearGradient>
+                  <!-- critical water gradient -->
+                  <linearGradient id="water-grad-crit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#f87171" stop-opacity=".75"/>
+                    <stop offset="100%" stop-color="#dc2626" stop-opacity=".9"/>
+                  </linearGradient>
+                </defs>
+
+                <!-- Tank outer shell -->
+                <rect x="28" y="30" width="124" height="218" rx="18" ry="18"
+                      fill="none"
+                      stroke="var(--border-card)"
+                      stroke-width="3"/>
+
+                <!-- Percentage marker lines (25%, 50%, 75%) -->
+                {% for frac, lbl in [(0.75, '25%'), (0.5, '50%'), (0.25, '75%')] %}
+                {% set my = 30 + (frac * 218)|round|int %}
+                <line x1="32" y1="{{ my }}" x2="148" y2="{{ my }}" class="tank-marker-line"/>
+                <text x="154" y="{{ my + 4 }}" fill="var(--text-faint)"
+                      font-size="9" font-family="Inconsolata, monospace">{{ lbl }}</text>
+                {% endfor %}
+
+                <!-- Water fill (clipped to tank) -->
+                {% set fill_h  = ((pct / 100) * 218)|round|int %}
+                {% set fill_y  = 30 + (218 - fill_h) %}
+                {% set wgrad   = 'water-grad-crit' if pct < 15 else ('water-grad-low' if pct < 40 else 'water-grad') %}
+
+                <g clip-path="url(#tank-clip)">
+                  <!-- Solid fill -->
+                  <rect class="tank-level-fill"
+                        x="28"
+                        y="{{ fill_y }}"
+                        width="124"
+                        height="{{ fill_h }}"
+                        fill="url(#{{ wgrad }})"/>
+
+                  <!-- Animated wave on top -->
+                  {% if pct > 2 %}
+                  <g style="transform:translateY({{ fill_y - 6 }}px)">
+                    <svg width="280" height="14" viewBox="0 0 280 14" overflow="visible">
+                      <path class="wave-path"
+                            d="M0 7 Q35 0 70 7 Q105 14 140 7 Q175 0 210 7 Q245 14 280 7 Q315 0 350 7 Q385 14 420 7 Q455 0 490 7 Q525 14 560 7"
+                            fill="none"
+                            stroke="{{ '#fbbf24' if pct < 15 else ('#f59e0b' if pct < 40 else '#7dd3fc') }}"
+                            stroke-width="2.5"
+                            opacity=".7"/>
+                    </svg>
+                  </g>
+                  {% endif %}
+                </g>
+
+                <!-- Percentage label inside tank -->
+                <text x="90" y="{{ [fill_y + (fill_h / 2) + 6, 248]|min }}"
+                      text-anchor="middle"
+                      font-size="22" font-weight="800"
+                      font-family="Inconsolata, monospace"
+                      fill="white" opacity=".95">{{ pct }}%</text>
+              </svg>
+            </div>
+
+            <!-- Numeric readout -->
+            <div class="text-center">
+              <div class="gauge-label
+                {% if pct >= 95 %}tank-status-full
+                {% elif pct >= 40 %}tank-status-ok
+                {% elif pct >= 15 %}tank-status-low
+                {% else %}tank-status-critical{% endif %}">
+                {{ level|round(1) }}
+              </div>
+              <div class="text-sm font-medium mt-0.5" style="color:var(--text-muted)">
+                gallons remaining
+              </div>
+              <div class="text-xs mt-1" style="color:var(--text-faint)">
+                of {{ capacity|int }} gal capacity
+              </div>
+            </div>
+
+            <!-- Status badge -->
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
+              {% if pct >= 95 %}agos-badge-success
+              {% elif pct >= 40 %}agos-badge-success
+              {% elif pct >= 15 %}agos-badge-warning
+              {% else %}agos-badge-danger{% endif %} agos-badge">
+              <span class="w-1.5 h-1.5 rounded-full inline-block
+                {% if pct >= 40 %}bg-green-500{% elif pct >= 15 %}bg-yellow-500{% else %}bg-red-500{% endif %}"></span>
+              {{ status }}
+            </span>
+          </div>
+
+          <!-- Quick stats -->
+          <div class="grid grid-cols-2 gap-3 w-full max-w-xs mx-auto lg:mx-0">
+            <div class="agos-stat-card">
+              <span class="agos-stat-label">Capacity</span>
+              <span class="agos-stat-value">{{ capacity|int }}<span class="text-sm font-normal" style="color:var(--text-muted)"> gal</span></span>
+              <span class="agos-stat-sub">Max tank size</span>
+            </div>
+            <div class="agos-stat-card">
+              <span class="agos-stat-label">Space Left</span>
+              <span class="agos-stat-value" style="color:var(--accent)">{{ remaining }}<span class="text-sm font-normal" style="color:var(--text-muted)"> gal</span></span>
+              <span class="agos-stat-sub">Until full</span>
+            </div>
+            <div class="agos-stat-card">
+              <span class="agos-stat-label">Total Refills</span>
+              <span class="agos-stat-value" style="color:var(--info-text)">
+                {{ logs | selectattr('action','equalto','refill') | list | length }}
+              </span>
+              <span class="agos-stat-sub">Log entries</span>
+            </div>
+            <div class="agos-stat-card">
+              <span class="agos-stat-label">Usage Logs</span>
+              <span class="agos-stat-value" style="color:var(--warning-text)">
+                {{ logs | selectattr('action','equalto','usage') | list | length }}
+              </span>
+              <span class="agos-stat-sub">Log entries</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Actions + Log -->
+        <div class="flex flex-col gap-5">
+
+          <!-- Action cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- Refill card -->
+            <div class="action-card">
+              <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style="background:var(--info-bg);">
+                  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                       viewBox="0 0 24 24" style="color:var(--info-text)">
+                    <path d="M12 2v6m0 0l-3-3m3 3l3-3M5 13a7 7 0 1014 0"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="action-card-title">Refill Tank</div>
+                  <div class="text-xs" style="color:var(--text-muted)">Add gallons to the tank</div>
+                </div>
+              </div>
+              <form action="{{ url_for('water_tank_refill') }}" method="POST" class="flex flex-col gap-3">
+                <div>
+                  <label class="agos-label">Gallons to add</label>
+                  <input type="number" name="gallons" min="0.1" max="{{ remaining }}" step="0.1"
+                         value="{{ remaining }}" placeholder="e.g. {{ capacity|int }}"
+                         class="agos-input" required/>
+                  <p class="text-[0.68rem] mt-1" style="color:var(--text-muted)">
+                    Max: <strong>{{ remaining }}</strong> gal (to fill completely)
+                  </p>
+                </div>
+                <div>
+                  <label class="agos-label">Note <span style="font-weight:400;color:var(--text-faint)">(optional)</span></label>
+                  <input type="text" name="note" placeholder="e.g. Morning refill"
+                         class="agos-input"/>
+                </div>
+                <button type="submit" class="agos-btn-primary w-full py-2.5"
+                        {% if remaining <= 0 %}disabled style="opacity:.5;cursor:not-allowed;"{% endif %}>
+                  {% if remaining <= 0 %}Tank is Full{% else %}Add Water{% endif %}
+                </button>
+              </form>
+            </div>
+
+            <!-- Log usage card -->
+            <div class="action-card">
+              <div class="flex items-center gap-2">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                     style="background:var(--warning-bg);">
+                  <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"
+                       viewBox="0 0 24 24" style="color:var(--warning-text)">
+                    <path d="M12 22V8m0 0l-3 3m3-3l3 3M5 11a7 7 0 1014 0"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="action-card-title">Log Usage</div>
+                  <div class="text-xs" style="color:var(--text-muted)">Record gallons consumed</div>
+                </div>
+              </div>
+              <form action="{{ url_for('water_tank_use') }}" method="POST" class="flex flex-col gap-3">
+                <div>
+                  <label class="agos-label">Gallons used</label>
+                  <input type="number" name="gallons" min="0.1" max="{{ level }}" step="0.1"
+                         placeholder="e.g. 5.0"
+                         class="agos-input" required/>
+                  <p class="text-[0.68rem] mt-1" style="color:var(--text-muted)">
+                    Available: <strong>{{ level|round(1) }}</strong> gal
+                  </p>
+                </div>
+                <div>
+                  <label class="agos-label">Note <span style="font-weight:400;color:var(--text-faint)">(optional)</span></label>
+                  <input type="text" name="note" placeholder="e.g. Production batch"
+                         class="agos-input"/>
+                </div>
+                <button type="submit"
+                        class="w-full py-2.5 font-semibold rounded-xl border-none cursor-pointer text-sm"
+                        style="background:var(--warning-bg);color:var(--warning-text);"
+                        {% if level <= 0 %}disabled style="opacity:.5;cursor:not-allowed;"{% endif %}>
+                  {% if level <= 0 %}Tank is Empty{% else %}Log Usage{% endif %}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- ── Activity Log ── -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <div class="agos-card-title">Tank Activity Log</div>
+                <div class="agos-card-subtitle">Last {{ logs|length }} entries</div>
+              </div>
+              {% if logs %}
+                {% set last_refill = logs | selectattr('action','equalto','refill') | list | first %}
+                {% if last_refill %}
+                <span class="text-xs px-2.5 py-1 rounded-lg" style="background:var(--info-bg);color:var(--info-text);">
+                  Last refill: {{ last_refill.created_at.strftime('%b %d, %I:%M %p') }}
+                </span>
+                {% endif %}
+              {% endif %}
+            </div>
+
+            <div class="log-table-wrap">
+              <table class="agos-table w-full border-collapse" style="min-width:520px;">
+                <thead>
+                  <tr>
+                    <th style="width:50px;">#</th>
+                    <th>Type</th>
+                    <th>Gallons</th>
+                    <th>Running Level</th>
+                    <th>Note</th>
+                    <th>By</th>
+                    <th>Date &amp; Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if not logs %}
+                  <tr>
+                    <td colspan="7" class="text-center py-10" style="color:var(--text-faint);">
+                      No activity yet. Log a refill or usage above.
+                    </td>
+                  </tr>
+                  {% else %}
+                  {# Compute running total forward from oldest to newest, then reverse for display #}
+                  {% set ns = namespace(running=0) %}
+                  {% set ordered = logs|sort(attribute='created_at') %}
+                  {% set levels_list = [] %}
+                  {% for log in ordered %}
+                    {% if log.action == 'refill' %}
+                      {% set ns.running = [ns.running + log.gallons, capacity]|min %}
+                    {% else %}
+                      {% set ns.running = [ns.running - log.gallons, 0]|max %}
+                    {% endif %}
+                    {% if levels_list.append(ns.running|round(2)) %}{% endif %}
+                  {% endfor %}
+                  {# Display in reverse (newest first) #}
+                  {% for log in logs %}
+                    {% set loop_i = logs|length - loop.index %}
+                    {% set running_lvl = levels_list[loop_i] if loop_i >= 0 else 0 %}
+                    {% set lvl_pct = ((running_lvl / capacity) * 100)|round(0)|int %}
+                  <tr>
+                    <td style="color:var(--text-muted);">{{ loop.index }}</td>
+                    <td>
+                      <span class="tank-log-chip {% if log.action == 'refill' %}chip-refill{% else %}chip-usage{% endif %}">
+                        {% if log.action == 'refill' %}
+                          <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2v8m-4-4l4 4 4-4M5 18a7 7 0 0014 0"/></svg>
+                          Refill
+                        {% else %}
+                          <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 22v-8m-4 4l4-4 4 4M5 6a7 7 0 0014 0"/></svg>
+                          Usage
+                        {% endif %}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="font-bold font-mono text-sm"
+                            style="color:{% if log.action == 'refill' %}var(--info-text){% else %}var(--warning-text){% endif %}">
+                        {% if log.action == 'refill' %}+{% else %}−{% endif %}{{ log.gallons|round(1) }} gal
+                      </span>
+                    </td>
+                    <td>
+                      <!-- Mini progress bar -->
+                      <div class="flex items-center gap-2">
+                        <div class="rounded-full overflow-hidden" style="width:64px;height:7px;background:var(--bg-input);flex-shrink:0;">
+                          <div class="h-full rounded-full transition-all"
+                               style="width:{{ lvl_pct }}%;
+                                      background:{% if lvl_pct < 15 %}var(--danger-text){% elif lvl_pct < 40 %}var(--warning-text){% else %}var(--accent){% endif %};"></div>
+                        </div>
+                        <span class="font-mono text-xs font-semibold" style="color:var(--text-secondary);">
+                          {{ running_lvl }} gal
+                        </span>
+                      </div>
+                    </td>
+                    <td style="color:var(--text-muted);font-size:.8rem;max-width:160px;">
+                      {{ log.note[:30] ~ '…' if log.note and log.note|length > 30 else (log.note or '—') }}
+                    </td>
+                    <td style="font-size:.8rem;color:var(--text-muted);">
+                      {% if log.user %}{{ log.user.first_name }}{% else %}—{% endif %}
+                    </td>
+                    <td style="font-size:.79rem;color:var(--text-muted);white-space:nowrap;">
+                      {{ log.created_at.strftime('%b %d, %Y') }}<br>
+                      <span style="font-size:.72rem;color:var(--text-faint);">{{ log.created_at.strftime('%I:%M %p') }}</span>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══ LOGOUT MODAL ══ -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex gap-3 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  });
+  const _orig = window.toggleTheme;
+  window.toggleTheme = function () {
+    _orig();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  };
+  if (typeof openModal === 'undefined') {
+    window.openModal  = (id) => document.getElementById(id).classList.add('open');
+    window.closeModal = (id) => document.getElementById(id).classList.remove('open');
+  }
+  document.getElementById('logout-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeModal('logout-modal');
+  });
+</script>
+</body>
+</html>

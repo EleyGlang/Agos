@@ -35,18 +35,70 @@
         <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
       </div>
     </div>
-    <<nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
-      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
-      <a href="{{ url_for('products') }}"         class="agos-sidebar-link active">Products</a>
-      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
-      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
-      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') in ['Admin',  'Super Admin'] %}
-      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
-      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
+    <nav class="flex-1 py-2">
+      <a href="{{ url_for('dashboard') }}"
+         class="agos-sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="{{ url_for('sales') }}"
+         class="agos-sidebar-link {% if active_page == 'sales' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 3h18M3 9h18M3 15h11M3 21h8"/></svg>
+        Record Sales
+      </a>
+      <a href="{{ url_for('inventory') }}"
+         class="agos-sidebar-link {% if active_page == 'inventory' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg>
+        Inventory
+      </a>
+      <a href="{{ url_for('products') }}"
+         class="agos-sidebar-link {% if active_page == 'products' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        Products
+      </a>
+      <a href="{{ url_for('water_tank') }}"
+         class="agos-sidebar-link {% if active_page == 'water_tank' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0014 0C19 9 12 2 12 2z"/></svg>
+        Water Tank
+      </a>
+      <a href="{{ url_for('deliveries') }}"
+         class="agos-sidebar-link {% if active_page == 'deliveries' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Deliveries
+      </a>
+      <a href="{{ url_for('returns') }}"
+         class="agos-sidebar-link {% if active_page == 'returns' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/></svg>
+        Returns &amp; Refunds
+      </a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('user_management') }}"
+         class="agos-sidebar-link {% if active_page == 'user_management' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Users
+      </a>
+      {% endif %}
+      <a href="{{ url_for('expenses') }}"
+         class="agos-sidebar-link {% if active_page == 'expenses' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Expenses
+      </a>
+      <a href="{{ url_for('reports') }}"
+         class="agos-sidebar-link {% if active_page == 'reports' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+        Reports
+      </a>
+      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+      <a href="{{ url_for('activity_log') }}"
+         class="agos-sidebar-link {% if active_page == 'activity_log' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Activity Log
+      </a>
+      <a href="{{ url_for('landing_editor') }}"
+         class="agos-sidebar-link {% if active_page == 'landing_editor' %}active{% endif %}">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Landing Editor
+      </a>
       {% endif %}
     </nav>
     <div class="agos-sidebar-footer flex-shrink-0 p-3">
@@ -120,10 +172,19 @@
                   <input type="text" name="unit" placeholder="e.g. gallon" class="agos-input"/>
                 </div>
               </div>
+              <!-- LOW-STOCK THRESHOLD: now optional, no longer required -->
               <div>
-                <label class="agos-label">Low-Stock Threshold</label>
-                <input type="number" name="minimum_stock" min="1" value="10" class="agos-input"/>
-                <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">Dashboard will flag products below this count.</p>
+                <label class="agos-label">
+                  Low-Stock Threshold
+                  <span class="ml-1 text-[0.65rem] font-normal px-1.5 py-0.5 rounded-md"
+                        style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">
+                    optional
+                  </span>
+                </label>
+                <input type="number" name="minimum_stock" min="1" placeholder="Default: 10" class="agos-input"/>
+                <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">
+                  Dashboard flags stock below this count. Leave blank to use the default of 10.
+                </p>
               </div>
               <button type="submit" class="agos-btn-primary w-full py-3">Add Product</button>
             </form>
@@ -161,7 +222,9 @@
                     <td class="font-medium product-name" style="color:var(--text-primary)">{{ product.product_name }}</td>
                     <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(product.price) }}</td>
                     <td style="color:var(--text-secondary)">{{ product.unit or '—' }}</td>
-                    <td>{{ product.inventory.minimum_stock if product.inventory else '—' }}</td>
+                    <td style="color:var(--text-muted)">
+                      {{ product.inventory.minimum_stock if product.inventory else '10' }}
+                    </td>
                     <td>
                       {% if product.is_active %}
                         <span class="agos-badge agos-badge-success">Active</span>
@@ -193,7 +256,6 @@
 
                         <!-- Delete (Admin or Super Admin) -->
                         {% if session.get('role') in ['Admin', 'Super Admin'] %}
-                          {# Hidden form — triggered by JS modal #}
                           <form id="delete-product-form-{{ product.product_id }}"
                                 action="{{ url_for('delete_product', product_id=product.product_id) }}"
                                 method="POST" style="display:none"></form>
@@ -249,9 +311,16 @@
             <input type="text" id="edit-unit" name="unit" class="agos-input"/>
           </div>
         </div>
+        <!-- Also optional in edit modal -->
         <div>
-          <label class="agos-label">Low-Stock Threshold</label>
-          <input type="number" id="edit-min-stock" name="minimum_stock" min="1" class="agos-input"/>
+          <label class="agos-label">
+            Low-Stock Threshold
+            <span class="ml-1 text-[0.65rem] font-normal px-1.5 py-0.5 rounded-md"
+                  style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">
+              optional
+            </span>
+          </label>
+          <input type="number" id="edit-min-stock" name="minimum_stock" min="1" placeholder="Default: 10" class="agos-input"/>
         </div>
         <div class="flex gap-3 pt-1">
           <button type="submit" class="agos-btn-primary flex-1 py-2.5">Save Changes</button>
@@ -341,7 +410,8 @@
     document.getElementById('edit-name').value      = name;
     document.getElementById('edit-price').value     = price;
     document.getElementById('edit-unit').value      = unit;
-    document.getElementById('edit-min-stock').value = minStock;
+    // Show actual value; if it's the default 10 just show it
+    document.getElementById('edit-min-stock').value = minStock || '';
     document.getElementById('edit-modal').classList.add('open');
   }
   function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
@@ -354,7 +424,6 @@
 
   function openDeleteProductModal(id, name, minStock) {
     document.getElementById('delete-product-name').textContent = `"${name}"`;
-
     const warn = document.getElementById('delete-product-warn');
     if (userRole === 'Super Admin') {
       warn.textContent =
@@ -365,14 +434,12 @@
         'This action is permanent and cannot be undone. ' +
         'If this product has transaction history, the server will reject the deletion.';
     }
-
     const btn = document.getElementById('delete-product-confirm-btn');
     btn.onclick = () => document.getElementById('delete-product-form-' + id).submit();
     openModal('delete-product-modal');
   }
 
-  // ── Generic modal helpers (expected from agos-theme.js) ──────────
-  // Fallback if agos-theme.js doesn't expose openModal/closeModal
+  // ── Generic modal helpers ─────────────────────────────────────────
   if (typeof openModal === 'undefined') {
     window.openModal  = (id) => document.getElementById(id).classList.add('open');
     window.closeModal = (id) => document.getElementById(id).classList.remove('open');
