@@ -10,74 +10,26 @@
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body class="agos-body m-0 p-0">
-<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
+  {% include '_sidebar.html' %}
 
-  <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
-      </div>
-      <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
-      </div>
-    </div>
-    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      <div>
-        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
-      </div>
-    </div>
-   <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
-      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
-      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
-      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link active">Expenses</a>
-      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') in ['Admin',  'Super Admin'] %}
-      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
-      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
-      {% endif %}
-    </nav>
-    <div class="agos-sidebar-footer flex-shrink-0 p-3">
-      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
-    </div>
-  </aside>
-
-  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
-
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
+        <button onclick="toggleSidebar()" class="block md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         <div>
           <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Expense Management</div>
-          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Track and categorize business expenses</div>
+          <div class="text-xs" style="color:var(--text-muted)">Track and categorize business expenses</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
-        <div class="agos-theme-row">
-          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
-          <label class="agos-theme-toggle" title="Toggle dark/light mode">
-            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
-            <span class="agos-theme-track"></span>
-          </label>
-        </div>
+        <div class="agos-theme-row"><span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span><label class="agos-theme-toggle"><input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label></div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
-
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
           <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
@@ -86,100 +38,68 @@
 
       <div class="grid gap-6 grid-cols-1 {% if can_edit %}lg:grid-cols-[1fr_1.8fr]{% endif %}">
 
-        <!-- Record Expense Form (Admin / Super Admin only) -->
         {% if can_edit %}
         <div class="agos-card overflow-hidden self-start">
-          <div class="agos-card-header">
-            <div class="agos-card-title">Record Expense</div>
-            <div class="agos-card-subtitle">Log a new business expense</div>
-          </div>
+          <div class="agos-card-header"><div class="agos-card-title">Record Expense</div><div class="agos-card-subtitle">Log a new business expense</div></div>
           <div class="p-5">
             <form id="expense-form" action="{{ url_for('expenses') }}" method="POST" class="flex flex-col gap-4">
               <div>
                 <label class="agos-label">Category <span style="color:#d32f2f">*</span></label>
                 <input type="text" name="category" id="expense-category" required list="expense-categories-list" placeholder="Select or type a category…" class="agos-input"/>
-                <datalist id="expense-categories-list">
-                  <option value="Utilities"/><option value="Supplies"/><option value="Maintenance"/>
-                  <option value="Salaries"/><option value="Rent"/><option value="Transportation"/><option value="Other"/>
-                </datalist>
+                <datalist id="expense-categories-list"><option value="Utilities"/><option value="Supplies"/><option value="Maintenance"/><option value="Salaries"/><option value="Rent"/><option value="Transportation"/><option value="Other"/></datalist>
               </div>
-              <div>
-                <label class="agos-label">Description <span style="color:#d32f2f">*</span></label>
-                <input type="text" name="description" id="expense-desc" required placeholder="e.g. Monthly electric bill" class="agos-input"/>
-              </div>
-              <div>
-                <label class="agos-label">Amount (₱) <span style="color:#d32f2f">*</span></label>
-                <input type="number" name="amount" id="expense-amount" min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/>
-              </div>
-              <div>
-                <label class="agos-label">Date <span style="color:#d32f2f">*</span></label>
-                <input type="date" name="expense_date" required id="expense-date-input" class="agos-input"/>
-              </div>
+              <div><label class="agos-label">Description <span style="color:#d32f2f">*</span></label><input type="text" name="description" id="expense-desc" required placeholder="e.g. Monthly electric bill" class="agos-input"/></div>
+              <div><label class="agos-label">Amount (₱) <span style="color:#d32f2f">*</span></label><input type="number" name="amount" id="expense-amount" min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/></div>
+              <div><label class="agos-label">Date <span style="color:#d32f2f">*</span></label><input type="date" name="expense_date" required id="expense-date-input" class="agos-input"/></div>
               <button type="button" onclick="openExpenseConfirm()" class="agos-btn-primary w-full py-3">Review &amp; Record Expense</button>
             </form>
           </div>
         </div>
         {% endif %}
 
-        <!-- Expense History -->
         <div class="agos-card overflow-hidden">
           <div class="agos-card-header flex items-center justify-between">
-            <div>
-              <div class="agos-card-title">Expense History</div>
-              <div class="agos-card-subtitle">{{ expenses | length }} record{{ 's' if expenses | length != 1 }}</div>
-            </div>
+            <div><div class="agos-card-title">Expense History</div><div class="agos-card-subtitle">{{ expenses | length }} record{{ 's' if expenses | length != 1 }}</div></div>
             <input type="text" id="search-expenses" placeholder="Search..." oninput="filterExpenses()" class="agos-input" style="width:9rem"/>
           </div>
           <div class="overflow-x-auto">
-            <table class="agos-table w-full border-collapse min-w-[560px]">
-              <thead>
-                <tr><th>#</th><th>Category</th><th>Description</th><th>Amount</th><th>Date</th>{% if can_edit %}<th>Action</th>{% endif %}</tr>
-              </thead>
+            <table class="agos-table w-full border-collapse" style="min-width:560px">
+              <thead><tr><th>#</th><th>Category</th><th>Description</th><th>Amount</th><th>Date</th>{% if can_edit %}<th>Action</th>{% endif %}</tr></thead>
               <tbody>
-                {% if expenses %}
-                  {% for expense in expenses %}
-                  <tr class="expense-row">
-                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
-                    <td><span class="agos-badge agos-badge-info">{{ expense.category }}</span></td>
-                    <td>{{ expense.description }}</td>
-                    <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(expense.amount) }}</td>
-                    <td style="color:var(--text-muted)">{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}</td>
-                    {% if can_edit %}
-                    <td>
-                      <form id="delete-expense-form-{{ expense.expense_id }}" action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}" method="POST" style="display:none"></form>
-                      <button type="button"
-                              onclick="openDeleteExpenseModal({{ expense.expense_id }}, '{{ expense.description | replace("'", "\\'") }}')"
-                              class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
-                              style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
-                    </td>
-                    {% endif %}
-                  </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr><td colspan="6" class="text-center py-10" style="color:var(--text-faint)">No expenses recorded yet.</td></tr>
+                {% if expenses %}{% for expense in expenses %}
+                <tr class="expense-row">
+                  <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                  <td><span class="agos-badge agos-badge-info">{{ expense.category }}</span></td>
+                  <td>{{ expense.description }}</td>
+                  <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(expense.amount) }}</td>
+                  <td style="color:var(--text-muted)">{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}</td>
+                  {% if can_edit %}
+                  <td>
+                    <form id="delete-expense-form-{{ expense.expense_id }}" action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}" method="POST" style="display:none"></form>
+                    <button type="button" onclick="openDeleteExpenseModal({{ expense.expense_id }},'{{ expense.description | replace("'", "\\'") }}')" class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer" style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
+                  </td>
+                  {% endif %}
+                </tr>
+                {% endfor %}{% else %}
+                <tr><td colspan="6" class="text-center py-10" style="color:var(--text-faint)">No expenses recorded yet.</td></tr>
                 {% endif %}
               </tbody>
             </table>
           </div>
         </div>
-
       </div>
     </main>
   </div>
 </div>
 
-<!-- ══ EXPENSE CONFIRM MODAL ══ -->
+<!-- EXPENSE CONFIRM MODAL -->
 <div id="expense-confirm-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-      </div>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
       <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Record This Expense?</h3>
       <div id="expense-confirm-details" class="text-sm mb-5 text-left rounded-xl p-3 mt-3" style="background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-secondary)"></div>
-      <div class="flex items-center gap-4 justify-center">
+      <div class="flex gap-4 justify-center">
         <button onclick="submitExpenseForm()" class="agos-btn-primary px-7 py-2.5">Yes, Record</button>
         <button onclick="closeExpenseConfirm()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -187,18 +107,14 @@
   </div>
 </div>
 
-<!-- ══ DELETE EXPENSE MODAL ══ -->
+<!-- DELETE EXPENSE MODAL -->
 <div id="delete-expense-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--danger-bg)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--danger-text)" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-        </svg>
-      </div>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--danger-bg)"><svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--danger-text)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></div>
       <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Expense?</h3>
       <p class="text-sm mb-5" id="delete-expense-message" style="color:var(--text-muted)"></p>
-      <div class="flex items-center gap-4 justify-center">
+      <div class="flex gap-4 justify-center">
         <button id="delete-expense-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--danger-text)">Yes, Delete</button>
         <button onclick="closeDeleteExpenseModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -206,18 +122,14 @@
   </div>
 </div>
 
-<!-- ══ LOGOUT MODAL ══ -->
+<!-- LOGOUT MODAL -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-      </div>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></div>
       <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
       <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
-      <div class="flex items-center gap-4 justify-center">
+      <div class="flex gap-3 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
         <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -229,37 +141,20 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('expense-date-input').value = new Date().toISOString().split('T')[0];
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const lbl = document.getElementById('theme-label');
-    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
   });
-  const _orig = window.toggleTheme;
-  window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
-
+  const _orig = window.toggleTheme; window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
   function openExpenseConfirm() {
-    const cat = document.getElementById('expense-category').value.trim();
-    const desc = document.getElementById('expense-desc').value.trim();
-    const amount = document.getElementById('expense-amount').value;
-    const date = document.getElementById('expense-date-input').value;
+    const cat = document.getElementById('expense-category').value.trim(); const desc = document.getElementById('expense-desc').value.trim(); const amount = document.getElementById('expense-amount').value; const date = document.getElementById('expense-date-input').value;
     if (!cat || !desc || !amount || !date) { alert('Please fill in all required fields.'); return; }
-    document.getElementById('expense-confirm-details').innerHTML =
-      `<div class="mb-1"><strong>Category:</strong> ${cat}</div><div class="mb-1"><strong>Description:</strong> ${desc}</div><div class="mb-1"><strong>Amount:</strong> ₱${parseFloat(amount).toFixed(2)}</div><div><strong>Date:</strong> ${date}</div>`;
+    document.getElementById('expense-confirm-details').innerHTML = `<div class="mb-1"><strong>Category:</strong> ${cat}</div><div class="mb-1"><strong>Description:</strong> ${desc}</div><div class="mb-1"><strong>Amount:</strong> ₱${parseFloat(amount).toFixed(2)}</div><div><strong>Date:</strong> ${date}</div>`;
     document.getElementById('expense-confirm-modal').classList.add('open');
   }
   function closeExpenseConfirm() { document.getElementById('expense-confirm-modal').classList.remove('open'); }
   function submitExpenseForm() { document.getElementById('expense-form').submit(); }
-
-  function openDeleteExpenseModal(id, desc) {
-    document.getElementById('delete-expense-message').textContent = `You're about to delete "${desc}". This action cannot be undone.`;
-    document.getElementById('delete-expense-confirm-btn').onclick = function() { document.getElementById('delete-expense-form-' + id).submit(); };
-    document.getElementById('delete-expense-modal').classList.add('open');
-  }
+  function openDeleteExpenseModal(id, desc) { document.getElementById('delete-expense-message').textContent = `You're about to delete "${desc}". This action cannot be undone.`; document.getElementById('delete-expense-confirm-btn').onclick = function() { document.getElementById('delete-expense-form-' + id).submit(); }; document.getElementById('delete-expense-modal').classList.add('open'); }
   function closeDeleteExpenseModal() { document.getElementById('delete-expense-modal').classList.remove('open'); }
-
-  function filterExpenses() {
-    const q = document.getElementById('search-expenses').value.toLowerCase();
-    document.querySelectorAll('.expense-row').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
-  }
+  function filterExpenses() { const q = document.getElementById('search-expenses').value.toLowerCase(); document.querySelectorAll('.expense-row').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; }); }
 </script>
 </body>
 </html>

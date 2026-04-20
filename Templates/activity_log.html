@@ -3,184 +3,135 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Activity Log — Agos</title>
+  <title>Reports — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body class="agos-body m-0 p-0">
-<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
+  {% include '_sidebar.html' %}
 
-  <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:linear-gradient(145deg,#2d88b8,#0095c8)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
-      </div>
-      <div>
-        <div class="text-xl font-bold text-white" style="font-family:'Inconsolata',monospace">Agos</div>
-        <div class="text-[0.6rem] tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
-      </div>
-    </div>
-    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      <div>
-        <div class="text-[0.82rem] font-medium" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
-      </div>
-    </div>
-    <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
-      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
-      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
-      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
-      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') in ['Admin',  'Super Admin'] %}
-      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link active">Activity Log</a>
-      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
-      {% endif %}
-    </nav>
-    <div class="agos-sidebar-footer flex-shrink-0 p-3">
-      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
-    </div>
-  </aside>
-
-  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
-
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
-
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
+        <button onclick="toggleSidebar()" class="block md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
         <div>
-          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Activity Log</div>
-          <div class="text-xs" style="color:var(--text-muted)">Full system audit trail — {{ total }} event{{ 's' if total != 1 }} recorded</div>
+          <div class="text-lg md:text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Financial Reports</div>
+          <div class="text-xs" style="color:var(--text-muted)">Monthly revenue, expenses, profit &amp; top products</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
-        <div class="agos-theme-row">
-          <span class="hidden sm:inline text-[0.7rem]" style="color:var(--text-muted)">Theme</span>
-          <label class="agos-theme-toggle" title="Toggle dark/light mode">
-            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
-            <span class="agos-theme-track"></span>
-          </label>
-        </div>
+        <div class="agos-theme-row"><span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span><label class="agos-theme-toggle"><input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label></div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#7c3aed,#a855f7)">{{ session['full_name'][0].upper() }}</div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
 
-    <main class="flex-1 p-4 md:p-6 lg:p-8">
+    <main class="flex-1 p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+      <!-- Month picker -->
+      <div class="agos-card px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div><div class="agos-card-title">Report Period</div><div class="text-xs mt-0.5" style="color:var(--text-muted)">Viewing data for <strong>{{ month }}</strong></div></div>
+        <form action="{{ url_for('reports') }}" method="GET" class="flex items-center gap-3">
+          <input type="month" name="month" value="{{ month }}" class="agos-input" style="width:auto"/>
+          <button type="submit" class="agos-btn-primary px-5 py-2">Apply</button>
+        </form>
+      </div>
 
-      <!-- Filter bar -->
-      <form method="GET" class="agos-card px-5 py-4 mb-5 flex flex-wrap gap-3 items-center">
-        <select name="module" class="agos-input" style="width:auto">
-          <option value="">All Modules</option>
-          {% for m in modules %}
-          <option value="{{ m }}" {% if selected_module == m %}selected{% endif %}>{{ m }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="agos-btn-primary px-4 py-2">Filter</button>
-        {% if selected_module %}
-        <a href="{{ url_for('activity_log') }}" class="px-3 py-2 rounded-lg text-sm no-underline" style="color:var(--accent)">Clear</a>
-        {% endif %}
-        <span class="text-xs ml-auto" style="color:var(--text-muted)">Showing {{ logs|length }} of {{ total }} — Page {{ page }}</span>
-      </form>
+      <!-- KPI cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="agos-stat-card"><div class="agos-stat-label">Total Revenue</div><div class="agos-stat-value" style="font-size:1.6rem">₱{{ "%.2f"|format(total_revenue) }}</div><div class="agos-stat-sub" style="color:var(--accent)">{{ sales_count }} sale{{ 's' if sales_count != 1 }} this month</div></div>
+        <div class="agos-stat-card"><div class="agos-stat-label">Total Expenses</div><div class="agos-stat-value" style="font-size:1.6rem">₱{{ "%.2f"|format(total_expenses) }}</div><div class="agos-stat-sub" style="color:var(--danger-text)">{{ by_category|length }} categor{{ 'ies' if by_category|length != 1 else 'y' }}</div></div>
+        <div class="agos-stat-card"><div class="agos-stat-label">Net Profit</div><div class="agos-stat-value" style="font-size:1.6rem;color:{% if net_profit >= 0 %}var(--accent){% else %}var(--danger-text){% endif %}">{% if net_profit >= 0 %}+{% endif %}₱{{ "%.2f"|format(net_profit) }}</div><div class="agos-stat-sub" style="color:{% if net_profit >= 0 %}var(--success-text){% else %}var(--danger-text){% endif %}">{{ 'Profitable month' if net_profit >= 0 else 'Operating at a loss' }}</div></div>
+        <div class="agos-stat-card"><div class="agos-stat-label">Profit Margin</div><div class="agos-stat-value" style="font-size:1.6rem">{% if total_revenue > 0 %}{{ "%.1f"|format((net_profit / total_revenue) * 100) }}%{% else %}—{% endif %}</div><div class="agos-stat-sub">Net / Revenue</div></div>
+      </div>
 
-      <!-- Log table -->
-      <div class="agos-card overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="agos-table w-full border-collapse min-w-[760px]">
-            <thead>
-              <tr>
-                {% for h in ['Time','Actor','Role','Module','Action','Description','IP'] %}
-                <th>{{ h }}</th>
+      <div class="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
+        <div class="flex flex-col gap-5">
+          <!-- Revenue vs Expenses bars -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header"><div class="agos-card-title">Revenue vs Expenses</div><div class="agos-card-subtitle">Visual comparison for {{ month }}</div></div>
+            <div class="p-5 flex flex-col gap-5">
+              {% set max_val = [total_revenue, total_expenses] | max %}
+              {% for label, val, bg, fill_color in [
+                ('Revenue', total_revenue, 'var(--accent-soft)', 'linear-gradient(90deg,#2d88b8,#0095c8)'),
+                ('Expenses', total_expenses, 'var(--danger-bg)', 'linear-gradient(90deg,#e05252,#c0392b)'),
+                ('Net Profit', net_profit if net_profit > 0 else 0, 'var(--success-bg)', 'linear-gradient(90deg,#27ae60,#2ecc71)')
+              ] %}
+              <div>
+                <div class="flex justify-between items-center mb-1.5">
+                  <span class="text-[0.78rem] font-semibold" style="color:var(--text-secondary)">{{ label }}</span>
+                  <span class="text-[0.82rem] font-bold" style="color:var(--text-primary)">{% if loop.index == 3 and net_profit >= 0 %}+{% elif loop.index == 3 and net_profit < 0 %}{% endif %}₱{{ "%.2f"|format(total_revenue if loop.index==1 else (total_expenses if loop.index==2 else net_profit)) }}</span>
+                </div>
+                <div class="w-full rounded-full overflow-hidden" style="background:{{ bg }};height:10px">{% if max_val > 0 and val > 0 %}<div class="h-full rounded-full" style="width:{{ (val / max_val * 100)|round }}%;background:{{ fill_color }}"></div>{% endif %}</div>
+              </div>
+              {% endfor %}
+              <div class="rounded-xl p-3 flex items-center justify-between" style="background:var(--accent-softer);border:1px solid var(--accent-border)">
+                <span class="text-[0.82rem] font-semibold" style="color:var(--accent)">Total Transactions</span>
+                <span class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ sales_count }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top products -->
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header"><div class="agos-card-title">Top Products</div><div class="agos-card-subtitle">By revenue for {{ month }}</div></div>
+            <div class="p-5">
+              {% if top_products %}
+              <div class="flex flex-col gap-3">
+                {% for name, revenue, qty in top_products %}
+                <div class="flex items-center justify-between py-2" style="border-bottom:1px solid var(--border-section)">
+                  <div><div class="font-medium text-[0.82rem]" style="color:var(--text-primary)">{{ name }}</div><div class="text-[0.72rem]" style="color:var(--text-muted)">{{ qty }} unit{{ 's' if qty != 1 }} sold</div></div>
+                  <div class="font-bold text-[0.82rem]" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">₱{{ "%.2f"|format(revenue) }}</div>
+                </div>
                 {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% if logs %}
-                {% for log in logs %}
-                <tr>
-                  <td style="white-space:nowrap;font-size:0.72rem">
-                    <div>{{ log.created_at.strftime('%b %d, %Y') }}</div>
-                    <div style="color:var(--text-muted)">{{ log.created_at.strftime('%I:%M %p') }}</div>
-                  </td>
-                  <td class="font-medium" style="color:var(--text-primary)">{{ log.actor_name }}</td>
-                  <td>
-                    <span class="agos-badge {% if log.actor_role == 'Super Admin' %}agos-badge-warning{% else %}agos-badge-info{% endif %}"
-                          style="{% if log.actor_role == 'Super Admin' %}background:rgba(124,58,237,0.15);color:#a855f7{% endif %}">
-                      {{ log.actor_role }}
-                    </span>
-                  </td>
-                  <td><span class="agos-badge agos-badge-info">{{ log.module }}</span></td>
-                  <td class="font-mono font-semibold text-[0.75rem]" style="color:var(--accent)">{{ log.action }}</td>
-                  <td style="max-width:280px">{{ log.description }}</td>
-                  <td style="font-size:0.72rem;color:var(--text-muted)">{{ log.ip_address or '—' }}</td>
-                </tr>
-                {% endfor %}
+              </div>
               {% else %}
-              <tr><td colspan="7" class="text-center py-12 text-sm" style="color:var(--text-faint)">No activity logged yet.</td></tr>
+              <div class="text-center py-6 text-xs" style="color:var(--text-faint)">No sales recorded for this month.</div>
               {% endif %}
-            </tbody>
-          </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expense breakdown -->
+        <div class="agos-card overflow-hidden">
+          <div class="agos-card-header"><div class="agos-card-title">Expenses by Category</div><div class="agos-card-subtitle">Breakdown for {{ month }}</div></div>
+          <div class="p-5">
+            {% if by_category %}
+            <div class="flex flex-col gap-3">
+              {% for cat, total in by_category %}
+              <div>
+                <div class="flex justify-between items-center mb-1"><span class="text-[0.80rem] font-medium" style="color:var(--text-secondary)">{{ cat }}</span><span class="text-[0.80rem] font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(total) }}</span></div>
+                <div class="w-full rounded-full overflow-hidden" style="background:var(--accent-soft);height:7px">{% if total_expenses > 0 %}<div class="h-full rounded-full" style="width:{{ (total / total_expenses * 100)|round }}%;background:linear-gradient(90deg,#2d88b8,#5bb8e0)"></div>{% endif %}</div>
+                {% if total_expenses > 0 %}<div class="text-right text-[0.68rem] mt-0.5" style="color:var(--text-muted)">{{ "%.1f"|format(total / total_expenses * 100) }}%</div>{% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}<div class="text-center py-8 text-xs" style="color:var(--text-faint)">No expenses recorded for this month.</div>{% endif %}
+          </div>
         </div>
       </div>
-
-      <!-- Pagination -->
-      {% if total > per_page %}
-      <div class="flex items-center justify-center gap-2 mt-5">
-        {% if page > 1 %}
-        <a href="{{ url_for('activity_log', page=page-1, module=selected_module) }}"
-           class="px-4 py-2 rounded-lg text-sm no-underline" style="background:var(--bg-card);border:1px solid var(--border-input);color:var(--accent)">← Prev</a>
-        {% endif %}
-        <span class="text-sm px-4 py-2" style="color:var(--text-muted)">Page {{ page }} of {{ (total // per_page) + (1 if total % per_page else 0) }}</span>
-        {% if page * per_page < total %}
-        <a href="{{ url_for('activity_log', page=page+1, module=selected_module) }}"
-           class="px-4 py-2 rounded-lg text-sm no-underline" style="background:var(--bg-card);border:1px solid var(--border-input);color:var(--accent)">Next →</a>
-        {% endif %}
-      </div>
-      {% endif %}
-
     </main>
   </div>
 </div>
 
-<!-- ══ LOGOUT MODAL ══ -->
+<!-- LOGOUT MODAL -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-      </div>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></div>
       <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
       <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
-      <div class="flex items-center gap-4 justify-center">
-        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
-        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
-      </div>
+      <div class="flex gap-3 justify-center"><button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button><button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button></div>
     </div>
   </div>
 </div>
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
+  const _orig = window.toggleTheme; window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
+</script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-

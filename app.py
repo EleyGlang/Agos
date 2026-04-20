@@ -11,7 +11,9 @@ from models import (
          db, User, Customer, Product, Inventory,
          Sale, SaleItem, DeliveryOrder, DeliveryItem,
          Expense, LoyaltyTransaction, ActivityLog,
-         Return_Model as Return, ReturnItem, WaterTankLog     )
+         Return_Model as Return, ReturnItem,
+         WaterTank, WaterTankLog          # ← NEW
+     )
 
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -59,6 +61,110 @@ def log_activity(action, module, description, target_type=None, target_id=None):
         db.session.add(entry)
     except Exception:
         pass
+
+
+# ══════════════════════════════════════════════════════
+#  WATER TANK — CONSTANTS & HELPERS
+# ══════════════════════════════════════════════════════
+
+# Each calendar day the tank is automatically topped up so that it holds
+# at least this many gallons before the first sale of the day.
+TANK_DAILY_GALLONS = 20.0
+
+
+def _get_or_create_tank():
+    """Return the single WaterTank row, creating it on first run."""
+    tank = WaterTank.query.first()
+    if not tank:
+        today = datetime.now().date()
+        tank  = WaterTank(
+            level=TANK_DAILY_GALLONS,
+            capacity=TANK_DAILY_GALLONS,
+            last_daily_refill_date=today,
+        )
+        db.session.add(tank)
+        db.session.add(WaterTankLog(
+            action='refill',
+            gallons=TANK_DAILY_GALLONS,
+            level_after=TANK_DAILY_GALLONS,
+            note='Initial tank setup',
+            source='daily',
+            user_id=session.get('user_id'),
+        ))
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        tank = WaterTank.query.first()
+    return tank
+
+
+def apply_daily_tank_refill():
+    """
+    Idempotent daily top-up.  Called lazily on the first request of each day
+    that touches the tank (water_tank page, new_sale, deliveries).
+
+    Logic: if the current level is below TANK_DAILY_GALLONS we add enough
+    to reach the daily baseline.  If it's already at or above the baseline
+    (e.g. after a large manual refill) we leave it alone.  Either way we
+    record that today's top-up check has been done.
+    """
+    tank = WaterTank.query.first()
+    if not tank:
+        _get_or_create_tank()
+        return
+
+    today = datetime.now().date()
+    if tank.last_daily_refill_date == today:
+        return                              # already processed today
+
+    old_level      = tank.level
+    target_level   = min(max(old_level, TANK_DAILY_GALLONS), tank.capacity)
+    gallons_added  = round(max(0.0, target_level - old_level), 3)
+
+    tank.level                  = target_level
+    tank.last_daily_refill_date = today
+
+    if gallons_added > 0:
+        db.session.add(WaterTankLog(
+            action='refill',
+            gallons=gallons_added,
+            level_after=target_level,
+            note=f'Daily auto top-up ({today})',
+            source='daily',
+            user_id=session.get('user_id'),
+        ))
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+
+def _deduct_tank(gallons: float, source: str, reference_id: int, note: str):
+    """
+    Remove *gallons* from the tank and write a WaterTankLog entry.
+    Silently clamps to the available water so the level never goes below 0.
+    The caller is responsible for committing the session.
+    """
+    tank = WaterTank.query.first()
+    if not tank:
+        return
+
+    deducted    = round(min(float(gallons), tank.level), 3)
+    if deducted <= 0:
+        return
+
+    tank.level  = round(max(0.0, tank.level - deducted), 3)
+    db.session.add(WaterTankLog(
+        action='usage',
+        gallons=deducted,
+        level_after=tank.level,
+        note=note,
+        source=source,
+        reference_id=reference_id,
+        user_id=session.get('user_id'),
+    ))
 
 
 # ══════════════════════════════════════════════════════
@@ -506,6 +612,12 @@ def sales():
 @app.route('/sales/new', methods=['POST'])
 @login_required
 def new_sale():
+    # ── Apply the daily tank top-up before deducting (silently) ──
+    try:
+        apply_daily_tank_refill()
+    except Exception:
+        pass
+
     customer_id = request.form.get('customer_id') or None
     sale_type   = request.form.get('sale_type', 'Walk-in')
     if sale_type == 'Delivery' and not customer_id:
@@ -566,6 +678,17 @@ def new_sale():
         inv = Inventory.query.filter_by(product_id=product.product_id).first()
         if inv:
             inv.quantity = max(0, inv.quantity - sale_item.quantity)
+
+    # ── Deduct total units sold from the water tank ──────────────
+    total_units = sum(si.quantity for si, _ in items_with_products)
+    if total_units > 0:
+        _deduct_tank(
+            total_units,
+            source='sale',
+            reference_id=sale.sale_id,
+            note=f'{sale_type} sale #{sale.sale_id} — {total_units} gal',
+        )
+
     log_activity('CREATE_SALE', 'Sales', f'{sale_type} sale — ₱{total_amount:.2f}', 'Sale', sale.sale_id)
     try:
         db.session.commit()
@@ -667,7 +790,6 @@ def toggle_user_status(user_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
-    # Return to profile if request came from there
     referrer = request.referrer or ''
     if 'profile' in referrer:
         return redirect(url_for('profile'))
@@ -748,23 +870,14 @@ def change_password():
 @app.route('/profile')
 @login_required
 def profile():
-    """
-    Unified profile page for all staff roles.
-    Super Admin → sees Admins + Operators + Customers in management section.
-    Admin       → sees Operators + Customers.
-    Operator    → sees only own profile (no management section).
-    """
     user = User.query.get_or_404(session['user_id'])
-
-    # Own stats
     sales_count     = Sale.query.filter_by(user_id=user.user_id).count()
     recent_activity = ActivityLog.query.filter_by(
         user_id=user.user_id
     ).order_by(ActivityLog.created_at.desc()).limit(8).all()
 
-    # Management data (Admin / Super Admin)
-    admin_users      = []
-    operator_users   = []
+    admin_users       = []
+    operator_users    = []
     managed_customers = []
     managed_users_count = 0
 
@@ -793,7 +906,6 @@ def profile():
 @app.route('/profile/update', methods=['POST'])
 @login_required
 def profile_update():
-    """Update own profile info or password."""
     user      = User.query.get_or_404(session['user_id'])
     form_type = request.form.get('form_type')
 
@@ -822,7 +934,6 @@ def profile_update():
         user.first_name     = first_name
         user.middle_initial = middle_initial.rstrip('.') if middle_initial else None
         user.last_name      = last_name
-        # Update full_name if it's a stored column; harmless if it's a property
         try:
             user.full_name = full_name
         except AttributeError:
@@ -872,23 +983,15 @@ def profile_update():
 @login_required
 @admin_required
 def admin_update_user_info(user_id):
-    """
-    Admin / Super Admin can update name fields for staff below them.
-    Super Admin → can edit Admins and Operators.
-    Admin       → can only edit Operators.
-    """
     import re
     target = User.query.get_or_404(user_id)
 
-    # Protect Super Admin accounts from any modification
     if target.role == 'Super Admin':
         flash('Super Admin accounts cannot be modified.', 'error')
         return redirect(url_for('profile'))
-    # Admin cannot touch other Admins
     if target.role == 'Admin' and not is_super_admin():
         flash('Only Super Admin can modify Admin accounts.', 'error')
         return redirect(url_for('profile'))
-    # Nobody can self-edit via this endpoint (use /profile/update instead)
     if target.user_id == session['user_id']:
         flash('Use the profile form to update your own information.', 'error')
         return redirect(url_for('profile'))
@@ -938,7 +1041,6 @@ def admin_update_user_info(user_id):
 @login_required
 @admin_required
 def admin_update_customer_info(customer_id):
-    """Admin / Super Admin can update a customer's name, phone, and address."""
     import re
     customer = Customer.query.get_or_404(customer_id)
 
@@ -990,7 +1092,6 @@ def admin_update_customer_info(customer_id):
 @login_required
 @admin_required
 def admin_reset_customer_password(customer_id):
-    """Admin / Super Admin can reset a customer's portal password."""
     customer     = Customer.query.get_or_404(customer_id)
     new_password = request.form.get('new_password', '').strip()
 
@@ -1262,6 +1363,12 @@ def deliveries():
 @app.route('/deliveries/<int:delivery_id>/status', methods=['POST'])
 @login_required
 def update_delivery_status(delivery_id):
+    # ── Apply daily tank top-up before any deduction ──────────────
+    try:
+        apply_daily_tank_refill()
+    except Exception:
+        pass
+
     delivery   = DeliveryOrder.query.get_or_404(delivery_id)
     new_status = request.form.get('status')
     if new_status == 'Cancelled':
@@ -1284,6 +1391,17 @@ def update_delivery_status(delivery_id):
             inv = Inventory.query.filter_by(product_id=di.product_id).first()
             if inv:
                 inv.quantity = max(0, inv.quantity - di.quantity)
+
+        # ── Deduct from water tank when delivery is actually fulfilled ──
+        total_units = sum(di.quantity for di in delivery.delivery_items)
+        if total_units > 0:
+            _deduct_tank(
+                total_units,
+                source='delivery',
+                reference_id=delivery_id,
+                note=f'Delivery #{delivery_id} fulfilled — {total_units} gal',
+            )
+
     delivery.status = new_status
     log_activity('UPDATE_DELIVERY', 'Deliveries', f'Delivery #{delivery_id} → {new_status}', 'DeliveryOrder', delivery_id)
     try:
@@ -1449,75 +1567,32 @@ def review_return(return_id):
     ret        = Return.query.get_or_404(return_id)
     action     = request.form.get('action')
     admin_note = request.form.get('admin_note', '').strip()
-
     if ret.status != 'Pending':
         flash('This return has already been reviewed.', 'error')
         return redirect(url_for('returns'))
-
     if action == 'approve':
         ret.status = 'Approved'
-
-        # ── Restock inventory ──────────────────────────────────
         for item in ret.return_items:
             inv = Inventory.query.filter_by(product_id=item.product_id).first()
-            if inv:
-                inv.quantity += item.quantity
-
-        # ── Loyalty points rollback ────────────────────────────
-        # For every 10 refill gallons returned the customer originally
-        # earned 1 point; we take those points back (floor division).
-        if ret.sale and ret.sale.customer:
-            customer = ret.sale.customer
-            total_returned_refills = sum(
-                item.quantity for item in ret.return_items
-                if 'refill' in item.product.product_name.lower()
-            )
-            if total_returned_refills > 0:
-                pts_to_deduct = total_returned_refills // 10
-                if pts_to_deduct > 0:
-                    customer.loyalty_points = max(0, customer.loyalty_points - pts_to_deduct)
-                    # Optional: log the deduction as a LoyaltyTransaction if your
-                    # model supports it.  The fields below are a common schema;
-                    # adjust column names if yours differ.
-                    try:
-                        lt = LoyaltyTransaction(
-                            customer_id=customer.customer_id,
-                            points=-pts_to_deduct,
-                            transaction_type='Deduction',
-                            description=f'Loyalty rollback — Return #{return_id} approved',
-                            created_at=datetime.now(),
-                        )
-                        db.session.add(lt)
-                    except Exception:
-                        # If LoyaltyTransaction schema differs just skip the log;
-                        # the points adjustment above already happened.
-                        pass
-
+            if inv: inv.quantity += item.quantity
         if admin_note:
             ret.notes = (ret.notes or '') + f'\n[Admin] {admin_note}'
-
         log_activity('APPROVE_RETURN', 'Returns',
-                     f'Return #{return_id} approved — ₱{ret.refund_amount:.2f}',
-                     'Return', return_id)
+                     f'Return #{return_id} approved — ₱{ret.refund_amount:.2f}', 'Return', return_id)
         flash(f'Return #{return_id} approved. ₱{float(ret.refund_amount):.2f} refund issued.', 'success')
-
     elif action == 'reject':
         ret.status = 'Rejected'
         if admin_note:
             ret.notes = (ret.notes or '') + f'\n[Admin] {admin_note}'
-        log_activity('REJECT_RETURN', 'Returns',
-                     f'Return #{return_id} rejected', 'Return', return_id)
+        log_activity('REJECT_RETURN', 'Returns', f'Return #{return_id} rejected', 'Return', return_id)
         flash(f'Return #{return_id} rejected.', 'success')
-
     ret.reviewed_by = session['user_id']
     ret.reviewed_at = datetime.now()
-
     try:
         db.session.commit()
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
-
     return redirect(url_for('returns'))
 
 @app.route('/returns/<int:return_id>/delete', methods=['POST'])
@@ -1534,120 +1609,6 @@ def delete_return(return_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('returns'))
-
-
-# ══════════════════════════════════════════════════════
-#  WATER TANK
-# ══════════════════════════════════════════════════════
-
-TANK_CAPACITY = 20.0   # gallons
-
-
-def _get_tank_level():
-    """Compute current water level from the log table."""
-    from sqlalchemy import func
-    refills = db.session.query(
-        func.coalesce(func.sum(WaterTankLog.gallons), 0)
-    ).filter(WaterTankLog.action == 'refill').scalar()
-    usage = db.session.query(
-        func.coalesce(func.sum(WaterTankLog.gallons), 0)
-    ).filter(WaterTankLog.action == 'usage').scalar()
-    return max(0.0, min(TANK_CAPACITY, float(refills) - float(usage)))
-
-
-@app.route('/water-tank')
-@login_required
-def water_tank():
-    level = _get_tank_level()
-    logs  = WaterTankLog.query.order_by(WaterTankLog.created_at.desc()).limit(50).all()
-    return render_template(
-        'water_tank.html',
-        level=level,
-        capacity=TANK_CAPACITY,
-        logs=logs,
-        active_page='water_tank',
-    )
-
-
-@app.route('/water-tank/refill', methods=['POST'])
-@login_required
-def water_tank_refill():
-    try:
-        gallons = float(request.form.get('gallons', 0))
-    except (ValueError, TypeError):
-        flash('Please enter a valid number.', 'error')
-        return redirect(url_for('water_tank'))
-
-    note  = request.form.get('note', '').strip()
-    level = _get_tank_level()
-    max_add = round(TANK_CAPACITY - level, 4)
-
-    if gallons <= 0:
-        flash('Amount must be greater than 0.', 'error')
-        return redirect(url_for('water_tank'))
-    if max_add <= 0:
-        flash('The tank is already full (20 gallons).', 'error')
-        return redirect(url_for('water_tank'))
-
-    # Clamp to available space
-    gallons = min(gallons, max_add)
-
-    entry = WaterTankLog(
-        action='refill',
-        gallons=round(gallons, 2),
-        note=note or 'Tank refilled',
-        user_id=session.get('user_id'),
-    )
-    db.session.add(entry)
-    log_activity('TANK_REFILL', 'Water Tank',
-                 f'+{gallons:.2f} gal added — level now {level + gallons:.2f}/{TANK_CAPACITY:.0f} gal')
-    try:
-        db.session.commit()
-        flash(f'✓ Added {gallons:.1f} gallons. Tank is now at {level + gallons:.1f} gal.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error: {str(e)}', 'error')
-
-    return redirect(url_for('water_tank'))
-
-
-@app.route('/water-tank/use', methods=['POST'])
-@login_required
-def water_tank_use():
-    try:
-        gallons = float(request.form.get('gallons', 0))
-    except (ValueError, TypeError):
-        flash('Please enter a valid number.', 'error')
-        return redirect(url_for('water_tank'))
-
-    note  = request.form.get('note', '').strip()
-    level = _get_tank_level()
-
-    if gallons <= 0:
-        flash('Amount must be greater than 0.', 'error')
-        return redirect(url_for('water_tank'))
-    if gallons > level:
-        flash(f'Not enough water. Only {level:.1f} gal available.', 'error')
-        return redirect(url_for('water_tank'))
-
-    entry = WaterTankLog(
-        action='usage',
-        gallons=round(gallons, 2),
-        note=note or 'Water used',
-        user_id=session.get('user_id'),
-    )
-    db.session.add(entry)
-    log_activity('TANK_USAGE', 'Water Tank',
-                 f'−{gallons:.2f} gal used — level now {level - gallons:.2f}/{TANK_CAPACITY:.0f} gal')
-    try:
-        db.session.commit()
-        flash(f'✓ Logged {gallons:.1f} gallons used. Tank is now at {level - gallons:.1f} gal.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error: {str(e)}', 'error')
-
-    return redirect(url_for('water_tank'))
-
 
 @app.route('/api/sale/<int:sale_id>/items')
 @login_required
@@ -1687,6 +1648,113 @@ def reports():
 
 
 # ══════════════════════════════════════════════════════
+#  WATER TANK
+# ══════════════════════════════════════════════════════
+
+@app.route('/water-tank')
+@login_required
+def water_tank():
+    # Silently apply daily top-up (idempotent)
+    try:
+        apply_daily_tank_refill()
+    except Exception:
+        pass
+
+    tank = _get_or_create_tank()
+    logs = WaterTankLog.query.order_by(WaterTankLog.created_at.desc()).limit(100).all()
+
+    # Today's breakdown
+    today      = datetime.now().date()
+    today_logs = [l for l in logs if l.created_at.date() == today]
+    today_usage         = round(sum(l.gallons for l in today_logs if l.action == 'usage'), 2)
+    today_sale_gal      = round(sum(l.gallons for l in today_logs if l.action == 'usage' and l.source == 'sale'), 2)
+    today_delivery_gal  = round(sum(l.gallons for l in today_logs if l.action == 'usage' and l.source == 'delivery'), 2)
+    today_manual_use    = round(sum(l.gallons for l in today_logs if l.action == 'usage' and l.source == 'manual'), 2)
+    today_refill_manual = round(sum(l.gallons for l in today_logs if l.action == 'refill' and l.source == 'manual'), 2)
+
+    return render_template('water_tank.html',
+        level=tank.level,
+        capacity=tank.capacity,
+        logs=logs,
+        daily_default=TANK_DAILY_GALLONS,
+        today_usage=today_usage,
+        today_sale_gal=today_sale_gal,
+        today_delivery_gal=today_delivery_gal,
+        today_manual_use=today_manual_use,
+        today_refill_manual=today_refill_manual,
+        active_page='water_tank')
+
+
+@app.route('/water-tank/refill', methods=['POST'])
+@login_required
+def water_tank_refill():
+    tank = _get_or_create_tank()
+    try:
+        gallons = float(request.form.get('gallons', 0))
+    except (ValueError, TypeError):
+        flash('Invalid gallon amount.', 'error')
+        return redirect(url_for('water_tank'))
+
+    remaining = round(tank.capacity - tank.level, 3)
+    if gallons <= 0 or gallons > remaining:
+        flash('Invalid amount or the tank is already full.', 'error')
+        return redirect(url_for('water_tank'))
+
+    note = request.form.get('note', '').strip() or 'Manual refill'
+    tank.level = round(min(tank.capacity, tank.level + gallons), 3)
+    db.session.add(WaterTankLog(
+        action='refill',
+        gallons=round(gallons, 3),
+        level_after=tank.level,
+        note=note,
+        source='manual',
+        user_id=session['user_id'],
+    ))
+    log_activity('TANK_REFILL', 'Water Tank', f'Manually added {gallons:.1f} gal to tank')
+    try:
+        db.session.commit()
+        flash(f'Added {gallons:.1f} gallons to the tank.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    return redirect(url_for('water_tank'))
+
+
+@app.route('/water-tank/use', methods=['POST'])
+@login_required
+def water_tank_use():
+    tank = _get_or_create_tank()
+    try:
+        gallons = float(request.form.get('gallons', 0))
+    except (ValueError, TypeError):
+        flash('Invalid gallon amount.', 'error')
+        return redirect(url_for('water_tank'))
+
+    if gallons <= 0 or gallons > tank.level:
+        flash('Invalid amount or not enough water in tank.', 'error')
+        return redirect(url_for('water_tank'))
+
+    note = request.form.get('note', '').strip() or 'Manual usage log'
+    tank.level = round(max(0.0, tank.level - gallons), 3)
+    db.session.add(WaterTankLog(
+        action='usage',
+        gallons=round(gallons, 3),
+        level_after=tank.level,
+        note=note,
+        source='manual',
+        user_id=session['user_id'],
+    ))
+    log_activity('TANK_USAGE', 'Water Tank', f'Manually logged {gallons:.1f} gal usage')
+    try:
+        db.session.commit()
+        flash(f'Logged {gallons:.1f} gallons used.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    return redirect(url_for('water_tank'))
+
+
+# ══════════════════════════════════════════════════════
 #  CUSTOMER PORTAL
 # ══════════════════════════════════════════════════════
 
@@ -1710,8 +1778,6 @@ def customer_dashboard():
     cancelled_orders = DeliveryOrder.query.filter_by(customer_id=cid, status='Cancelled').count()
     recent_orders    = DeliveryOrder.query.filter_by(customer_id=cid).order_by(DeliveryOrder.delivery_date.desc()).limit(6).all()
 
-    # Most recent active (Pending or Confirmed) delivery — used by the Delivery Tracker card.
-    # Ordered by created_at so we show what was placed last, not what is scheduled furthest.
     active_delivery  = DeliveryOrder.query.filter(
         DeliveryOrder.customer_id == cid,
         DeliveryOrder.status.in_(['Pending', 'Confirmed'])

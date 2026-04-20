@@ -8,184 +8,17 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-
-  <style>
-    .returns-stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 1.25rem;
-    }
-    @media (max-width: 900px) { .returns-stats-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 500px) { .returns-stats-grid { grid-template-columns: 1fr; } }
-
-    .returns-filter-row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
-
-    .returns-items-preview { display: flex; flex-wrap: wrap; gap: .35rem; }
-    .returns-item-chip {
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: .68rem;
-      font-weight: 600;
-      padding: .15rem .5rem;
-      border-radius: 9999px;
-      border: 1px solid var(--accent-border);
-      white-space: nowrap;
-    }
-
-    .agos-action-btn {
-      font-size: .73rem; font-weight: 700; padding: .3rem .7rem;
-      border-radius: .5rem; border: none; cursor: pointer;
-      font-family: 'Outfit', sans-serif; transition: opacity .15s; white-space: nowrap;
-    }
-    .agos-action-btn:hover { opacity: .78; }
-    .agos-btn-view      { background: var(--info-bg);    color: var(--info-text); }
-    .agos-btn-approve   { background: var(--success-bg); color: var(--success-text); }
-    .agos-btn-reject-sm { background: var(--danger-bg);  color: var(--danger-text); }
-    .agos-btn-del-ghost { background: transparent; color: var(--danger-text); border: 1px solid var(--danger-bg); }
-
-    .return-item-row {
-      background: var(--bg-input); border: 1px solid var(--border-input);
-      border-radius: .75rem; padding: .875rem;
-      display: flex; flex-direction: column; gap: .5rem;
-    }
-    .return-item-row .item-header {
-      font-size: .85rem; font-weight: 700; color: var(--text-primary);
-      display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; gap: .5rem;
-    }
-    .return-item-row .item-controls { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
-
-    .view-detail-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
-    .view-detail-table th {
-      text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .07em;
-      color: var(--text-muted); padding: .5rem .75rem; border-bottom: 1px solid var(--table-head-border);
-    }
-    .view-detail-table td { padding: .625rem .75rem; border-bottom: 1px solid var(--table-border); color: var(--text-secondary); }
-
-    .modal-close-btn {
-      background: none; border: none; cursor: pointer; color: var(--text-muted);
-      font-size: 1.25rem; line-height: 1; padding: 0; transition: color .15s;
-    }
-    .modal-close-btn:hover { color: var(--danger-text); }
-
-    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .empty-state { text-align: center; padding: 3.5rem 1rem; color: var(--text-faint); }
-    .empty-state svg { margin: 0 auto 1rem; display: block; opacity: .4; }
-
-    .agos-sidebar-link { display: flex; align-items: center; gap: .6rem; }
-
-    /* loyalty rollback notice */
-    .loyalty-rollback-box {
-      background: var(--warning-bg);
-      border: 1px solid rgba(245,158,11,.25);
-      border-radius: .65rem;
-      padding: .65rem .875rem;
-      display: flex;
-      align-items: flex-start;
-      gap: .5rem;
-      font-size: .78rem;
-      color: var(--warning-text);
-    }
-  </style>
 </head>
 
 <body class="agos-body m-0 p-0">
-<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+<a data-logout-url="{{ url_for('logout') }}" class="hidden"></a>
 
 <div class="flex min-h-screen">
 
-  <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar"
-    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
-        </svg>
-      </div>
-      <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
-      </div>
-    </div>
-
-    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-           style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
-        {{ session['full_name'][0].upper() }}
-      </div>
-      <div>
-        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
-      </div>
-    </div>
-
-    <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}" class="agos-sidebar-link {% if active_page=='dashboard' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Dashboard
-      </a>
-      <a href="{{ url_for('sales') }}" class="agos-sidebar-link {% if active_page=='sales' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 3h18M3 9h18M3 15h11M3 21h8"/></svg>
-        Record Sales
-      </a>
-      <a href="{{ url_for('returns') }}" class="agos-sidebar-link active">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/></svg>
-        Returns &amp; Refunds
-      </a>
-      <a href="{{ url_for('inventory') }}" class="agos-sidebar-link {% if active_page=='inventory' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg>
-        Inventory
-      </a>
-      <a href="{{ url_for('products') }}" class="agos-sidebar-link {% if active_page=='products' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        Products
-      </a>
-      <a href="{{ url_for('water_tank') }}" class="agos-sidebar-link {% if active_page=='water_tank' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2C12 2 5 9 5 14a7 7 0 0014 0C19 9 12 2 12 2z"/></svg>
-        Water Tank
-      </a>
-      <a href="{{ url_for('customers') }}" class="agos-sidebar-link {% if active_page=='customers' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-        Customers
-      </a>
-      <a href="{{ url_for('deliveries') }}" class="agos-sidebar-link {% if active_page=='deliveries' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-        Deliveries
-      </a>
-      {% if session.get('role') in ['Admin', 'Super Admin'] %}
-      <a href="{{ url_for('user_management') }}" class="agos-sidebar-link {% if active_page=='user_management' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Users
-      </a>
-      {% endif %}
-      <a href="{{ url_for('expenses') }}" class="agos-sidebar-link {% if active_page=='expenses' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-        Expenses
-      </a>
-      <a href="{{ url_for('reports') }}" class="agos-sidebar-link {% if active_page=='reports' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Reports
-      </a>
-      {% if session.get('role') in ['Admin', 'Super Admin'] %}
-      <a href="{{ url_for('activity_log') }}" class="agos-sidebar-link {% if active_page=='activity_log' %}active{% endif %}">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Activity Log
-      </a>
-      {% endif %}
-    </nav>
-
-    <div class="agos-sidebar-footer flex-shrink-0 p-3">
-      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
-    </div>
-  </aside>
-
-  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
+  {% include '_sidebar.html' %}
 
   <!-- ══ MAIN ══ -->
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
 
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
@@ -247,15 +80,13 @@
         </button>
       </div>
 
-      <!-- Stat cards -->
-      <div class="returns-stats-grid">
+      <!-- Stat cards — 4 column responsive grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+
         {% set ns = namespace(approved_total=0) %}
         {% for r in returns_list %}
-          {% if r.status == 'Approved' %}
-            {% set ns.approved_total = ns.approved_total + r.refund_amount|float %}
-          {% endif %}
+          {% if r.status == 'Approved' %}{% set ns.approved_total = ns.approved_total + r.refund_amount|float %}{% endif %}
         {% endfor %}
-
         {% set total_count    = returns_list | length %}
         {% set pending_count  = returns_list | selectattr('status','equalto','Pending')  | list | length %}
         {% set approved_count = returns_list | selectattr('status','equalto','Approved') | list | length %}
@@ -263,8 +94,7 @@
 
         <div class="agos-stat-card">
           <div class="agos-stat-icon" style="background:var(--info-bg);">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
-                 viewBox="0 0 24 24" style="color:var(--info-text)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--info-text)">
               <path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/>
             </svg>
           </div>
@@ -275,8 +105,7 @@
 
         <div class="agos-stat-card">
           <div class="agos-stat-icon" style="background:var(--warning-bg);">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
-                 viewBox="0 0 24 24" style="color:var(--warning-text)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--warning-text)">
               <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
             </svg>
           </div>
@@ -287,8 +116,7 @@
 
         <div class="agos-stat-card">
           <div class="agos-stat-icon" style="background:var(--success-bg);">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
-                 viewBox="0 0 24 24" style="color:var(--success-text)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--success-text)">
               <path d="M20 6L9 17l-5-5"/>
             </svg>
           </div>
@@ -299,8 +127,7 @@
 
         <div class="agos-stat-card">
           <div class="agos-stat-icon" style="background:var(--success-bg);">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"
-                 viewBox="0 0 24 24" style="color:var(--success-text)">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="color:var(--success-text)">
               <line x1="12" y1="1" x2="12" y2="23"/>
               <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
             </svg>
@@ -314,28 +141,21 @@
       </div>
 
       <!-- Filters -->
-      <div class="agos-card mb-5" style="padding:1rem 1.25rem;">
-        <form method="GET" action="{{ url_for('returns') }}" class="returns-filter-row">
+      <div class="agos-card mb-5 p-4">
+        <form method="GET" action="{{ url_for('returns') }}" class="flex flex-wrap gap-3 items-center">
           <input type="text" name="search" value="{{ search }}"
                  placeholder="Search customer, sale ID, reason…"
-                 class="agos-input" style="flex:2;min-width:180px;">
-          <select name="status" class="agos-input" style="flex:1;min-width:140px;">
+                 class="agos-input flex-[2] min-w-[180px]">
+          <select name="status" class="agos-input flex-1 min-w-[140px]">
             <option value="">All Statuses</option>
             {% for s in ['Pending','Approved','Rejected'] %}
               <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ s }}</option>
             {% endfor %}
           </select>
-          <input type="date" name="date_from" value="{{ date_from }}"
-                 class="agos-input" style="flex:1;min-width:140px;">
-          <input type="date" name="date_to"   value="{{ date_to }}"
-                 class="agos-input" style="flex:1;min-width:140px;">
-          <button type="submit" class="agos-btn-primary" style="padding:.625rem 1.25rem;white-space:nowrap;">
-            Filter
-          </button>
-          <a href="{{ url_for('returns') }}" class="agos-btn-ghost"
-             style="padding:.625rem 1rem;white-space:nowrap;text-decoration:none;">
-            Clear
-          </a>
+          <input type="date" name="date_from" value="{{ date_from }}" class="agos-input flex-1 min-w-[140px]">
+          <input type="date" name="date_to"   value="{{ date_to }}"   class="agos-input flex-1 min-w-[140px]">
+          <button type="submit" class="agos-btn-primary px-5 py-[0.625rem] whitespace-nowrap">Filter</button>
+          <a href="{{ url_for('returns') }}" class="agos-btn-ghost px-4 py-[0.625rem] whitespace-nowrap no-underline">Clear</a>
         </form>
       </div>
 
@@ -344,22 +164,20 @@
         <div class="agos-card-header flex items-center justify-between flex-wrap gap-3">
           <div>
             <div class="agos-card-title">Return Records</div>
-            <div class="agos-card-subtitle">
-              {{ returns_list|length }} return{{ 's' if returns_list|length != 1 }} found
-            </div>
+            <div class="agos-card-subtitle">{{ returns_list|length }} return{{ 's' if returns_list|length != 1 }} found</div>
           </div>
           {% if pending_count > 0 and session.get('role') in ['Admin','Super Admin'] %}
-            <span class="agos-badge agos-badge-warning" style="font-size:.75rem;padding:.3rem .75rem;">
+            <span class="agos-badge agos-badge-warning text-[0.75rem] px-3 py-1.5">
               {{ pending_count }} awaiting review
             </span>
           {% endif %}
         </div>
 
-        <div class="table-scroll">
+        <div class="overflow-x-auto [-webkit-overflow-scrolling:touch]">
           <table class="agos-table w-full border-collapse" style="min-width:880px;">
             <thead>
               <tr>
-                <th style="width:56px;">#</th>
+                <th class="w-14">#</th>
                 <th>Sale</th>
                 <th>Customer</th>
                 <th>Items Returned</th>
@@ -368,73 +186,56 @@
                 <th>Status</th>
                 <th>Filed By</th>
                 <th>Date Filed</th>
-                <th style="min-width:170px;">Actions</th>
+                <th class="min-w-[170px]">Actions</th>
               </tr>
             </thead>
             <tbody>
               {% if not returns_list %}
               <tr>
                 <td colspan="10">
-                  <div class="empty-state">
-                    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24">
+                  <div class="text-center py-14">
+                    <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24" class="mx-auto mb-4 opacity-40" style="color:var(--text-faint)">
                       <path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 010 8h-1"/>
                     </svg>
-                    <p style="font-size:.9rem;font-weight:600;color:var(--text-muted);margin:.5rem 0 .25rem;">
-                      No returns found
-                    </p>
-                    <p style="font-size:.78rem;color:var(--text-faint);margin:0;">
-                      Return requests will appear here once filed
-                    </p>
+                    <p class="text-[0.9rem] font-semibold m-0 mb-1" style="color:var(--text-muted)">No returns found</p>
+                    <p class="text-[0.78rem] m-0" style="color:var(--text-faint)">Return requests will appear here once filed</p>
                   </div>
                 </td>
               </tr>
               {% endif %}
 
               {% for r in returns_list %}
-              {# Compute loyalty rollback for this return (Jinja side) #}
               {% set ns2 = namespace(refill_qty=0) %}
               {% for item in r.return_items %}
-                {% if 'refill' in item.product.product_name|lower %}
-                  {% set ns2.refill_qty = ns2.refill_qty + item.quantity %}
-                {% endif %}
+                {% if 'refill' in item.product.product_name|lower %}{% set ns2.refill_qty = ns2.refill_qty + item.quantity %}{% endif %}
               {% endfor %}
               {% set pts_rollback = (ns2.refill_qty // 10)|int %}
-
               <tr>
+                <td><span class="font-bold" style="color:var(--text-primary)">#{{ r.return_id }}</span></td>
+                <td><span class="font-semibold" style="color:var(--accent);font-family:'Inconsolata',monospace">Sale #{{ r.sale_id }}</span></td>
                 <td>
-                  <span style="font-weight:700;color:var(--text-primary);">#{{ r.return_id }}</span>
+                  {% if r.sale.customer %}{{ r.sale.customer.full_name }}
+                  {% else %}<em style="color:var(--text-muted)">Walk-in</em>{% endif %}
                 </td>
                 <td>
-                  <span style="color:var(--accent);font-weight:600;font-family:'Inconsolata',monospace;">
-                    Sale #{{ r.sale_id }}
-                  </span>
-                </td>
-                <td>
-                  {% if r.sale.customer %}
-                    {{ r.sale.customer.full_name }}
-                  {% else %}
-                    <em style="color:var(--text-muted);">Walk-in</em>
-                  {% endif %}
-                </td>
-                <td>
-                  <div class="returns-items-preview">
+                  <div class="flex flex-wrap gap-1.5">
                     {% for item in r.return_items[:2] %}
-                      <span class="returns-item-chip">{{ item.product.product_name }} ×{{ item.quantity }}</span>
+                      <!-- returns-item-chip -->
+                      <span class="text-[0.68rem] font-semibold px-2 py-[0.15rem] rounded-full border whitespace-nowrap"
+                            style="background:var(--accent-soft);color:var(--accent);border-color:var(--accent-border)">
+                        {{ item.product.product_name }} ×{{ item.quantity }}
+                      </span>
                     {% endfor %}
                     {% if r.return_items|length > 2 %}
-                      <span style="font-size:.72rem;color:var(--text-muted);">+{{ r.return_items|length - 2 }} more</span>
+                      <span class="text-[0.72rem]" style="color:var(--text-muted)">+{{ r.return_items|length - 2 }} more</span>
                     {% endif %}
                     {% if not r.return_items %}
-                      <span style="color:var(--text-faint);font-size:.78rem;">—</span>
+                      <span class="text-[0.78rem]" style="color:var(--text-faint)">—</span>
                     {% endif %}
                   </div>
                 </td>
-                <td>
-                  <span style="font-weight:700;color:var(--success-text);font-family:'Inconsolata',monospace;">
-                    ₱{{ "%.2f"|format(r.refund_amount|float) }}
-                  </span>
-                </td>
-                <td style="color:var(--text-muted);font-size:.81rem;max-width:140px;">
+                <td><span class="font-bold" style="color:var(--success-text);font-family:'Inconsolata',monospace">₱{{ "%.2f"|format(r.refund_amount|float) }}</span></td>
+                <td class="text-[0.81rem] max-w-[140px]" style="color:var(--text-muted)">
                   {{ r.reason[:24] ~ '…' if r.reason and r.reason|length > 24 else (r.reason or '—') }}
                 </td>
                 <td>
@@ -442,48 +243,37 @@
                     {% if r.status == 'Approved' %}agos-badge-success
                     {% elif r.status == 'Rejected' %}agos-badge-danger
                     {% else %}agos-badge-warning{% endif %}">
-                    {% if r.status == 'Approved' %}✓ 
-                    {% elif r.status == 'Rejected' %}✗ 
-                    {% else %}⏳ {% endif %}{{ r.status }}
+                    {% if r.status == 'Approved' %}✓ {% elif r.status == 'Rejected' %}✗ {% else %}⏳ {% endif %}{{ r.status }}
                   </span>
                 </td>
-                <td style="font-size:.81rem;color:var(--text-muted);">
+                <td class="text-[0.81rem]" style="color:var(--text-muted)">
                   {% if r.creator %}{{ r.creator.first_name }} {{ r.creator.last_name }}{% else %}—{% endif %}
                 </td>
-                <td style="font-size:.79rem;color:var(--text-muted);white-space:nowrap;">
+                <td class="text-[0.79rem] whitespace-nowrap" style="color:var(--text-muted)">
                   {{ r.created_at.strftime('%b %d, %Y') }}<br>
-                  <span style="font-size:.72rem;color:var(--text-faint);">{{ r.created_at.strftime('%I:%M %p') }}</span>
+                  <span class="text-[0.72rem]" style="color:var(--text-faint)">{{ r.created_at.strftime('%I:%M %p') }}</span>
                 </td>
                 <td>
                   <div class="flex flex-wrap gap-1.5">
-                    <button class="agos-action-btn agos-btn-view"
+                    <!-- View button -->
+                    <button class="text-[0.73rem] font-bold px-[0.7rem] py-[0.3rem] rounded-lg border-none cursor-pointer whitespace-nowrap hover:opacity-75 transition-opacity duration-150"
+                            style="background:var(--info-bg);color:var(--info-text)"
                             onclick="openViewModal({{ r.return_id }})">View</button>
                     {% if r.status == 'Pending' and session.get('role') in ['Admin','Super Admin'] %}
-                      <button class="agos-action-btn agos-btn-approve"
-                              onclick="openReviewModal(
-                                {{ r.return_id }}, 'approve',
-                                {{ r.sale_id }},
-                                '{{ '%.2f'|format(r.refund_amount|float) }}',
-                                '{{ r.sale.customer.full_name if r.sale.customer else 'Walk-in' }}',
-                                {{ pts_rollback }}
-                              )">
-                        Approve
-                      </button>
-                      <button class="agos-action-btn agos-btn-reject-sm"
-                              onclick="openReviewModal(
-                                {{ r.return_id }}, 'reject',
-                                {{ r.sale_id }},
-                                '{{ '%.2f'|format(r.refund_amount|float) }}',
-                                '{{ r.sale.customer.full_name if r.sale.customer else 'Walk-in' }}',
-                                0
-                              )">
-                        Reject
-                      </button>
+                      <!-- Approve button -->
+                      <button class="text-[0.73rem] font-bold px-[0.7rem] py-[0.3rem] rounded-lg border-none cursor-pointer whitespace-nowrap hover:opacity-75 transition-opacity duration-150"
+                              style="background:var(--success-bg);color:var(--success-text)"
+                              onclick="openReviewModal({{ r.return_id }},'approve',{{ r.sale_id }},'{{ '%.2f'|format(r.refund_amount|float) }}','{{ r.sale.customer.full_name if r.sale.customer else 'Walk-in' }}',{{ pts_rollback }})">Approve</button>
+                      <!-- Reject button -->
+                      <button class="text-[0.73rem] font-bold px-[0.7rem] py-[0.3rem] rounded-lg border-none cursor-pointer whitespace-nowrap hover:opacity-75 transition-opacity duration-150"
+                              style="background:var(--danger-bg);color:var(--danger-text)"
+                              onclick="openReviewModal({{ r.return_id }},'reject',{{ r.sale_id }},'{{ '%.2f'|format(r.refund_amount|float) }}','{{ r.sale.customer.full_name if r.sale.customer else 'Walk-in' }}',0)">Reject</button>
                     {% endif %}
                     {% if session.get('role') == 'Super Admin' %}
-                      <form action="{{ url_for('delete_return', return_id=r.return_id) }}"
-                            method="POST" style="display:inline">
-                        <button class="agos-action-btn agos-btn-del-ghost">Del</button>
+                      <form action="{{ url_for('delete_return', return_id=r.return_id) }}" method="POST" class="inline">
+                        <!-- Delete ghost button -->
+                        <button class="text-[0.73rem] font-bold px-[0.7rem] py-[0.3rem] rounded-lg cursor-pointer whitespace-nowrap hover:opacity-75 transition-opacity duration-150"
+                                style="background:transparent;color:var(--danger-text);border:1px solid var(--danger-bg)">Del</button>
                       </form>
                     {% endif %}
                   </div>
@@ -500,40 +290,29 @@
 </div>
 
 
-<!-- ════════════════════════════════════════════════
-  NEW RETURN MODAL
-════════════════════════════════════════════════ -->
+<!-- ════════ NEW RETURN MODAL ════════ -->
 <div id="modal-new-return" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-2xl max-h-screen overflow-y-auto">
     <div class="agos-modal-box">
-
       <div class="px-6 py-4 flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
         <div>
           <div class="agos-card-title">File New Return</div>
           <div class="agos-card-subtitle">Select a sale then choose which items to return</div>
         </div>
-        <button class="modal-close-btn" onclick="closeModal('modal-new-return')">✕</button>
+        <button class="bg-none border-none cursor-pointer text-xl leading-none p-0 hover:text-[var(--danger-text)] transition-colors duration-150" style="color:var(--text-muted)" onclick="closeModal('modal-new-return')">✕</button>
       </div>
-
       <form id="form-new-return" action="{{ url_for('new_return') }}" method="POST" class="p-6 flex flex-col gap-5">
-
-        <!-- Sale selector -->
         <div>
           <label class="agos-label">Sale <span style="color:#d32f2f">*</span></label>
           <select name="sale_id" id="sale-select" required class="agos-input" onchange="loadSaleItems(this.value)">
             <option value="">— select a sale —</option>
             {% for s in sales %}
               <option value="{{ s.sale_id }}">
-                Sale #{{ s.sale_id }} —
-                {{ s.customer.full_name if s.customer else 'Walk-in' }} —
-                {{ s.sale_date.strftime('%b %d, %Y') }} —
-                ₱{{ "%.2f"|format(s.total_amount) }}
+                Sale #{{ s.sale_id }} — {{ s.customer.full_name if s.customer else 'Walk-in' }} — {{ s.sale_date.strftime('%b %d, %Y') }} — ₱{{ "%.2f"|format(s.total_amount) }}
               </option>
             {% endfor %}
           </select>
         </div>
-
-        <!-- Reason -->
         <div>
           <label class="agos-label">Return Reason <span style="color:#d32f2f">*</span></label>
           <select name="reason" required class="agos-input">
@@ -545,26 +324,20 @@
             <option>Other</option>
           </select>
         </div>
-
-        <!-- Return items (populated by JS) -->
         <div>
           <label class="agos-label">Items to Return <span style="color:#d32f2f">*</span></label>
           <div id="return-items-container" class="flex flex-col gap-3">
-            <p style="font-size:.82rem;color:var(--text-muted);">Select a sale above to load its items.</p>
+            <p class="text-[0.82rem]" style="color:var(--text-muted)">Select a sale above to load its items.</p>
           </div>
         </div>
-
-        <!-- Refund preview -->
-        <div id="refund-preview" class="hidden" style="background:var(--success-bg);border:1px solid rgba(46,170,110,.2);border-radius:.75rem;padding:.875rem 1rem;">
-          <p style="margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--success-text);">Estimated Refund</p>
-          <p id="refund-total" style="margin:.25rem 0 0;font-size:1.6rem;font-weight:800;color:var(--success-text);font-family:'Inconsolata',monospace;">₱0.00</p>
+        <div id="refund-preview" class="hidden rounded-xl px-4 py-3.5" style="background:var(--success-bg);border:1px solid rgba(46,170,110,.2)">
+          <p class="m-0 text-[0.7rem] font-bold uppercase tracking-[0.07em]" style="color:var(--success-text)">Estimated Refund</p>
+          <p id="refund-total" class="m-0 mt-1 text-[1.6rem] font-extrabold" style="color:var(--success-text);font-family:'Inconsolata',monospace">₱0.00</p>
         </div>
-
         <div>
           <label class="agos-label">Additional Notes</label>
           <textarea name="notes" rows="2" placeholder="Optional notes…" class="agos-input"></textarea>
         </div>
-
         <div class="flex gap-3 pt-1">
           <button type="submit" class="agos-btn-primary flex-1 py-2.5">Submit Return</button>
           <button type="button" onclick="closeModal('modal-new-return')" class="agos-btn-ghost flex-1 py-2.5">Cancel</button>
@@ -575,22 +348,19 @@
 </div>
 
 
-<!-- ════════════════════════════════════════════════
-  REVIEW MODAL (approve / reject)
-  ptsRollback param added to show loyalty notice
-════════════════════════════════════════════════ -->
+<!-- ════════ REVIEW MODAL ════════ -->
 <div id="modal-review" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box">
       <div class="px-6 py-4 flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
         <div class="agos-card-title" id="review-modal-title">Review Return</div>
-        <button class="modal-close-btn" onclick="closeModal('modal-review')">✕</button>
+        <button class="bg-none border-none cursor-pointer text-xl leading-none p-0 hover:text-[var(--danger-text)] transition-colors duration-150" style="color:var(--text-muted)" onclick="closeModal('modal-review')">✕</button>
       </div>
       <form id="form-review" method="POST" class="p-6 flex flex-col gap-4">
         <input type="hidden" name="action" id="review-action"/>
         <div id="review-info"></div>
         <div>
-          <label class="agos-label">Admin Note <span style="font-weight:400;color:var(--text-faint)">(optional)</span></label>
+          <label class="agos-label">Admin Note <span class="font-normal" style="color:var(--text-faint)">(optional)</span></label>
           <textarea name="admin_note" rows="2" placeholder="Reason for decision…" class="agos-input"></textarea>
         </div>
         <div class="flex gap-3 pt-1">
@@ -603,15 +373,13 @@
 </div>
 
 
-<!-- ════════════════════════════════════════════════
-  VIEW DETAILS MODAL
-════════════════════════════════════════════════ -->
+<!-- ════════ VIEW DETAILS MODAL ════════ -->
 <div id="modal-view" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-2xl max-h-screen overflow-y-auto">
     <div class="agos-modal-box">
       <div class="px-6 py-4 flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
         <div class="agos-card-title" id="view-modal-title">Return Details</div>
-        <button class="modal-close-btn" onclick="closeModal('modal-view')">✕</button>
+        <button class="bg-none border-none cursor-pointer text-xl leading-none p-0 hover:text-[var(--danger-text)] transition-colors duration-150" style="color:var(--text-muted)" onclick="closeModal('modal-view')">✕</button>
       </div>
       <div id="view-modal-body" class="p-6"></div>
     </div>
@@ -623,11 +391,9 @@
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-           style="background:var(--accent-soft)">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
         <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
         </svg>
       </div>
       <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
@@ -641,32 +407,23 @@
 </div>
 
 
-<!-- ═══════════════════════════════════════════
-  RETURN DATA BLOB (for view modal)
-  Passes all return data to JS without extra AJAX
-═══════════════════════════════════════════ -->
+<!-- Return data blob for view modal -->
 <script>
 window.__returnData = {
   {% for r in returns_list %}
   {{ r.return_id }}: {
-    return_id: {{ r.return_id }},
-    sale_id:   {{ r.sale_id }},
-    status:    "{{ r.status }}",
-    reason:    {{ (r.reason or '')|tojson }},
-    notes:     {{ (r.notes  or '')|tojson }},
-    customer:  {{ (r.sale.customer.full_name if r.sale.customer else 'Walk-in')|tojson }},
+    return_id: {{ r.return_id }}, sale_id: {{ r.sale_id }}, status: "{{ r.status }}",
+    reason: {{ (r.reason or '')|tojson }}, notes: {{ (r.notes or '')|tojson }},
+    customer: {{ (r.sale.customer.full_name if r.sale.customer else 'Walk-in')|tojson }},
     refund_amount: {{ r.refund_amount|float }},
     created_at: "{{ r.created_at.strftime('%b %d, %Y %I:%M %p') }}",
     reviewed_at: {% if r.reviewed_at %}"{{ r.reviewed_at.strftime('%b %d, %Y %I:%M %p') }}"{% else %}null{% endif %},
     reviewer: {% if r.reviewer %}{{ (r.reviewer.first_name ~ ' ' ~ r.reviewer.last_name)|tojson }}{% else %}null{% endif %},
     items: [
       {% for item in r.return_items %}
-      {
-        name:     {{ item.product.product_name|tojson }},
-        qty:      {{ item.quantity }},
-        price:    {{ item.price|float }},
-        subtotal: {{ item.subtotal|float }},
-        reason:   {{ (item.reason or '')|tojson }},
+      { name: {{ item.product.product_name|tojson }}, qty: {{ item.quantity }},
+        price: {{ item.price|float }}, subtotal: {{ item.subtotal|float }},
+        reason: {{ (item.reason or '')|tojson }},
         is_refill: {{ 'true' if 'refill' in item.product.product_name|lower else 'false' }}
       }{% if not loop.last %},{% endif %}
       {% endfor %}
@@ -676,12 +433,8 @@ window.__returnData = {
 };
 </script>
 
-
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-/* ═══════════════════════════════════════════
-   THEME LABEL SYNC
-═══════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function () {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const lbl = document.getElementById('theme-label');
@@ -695,87 +448,58 @@ window.toggleTheme = function () {
   if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
 };
 
-/* ═══════════════════════════════════════════
-   MODAL HELPERS
-═══════════════════════════════════════════ */
 if (typeof openModal === 'undefined') {
   window.openModal  = (id) => document.getElementById(id).classList.add('open');
   window.closeModal = (id) => document.getElementById(id).classList.remove('open');
 }
 ['modal-new-return','modal-review','modal-view','logout-modal'].forEach(function (id) {
   var el = document.getElementById(id);
-  if (el) el.addEventListener('click', function (e) {
-    if (e.target === this) closeModal(id);
-  });
+  if (el) el.addEventListener('click', function (e) { if (e.target === this) closeModal(id); });
 });
 
-
-/* ═══════════════════════════════════════════
-   LOAD SALE ITEMS (new return form)
-═══════════════════════════════════════════ */
 function loadSaleItems(saleId) {
   const container = document.getElementById('return-items-container');
   const preview   = document.getElementById('refund-preview');
-
   if (!saleId) {
     container.innerHTML = '<p style="font-size:.82rem;color:var(--text-muted);">Select a sale above to load its items.</p>';
-    preview.classList.add('hidden');
-    return;
+    preview.classList.add('hidden'); return;
   }
-
   container.innerHTML = '<p style="font-size:.82rem;color:var(--text-muted);">Loading…</p>';
-
-  fetch('/api/sale/' + saleId + '/items')
-    .then(r => r.json())
-    .then(data => {
-      if (!data.items || !data.items.length) {
-        container.innerHTML = '<p style="font-size:.82rem;color:var(--text-muted);">No items found for this sale.</p>';
-        preview.classList.add('hidden');
-        return;
-      }
-      let html = '';
-      data.items.forEach(function (item, i) {
-        html += `
-          <div class="return-item-row">
-            <div class="item-header">
-              <span>${escHtml(item.product_name)}</span>
-              <span style="font-size:.75rem;color:var(--text-muted);">
-                ₱${item.price.toFixed(2)} × ${item.quantity} = ₱${item.subtotal.toFixed(2)}
-              </span>
-            </div>
-            <div class="item-controls">
-              <div style="display:flex;align-items:center;gap:.5rem;">
-                <label class="agos-label" style="margin:0;white-space:nowrap;">Return Qty</label>
-                <input type="number" name="quantity[]" min="0" max="${item.quantity}"
-                       value="0" class="agos-input" style="width:70px;"
-                       data-price="${item.price}" onchange="updateRefundTotal()"/>
-                <input type="hidden" name="product_id[]" value="${item.product_id}"/>
-                <span style="font-size:.72rem;color:var(--text-muted);">of ${item.quantity}</span>
-              </div>
-              <div style="flex:1;min-width:160px;">
-                <input type="text" name="item_reason[]"
-                       placeholder="Item reason (optional)" class="agos-input" style="font-size:.78rem;"/>
-              </div>
-            </div>
-          </div>`;
-      });
-      container.innerHTML = html;
-      preview.classList.remove('hidden');
-      updateRefundTotal();
-    })
-    .catch(function () {
-      container.innerHTML = '<p style="font-size:.82rem;color:var(--danger-text);">Failed to load items.</p>';
+  fetch('/api/sale/' + saleId + '/items').then(r => r.json()).then(data => {
+    if (!data.items || !data.items.length) {
+      container.innerHTML = '<p style="font-size:.82rem;color:var(--text-muted);">No items found.</p>';
+      preview.classList.add('hidden'); return;
+    }
+    let html = '';
+    data.items.forEach(function (item) {
+      html += `
+        <div style="background:var(--bg-input);border:1px solid var(--border-input);border-radius:.75rem;padding:.875rem;display:flex;flex-direction:column;gap:.5rem;">
+          <div style="font-size:.85rem;font-weight:700;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
+            <span>${escHtml(item.product_name)}</span>
+            <span style="font-size:.75rem;color:var(--text-muted);">₱${item.price.toFixed(2)} × ${item.quantity} = ₱${item.subtotal.toFixed(2)}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">
+            <label class="agos-label" style="margin:0;white-space:nowrap;">Return Qty</label>
+            <input type="number" name="quantity[]" min="0" max="${item.quantity}" value="0" class="agos-input" style="width:70px;"
+                   data-price="${item.price}" onchange="updateRefundTotal()"/>
+            <input type="hidden" name="product_id[]" value="${item.product_id}"/>
+            <span style="font-size:.72rem;color:var(--text-muted);">of ${item.quantity}</span>
+            <input type="text" name="item_reason[]" placeholder="Item reason (optional)" class="agos-input" style="flex:1;min-width:160px;font-size:.78rem;"/>
+          </div>
+        </div>`;
     });
+    container.innerHTML = html;
+    preview.classList.remove('hidden');
+    updateRefundTotal();
+  }).catch(function () {
+    container.innerHTML = '<p style="font-size:.82rem;color:var(--danger-text);">Failed to load items.</p>';
+  });
 }
 
 function updateRefundTotal() {
   var inputs = document.querySelectorAll('#return-items-container input[name="quantity[]"]');
-  var total  = 0;
-  inputs.forEach(function (inp) {
-    var qty   = parseInt(inp.value) || 0;
-    var price = parseFloat(inp.dataset.price) || 0;
-    total += qty * price;
-  });
+  var total = 0;
+  inputs.forEach(function (inp) { total += (parseInt(inp.value) || 0) * (parseFloat(inp.dataset.price) || 0); });
   var el = document.getElementById('refund-total');
   if (el) el.textContent = '₱' + total.toFixed(2);
 }
@@ -787,181 +511,65 @@ document.getElementById('form-new-return').addEventListener('submit', function (
   if (!ok) { e.preventDefault(); alert('Please enter a return quantity of at least 1 for at least one item.'); }
 });
 
-
-/* ═══════════════════════════════════════════
-   REVIEW MODAL
-   ptsRollback — loyalty points to be deducted
-═══════════════════════════════════════════ */
 function openReviewModal(returnId, action, saleId, refundAmt, customer, ptsRollback) {
-  var form        = document.getElementById('form-review');
-  var title       = document.getElementById('review-modal-title');
-  var info        = document.getElementById('review-info');
-  var btn         = document.getElementById('review-submit-btn');
-  var actionInput = document.getElementById('review-action');
-
-  form.action       = '/returns/' + returnId + '/review';
-  actionInput.value = action;
-
-  // Build loyalty rollback notice HTML
+  var form = document.getElementById('form-review');
+  var title = document.getElementById('review-modal-title');
+  var info  = document.getElementById('review-info');
+  var btn   = document.getElementById('review-submit-btn');
+  form.action = '/returns/' + returnId + '/review';
+  document.getElementById('review-action').value = action;
   var loyaltyNote = '';
   if (action === 'approve' && ptsRollback > 0) {
-    loyaltyNote =
-      '<div class="loyalty-rollback-box" style="margin-top:.6rem;">' +
-        '<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" ' +
-             'viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px;">' +
-          '<circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>' +
-        '</svg>' +
-        '<span><strong>' + ptsRollback + ' loyalty point' + (ptsRollback !== 1 ? 's' : '') +
-        '</strong> will be deducted from this customer\'s balance (refill items returned).</span>' +
-      '</div>';
+    loyaltyNote = '<div style="margin-top:.6rem;background:var(--warning-bg);border:1px solid rgba(245,158,11,.25);border-radius:.65rem;padding:.65rem .875rem;display:flex;align-items:flex-start;gap:.5rem;font-size:.78rem;color:var(--warning-text);"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><span><strong>' + ptsRollback + ' loyalty point' + (ptsRollback !== 1 ? 's' : '') + '</strong> will be deducted from this customer\'s balance.</span></div>';
   }
-
   if (action === 'approve') {
-    title.textContent    = '✅ Approve Return';
-    btn.textContent      = 'Approve & Issue Refund';
+    title.textContent = '✅ Approve Return';
+    btn.textContent   = 'Approve & Issue Refund';
     btn.style.background = 'var(--success-text)';
     btn.style.boxShadow  = '0 4px 14px rgba(46,170,110,.30)';
-    info.innerHTML =
-      '<div style="margin-bottom:.5rem;">' +
-        '<strong style="color:var(--text-primary);">Return #' + returnId + '</strong>' +
-        ' &nbsp;&middot;&nbsp; Sale #' + saleId +
-        ' &nbsp;&middot;&nbsp; <span style="color:var(--text-muted);">' + escHtml(customer) + '</span>' +
-      '</div>' +
-      '<div style="font-size:1.4rem;font-weight:800;color:var(--success-text);' +
-           'font-family:\'Inconsolata\',monospace;margin-bottom:.5rem;">' +
-        'Refund: &#8369;' + refundAmt +
-      '</div>' +
-      '<div style="font-size:.78rem;color:var(--text-muted);background:var(--success-bg);' +
-           'border-radius:.5rem;padding:.5rem .75rem;">' +
-        '&#10003; &nbsp;Inventory will be <strong>restocked</strong> for all returned items.<br>' +
-        '&#10003; &nbsp;Status will change to <strong>Approved</strong>.' +
-      '</div>' +
-      loyaltyNote;
+    info.innerHTML = '<div style="margin-bottom:.5rem;"><strong style="color:var(--text-primary);">Return #' + returnId + '</strong> &nbsp;·&nbsp; Sale #' + saleId + ' &nbsp;·&nbsp; <span style="color:var(--text-muted);">' + escHtml(customer) + '</span></div><div style="font-size:1.4rem;font-weight:800;color:var(--success-text);font-family:\'Inconsolata\',monospace;margin-bottom:.5rem;">Refund: &#8369;' + refundAmt + '</div><div style="font-size:.78rem;color:var(--text-muted);background:var(--success-bg);border-radius:.5rem;padding:.5rem .75rem;">&#10003; &nbsp;Inventory will be <strong>restocked</strong>.<br>&#10003; &nbsp;Status → <strong>Approved</strong>.</div>' + loyaltyNote;
   } else {
-    title.textContent    = '❌ Reject Return';
-    btn.textContent      = 'Confirm Rejection';
+    title.textContent = '❌ Reject Return';
+    btn.textContent   = 'Confirm Rejection';
     btn.style.background = 'var(--danger-text)';
     btn.style.boxShadow  = '0 4px 14px rgba(224,82,82,.25)';
-    info.innerHTML =
-      '<div style="margin-bottom:.5rem;">' +
-        '<strong style="color:var(--text-primary);">Return #' + returnId + '</strong>' +
-        ' &nbsp;&middot;&nbsp; Sale #' + saleId +
-        ' &nbsp;&middot;&nbsp; <span style="color:var(--text-muted);">' + escHtml(customer) + '</span>' +
-      '</div>' +
-      '<div style="font-size:.78rem;color:var(--text-muted);background:var(--danger-bg);' +
-           'border-radius:.5rem;padding:.5rem .75rem;">' +
-        '&#10007; &nbsp;<strong>No refund</strong> will be issued.<br>' +
-        '&#10007; &nbsp;<strong>No inventory changes</strong> will be made.<br>' +
-        'Provide a reason in the note below.' +
-      '</div>';
+    info.innerHTML = '<div style="margin-bottom:.5rem;"><strong style="color:var(--text-primary);">Return #' + returnId + '</strong> &nbsp;·&nbsp; Sale #' + saleId + ' &nbsp;·&nbsp; <span style="color:var(--text-muted);">' + escHtml(customer) + '</span></div><div style="font-size:.78rem;color:var(--text-muted);background:var(--danger-bg);border-radius:.5rem;padding:.5rem .75rem;">&#10007; &nbsp;<strong>No refund</strong> will be issued.<br>&#10007; &nbsp;<strong>No inventory changes</strong> will be made.</div>';
   }
   openModal('modal-review');
 }
 
-
-/* ═══════════════════════════════════════════
-   VIEW DETAILS MODAL
-═══════════════════════════════════════════ */
 function openViewModal(returnId) {
   var data = (window.__returnData || {})[returnId];
   if (!data) return;
-
   document.getElementById('view-modal-title').textContent = 'Return #' + data.return_id + ' — Details';
-
-  var statusColor = data.status === 'Approved' ? 'var(--success-text)'
-                  : data.status === 'Rejected'  ? 'var(--danger-text)'
-                  : 'var(--warning-text)';
+  var statusColor = data.status === 'Approved' ? 'var(--success-text)' : data.status === 'Rejected' ? 'var(--danger-text)' : 'var(--warning-text)';
   var statusIcon  = data.status === 'Approved' ? '✓' : data.status === 'Rejected' ? '✗' : '⏳';
-
-  // Loyalty rollback info for view modal
   var totalRefillQty = 0;
-  data.items.forEach(function (item) {
-    if (item.is_refill) totalRefillQty += item.qty;
-  });
+  data.items.forEach(function (item) { if (item.is_refill) totalRefillQty += item.qty; });
   var ptsInfo = '';
   if (data.status === 'Approved' && totalRefillQty > 0) {
     var ptsDeducted = Math.floor(totalRefillQty / 10);
     if (ptsDeducted > 0) {
-      ptsInfo = '<div style="margin-top:.75rem;background:var(--warning-bg);border:1px solid rgba(245,158,11,.2);' +
-                'border-radius:.65rem;padding:.65rem .875rem;font-size:.78rem;color:var(--warning-text);">' +
-                '⚠ ' + ptsDeducted + ' loyalty point' + (ptsDeducted !== 1 ? 's were' : ' was') +
-                ' deducted when this return was approved.</div>';
+      ptsInfo = '<div style="margin-top:.75rem;background:var(--warning-bg);border:1px solid rgba(245,158,11,.2);border-radius:.65rem;padding:.65rem .875rem;font-size:.78rem;color:var(--warning-text);">⚠ ' + ptsDeducted + ' loyalty point' + (ptsDeducted !== 1 ? 's were' : ' was') + ' deducted when this return was approved.</div>';
     }
   }
-
   var itemRows = data.items.map(function (item) {
-    return '<tr>' +
-      '<td style="font-weight:600;color:var(--text-primary);">'             + escHtml(item.name)            + '</td>' +
-      '<td style="text-align:center;font-weight:700;color:var(--accent);">' + '×' + item.qty                + '</td>' +
-      '<td>&#8369;' + item.price.toFixed(2)    + '</td>' +
-      '<td style="font-weight:700;color:var(--success-text);">&#8369;'      + item.subtotal.toFixed(2)       + '</td>' +
-      '<td style="color:var(--text-muted);font-size:.78rem;">'               + escHtml(item.reason)          + '</td>' +
-      '</tr>';
+    return '<tr><td style="font-weight:600;color:var(--text-primary);">' + escHtml(item.name) + '</td><td style="text-align:center;font-weight:700;color:var(--accent);">×' + item.qty + '</td><td>&#8369;' + item.price.toFixed(2) + '</td><td style="font-weight:700;color:var(--success-text);">&#8369;' + item.subtotal.toFixed(2) + '</td><td style="color:var(--text-muted);font-size:.78rem;">' + escHtml(item.reason) + '</td></tr>';
   }).join('');
-
-  var reviewSection = data.reviewed_at
-    ? '<div style="margin-top:1rem;padding:.75rem 1rem;background:var(--bg-input);' +
-        'border-radius:.75rem;font-size:.8rem;color:var(--text-secondary);border:1px solid var(--border-card);">' +
-        '<strong style="color:var(--text-primary);">Reviewed by:</strong> ' + escHtml(data.reviewer) +
-        ' &nbsp;&middot;&nbsp; <strong style="color:var(--text-primary);">At:</strong> ' + escHtml(data.reviewed_at) +
-      '</div>'
-    : '';
-
-  var notesSection = data.notes
-    ? '<div style="margin-top:1rem;padding:.875rem 1rem;background:var(--bg-input);' +
-        'border-radius:.75rem;font-size:.82rem;color:var(--text-secondary);border:1px solid var(--border-card);">' +
-        '<p style="margin:0 0 .35rem;font-size:.72rem;font-weight:700;text-transform:uppercase;' +
-           'letter-spacing:.07em;color:var(--text-muted);">Notes</p>' +
-        '<p style="margin:0;white-space:pre-wrap;">' + escHtml(data.notes) + '</p>' +
-      '</div>'
-    : '';
-
+  var reviewSection = data.reviewed_at ? '<div style="margin-top:1rem;padding:.75rem 1rem;background:var(--bg-input);border-radius:.75rem;font-size:.8rem;color:var(--text-secondary);border:1px solid var(--border-card);"><strong style="color:var(--text-primary);">Reviewed by:</strong> ' + escHtml(data.reviewer) + ' &nbsp;·&nbsp; <strong style="color:var(--text-primary);">At:</strong> ' + escHtml(data.reviewed_at) + '</div>' : '';
+  var notesSection  = data.notes ? '<div style="margin-top:1rem;padding:.875rem 1rem;background:var(--bg-input);border-radius:.75rem;font-size:.82rem;color:var(--text-secondary);border:1px solid var(--border-card);"><p style="margin:0 0 .35rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);">Notes</p><p style="margin:0;white-space:pre-wrap;">' + escHtml(data.notes) + '</p></div>' : '';
   document.getElementById('view-modal-body').innerHTML =
-    '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:1rem;">' +
-      '<span style="background:' + statusColor + '22;color:' + statusColor + ';font-size:.8rem;' +
-             'font-weight:700;padding:.3rem .875rem;border-radius:9999px;' +
-             'border:1px solid ' + statusColor + '44;">' +
-        statusIcon + ' ' + escHtml(data.status) +
-      '</span>' +
-      '<span style="font-size:.78rem;color:var(--text-muted);">Sale #' + data.sale_id + ' &nbsp;&middot;&nbsp; ' + escHtml(data.customer) + '</span>' +
-      '<span style="font-size:.78rem;color:var(--text-faint);">Filed: ' + escHtml(data.created_at) + '</span>' +
-    '</div>' +
-
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">' +
-      '<div style="background:var(--bg-input);border-radius:.75rem;padding:.875rem;border:1px solid var(--border-card);">' +
-        '<p style="margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);">Reason</p>' +
-        '<p style="margin:.3rem 0 0;font-size:.9rem;font-weight:600;color:var(--text-primary);">' + escHtml(data.reason) + '</p>' +
-      '</div>' +
-      '<div style="background:var(--success-bg);border-radius:.75rem;padding:.875rem;border:1px solid rgba(46,170,110,.2);">' +
-        '<p style="margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--success-text);">Refund Amount</p>' +
-        '<p style="margin:.3rem 0 0;font-size:1.4rem;font-weight:800;color:var(--success-text);font-family:\'Inconsolata\',monospace;">&#8369;' + data.refund_amount.toFixed(2) + '</p>' +
-      '</div>' +
-    '</div>' +
-
+    '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:1rem;"><span style="background:' + statusColor + '22;color:' + statusColor + ';font-size:.8rem;font-weight:700;padding:.3rem .875rem;border-radius:9999px;border:1px solid ' + statusColor + '44;">' + statusIcon + ' ' + escHtml(data.status) + '</span><span style="font-size:.78rem;color:var(--text-muted);">Sale #' + data.sale_id + ' &nbsp;·&nbsp; ' + escHtml(data.customer) + '</span><span style="font-size:.78rem;color:var(--text-faint);">Filed: ' + escHtml(data.created_at) + '</span></div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;"><div style="background:var(--bg-input);border-radius:.75rem;padding:.875rem;border:1px solid var(--border-card);"><p style="margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);">Reason</p><p style="margin:.3rem 0 0;font-size:.9rem;font-weight:600;color:var(--text-primary);">' + escHtml(data.reason) + '</p></div><div style="background:var(--success-bg);border-radius:.75rem;padding:.875rem;border:1px solid rgba(46,170,110,.2);"><p style="margin:0;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--success-text);">Refund Amount</p><p style="margin:.3rem 0 0;font-size:1.4rem;font-weight:800;color:var(--success-text);font-family:\'Inconsolata\',monospace;">&#8369;' + data.refund_amount.toFixed(2) + '</p></div></div>' +
     ptsInfo +
-
-    '<p style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:.75rem 0 .5rem;">Returned Items</p>' +
-    '<div style="border-radius:.75rem;overflow:hidden;border:1px solid var(--border-card);">' +
-      '<table class="view-detail-table">' +
-        '<thead><tr>' +
-          '<th>Product</th><th style="text-align:center;">Qty</th>' +
-          '<th>Unit Price</th><th>Subtotal</th><th>Item Reason</th>' +
-        '</tr></thead>' +
-        '<tbody>' + (itemRows || '<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:1rem;">No items recorded.</td></tr>') + '</tbody>' +
-      '</table>' +
-    '</div>' +
+    '<p style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:.75rem 0 .5rem;">Returned Items</p><div style="border-radius:.75rem;overflow:hidden;border:1px solid var(--border-card);"><table style="width:100%;border-collapse:collapse;font-size:.83rem;"><thead><tr><th style="text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:.5rem .75rem;border-bottom:1px solid var(--table-head-border);">Product</th><th style="text-align:center;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:.5rem .75rem;border-bottom:1px solid var(--table-head-border);">Qty</th><th style="text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:.5rem .75rem;border-bottom:1px solid var(--table-head-border);">Unit Price</th><th style="text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:.5rem .75rem;border-bottom:1px solid var(--table-head-border);">Subtotal</th><th style="text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:.5rem .75rem;border-bottom:1px solid var(--table-head-border);">Item Reason</th></tr></thead><tbody>' + (itemRows || '<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:1rem;">No items recorded.</td></tr>') + '</tbody></table></div>' +
     notesSection + reviewSection;
-
   openModal('modal-view');
 }
 
-
-/* ── Utility ── */
 function escHtml(str) {
   if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>

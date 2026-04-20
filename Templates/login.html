@@ -8,120 +8,26 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
-    body { background: var(--bg-page); font-family: 'Outfit', sans-serif; transition: background 0.3s; }
-
-    .login-wrap {
-      min-height: 100vh;
-      display: flex;
-    }
-
-    /* Left accent panel */
-    .login-panel-left {
-      width: 420px;
-      min-width: 360px;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      padding: 3.5rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    @media (min-width: 1024px) { .login-panel-left { display: flex; } }
-
+    /* ── [data-theme] attribute selectors — cannot be Tailwind dark: (different mechanism) ── */
     [data-theme="light"] .login-panel-left { background: linear-gradient(165deg, #123047 0%, #0d1f2d 100%); }
     [data-theme="dark"]  .login-panel-left { background: linear-gradient(165deg, #030c14 0%, #060e18 100%); }
-
-    .left-ring {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    .login-panel-right {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2.5rem;
-      overflow-y: auto;
-      transition: background 0.3s;
-    }
-
     [data-theme="light"] .login-panel-right { background: #ffffff; }
     [data-theme="dark"]  .login-panel-right { background: var(--bg-card); }
-
-    .login-form-inner {
-      width: 100%;
-      max-width: 420px;
-    }
-
-    .login-field {
-      background: var(--bg-input);
-      border: 1.5px solid var(--border-input);
-      color: var(--text-primary);
-      border-radius: 0.75rem;
-      padding: 0.7rem 0.875rem;
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.9rem;
-      outline: none;
-      width: 100%;
-      transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .login-field:focus {
-      background: var(--bg-input-focus);
-      border-color: var(--border-input-focus);
-      box-shadow: 0 0 0 3px rgba(0,149,200,0.10);
-    }
-
-    .login-field::placeholder { color: var(--text-faint); }
-
-    /* Theme toggle in top-right corner of right panel */
-    .login-theme-corner {
-      position: absolute;
-      top: 1.25rem;
-      right: 1.25rem;
-    }
-
-    .login-theme-btn {
-      width: 2.25rem;
-      height: 2.25rem;
-      border-radius: 50%;
-      background: var(--accent-soft);
-      border: 1px solid var(--border-card);
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s;
-    }
-    .login-theme-btn:hover { background: var(--accent-soft); }
-
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      text-decoration: none;
-      margin-bottom: 1.5rem;
-      transition: color 0.2s;
-    }
-    .back-link:hover { color: var(--accent); }
   </style>
 </head>
-<body>
 
-<div class="login-wrap">
+<body style="background:var(--bg-page);font-family:'Outfit',sans-serif;" class="transition-[background] duration-300">
 
-  <!-- Left decorative panel (desktop only) -->
-  <div class="login-panel-left">
-    <!-- Rings -->
-    <div class="left-ring" style="width:400px;height:400px;top:-100px;right:-150px;border:1px solid rgba(91,184,224,0.08)"></div>
-    <div class="left-ring" style="width:280px;height:280px;bottom:-80px;left:-100px;border:1px solid rgba(91,184,224,0.06)"></div>
+<!-- Outer wrap -->
+<div class="min-h-screen flex">
+
+  <!-- Left accent panel (desktop only) -->
+  <div class="login-panel-left hidden lg:flex flex-col justify-center px-14 py-14 relative overflow-hidden w-[420px] min-w-[360px]">
+    <!-- Decorative rings -->
+    <div class="absolute rounded-full pointer-events-none" style="width:400px;height:400px;top:-100px;right:-150px;border:1px solid rgba(91,184,224,0.08)"></div>
+    <div class="absolute rounded-full pointer-events-none" style="width:280px;height:280px;bottom:-80px;left:-100px;border:1px solid rgba(91,184,224,0.06)"></div>
 
     <!-- Brand -->
     <div class="flex items-center gap-3 mb-10">
@@ -160,19 +66,21 @@
   </div>
 
   <!-- Right form panel -->
-  <div class="login-panel-right" style="position:relative">
+  <div class="login-panel-right flex-1 flex items-center justify-center px-6 sm:px-10 py-10 overflow-y-auto relative">
 
-    <!-- Theme toggle -->
-    <div class="login-theme-corner">
-      <button class="login-theme-btn" onclick="toggleLoginTheme()" id="login-theme-btn" title="Toggle dark/light mode">
+    <!-- Theme toggle corner -->
+    <div class="absolute top-5 right-5">
+      <button class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer text-base transition-[background] duration-200"
+              style="background:var(--accent-soft);border:1px solid var(--border-card)"
+              onclick="toggleLoginTheme()" id="login-theme-btn" title="Toggle dark/light mode">
         🌙
       </button>
     </div>
 
-    <div class="login-form-inner">
+    <div class="w-full max-w-[420px]">
 
       <!-- Back to landing -->
-      <a href="{{ url_for('landing') }}" class="back-link">
+      <a href="{{ url_for('landing') }}" class="inline-flex items-center gap-1.5 text-[0.78rem] no-underline mb-6 transition-colors duration-200 hover:text-[var(--accent)]" style="color:var(--text-muted)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5M12 5l-7 7 7 7"/>
         </svg>
@@ -215,17 +123,19 @@
         <div>
           <label class="agos-label">Username</label>
           <input type="text" name="username" placeholder="Enter your username" required
-                 class="login-field"/>
+                 class="w-full px-3.5 py-[0.7rem] rounded-xl text-[0.9rem] outline-none transition-[background,border-color,box-shadow] duration-200 placeholder:text-[var(--text-faint)] focus:[box-shadow:0_0_0_3px_rgba(0,149,200,0.10)]"
+                 style="background:var(--bg-input);border:1.5px solid var(--border-input);color:var(--text-primary);font-family:'Outfit',sans-serif"/>
         </div>
 
         <div>
           <label class="agos-label">Password</label>
-          <div style="position:relative">
+          <div class="relative">
             <input type="password" name="password" id="pw-input" placeholder="Enter your password" required
-                   class="login-field" style="padding-right:2.5rem"/>
+                   class="w-full px-3.5 py-[0.7rem] pr-10 rounded-xl text-[0.9rem] outline-none transition-[background,border-color,box-shadow] duration-200 placeholder:text-[var(--text-faint)] focus:[box-shadow:0_0_0_3px_rgba(0,149,200,0.10)]"
+                   style="background:var(--bg-input);border:1.5px solid var(--border-input);color:var(--text-primary);font-family:'Outfit',sans-serif"/>
             <button type="button" onclick="togglePwField()"
-                    style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text-faint);"
-                    id="pw-eye">👁</button>
+                    class="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-base"
+                    style="color:var(--text-faint);" id="pw-eye">👁</button>
           </div>
         </div>
 
@@ -234,7 +144,6 @@
         </button>
 
       </form>
-
 
     </div>
   </div>
@@ -255,7 +164,6 @@
     document.getElementById('login-theme-btn').textContent = next === 'dark' ? '☀️' : '🌙';
   }
 
-  // Init
   (function(){
     const saved = localStorage.getItem('agos-theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);

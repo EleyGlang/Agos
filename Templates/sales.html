@@ -10,69 +10,26 @@
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body class="agos-body m-0 p-0">
-<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
 
-  <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar"
-    class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
-      </div>
-      <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
-      </div>
-    </div>
-    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      <div>
-        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
-      </div>
-    </div>
-   <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
-      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link active">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
-      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
-      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
-      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') in ['Admin',  'Super Admin'] %}
-      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
-      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
-      {% endif %}
-    </nav>
-    <div class="agos-sidebar-footer flex-shrink-0 p-3">
-      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
-    </div>
-  </aside>
+  {% include '_sidebar.html' %}
 
-  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
-
-  <!-- ══ MAIN ══ -->
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
 
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+        <button onclick="toggleSidebar()" class="block md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
           <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Sales Management</div>
-          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Record walk-in and delivery sales</div>
+          <div class="text-xs" style="color:var(--text-muted)">Record walk-in and delivery sales</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
         <div class="agos-theme-row">
           <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
-          <label class="agos-theme-toggle" title="Toggle dark/light mode">
-            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
-            <span class="agos-theme-track"></span>
-          </label>
+          <label class="agos-theme-toggle"><input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label>
         </div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
@@ -98,7 +55,7 @@
           <div class="p-5">
             <form action="{{ url_for('new_sale') }}" method="POST" id="sale-form" class="flex flex-col gap-4">
 
-              <!-- Sale Mode — 3 options -->
+              <!-- Sale Mode tabs -->
               <div>
                 <label class="agos-label">Sale Type</label>
                 <div class="flex rounded-xl overflow-hidden" style="border:1.5px solid var(--border-input)">
@@ -112,7 +69,6 @@
                           class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
                           style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">New Customer</button>
                 </div>
-                <!-- Hidden fields posted to backend -->
                 <input type="hidden" name="sale_type" id="sale-type-input" value="Walk-in"/>
                 <select name="customer_id" id="customer_id" style="display:none">
                   <option value="">Walk-In Customer</option>
@@ -123,13 +79,10 @@
                 </select>
               </div>
 
-              <!-- Existing customer search (shown only in existing mode) -->
+              <!-- Existing customer search -->
               <div id="existing-customer-block" style="display:none">
                 <label class="agos-label">Select Customer</label>
-                <input type="text" id="customer-search" list="customers-list"
-                       placeholder="Type to search customer…"
-                       oninput="syncCustomerSelect(this.value)"
-                       class="agos-input"/>
+                <input type="text" id="customer-search" list="customers-list" placeholder="Type to search customer…" oninput="syncCustomerSelect(this.value)" class="agos-input"/>
                 <datalist id="customers-list">
                   {% for customer in customers %}
                     <option value="{{ customer.full_name }} ({{ customer.loyalty_points }} pts)" data-id="{{ customer.customer_id }}">{{ customer.full_name }}</option>
@@ -137,21 +90,12 @@
                 </datalist>
               </div>
 
-              <!-- New customer fields (shown only in new mode) -->
-              <div id="new-customer-fields" style="display:none;padding:1rem;border-radius:0.75rem;border:1.5px solid var(--border-input)">
+              <!-- New customer fields -->
+              <div id="new-customer-fields" style="display:none" class="p-4 rounded-xl" style="border:1.5px solid var(--border-input)">
                 <div class="text-[0.95rem] font-bold mb-3" style="font-family:'Inconsolata',monospace;color:var(--success-text)">New Customer Information</div>
-                <div class="mb-3">
-                  <label class="agos-label">Full Name <span style="color:#d32f2f">*</span></label>
-                  <input type="text" name="new_customer_name" id="new_customer_name" placeholder="Enter customer name" class="agos-input" pattern="[A-Za-z ]+" title="Only letters and spaces"/>
-                </div>
-                <div class="mb-3">
-                  <label class="agos-label">Contact Number</label>
-                  <input type="tel" name="new_customer_number" id="new_customer_number" placeholder="11-digit number" class="agos-input" pattern="\d{11}" maxlength="11" inputmode="numeric"/>
-                </div>
-                <div class="mb-2">
-                  <label class="agos-label">Address</label>
-                  <textarea name="new_customer_address" id="new_customer_address" placeholder="Enter address" rows="3" class="agos-input" style="resize:none"></textarea>
-                </div>
+                <div class="mb-3"><label class="agos-label">Full Name <span style="color:#d32f2f">*</span></label><input type="text" name="new_customer_name" id="new_customer_name" placeholder="Enter customer name" class="agos-input" pattern="[A-Za-z ]+" title="Only letters and spaces"/></div>
+                <div class="mb-3"><label class="agos-label">Contact Number</label><input type="tel" name="new_customer_number" id="new_customer_number" placeholder="11-digit number" class="agos-input" pattern="\d{11}" maxlength="11" inputmode="numeric"/></div>
+                <div class="mb-2"><label class="agos-label">Address</label><textarea name="new_customer_address" id="new_customer_address" placeholder="Enter address" rows="3" class="agos-input" style="resize:none"></textarea></div>
               </div>
 
               <!-- Products -->
@@ -199,32 +143,25 @@
               <div class="agos-card-title">Transaction History</div>
               <div class="agos-card-subtitle">{{ sales|length }} total transaction{{ 's' if sales|length != 1 }}</div>
             </div>
-            <input type="text" id="search-sales" placeholder="Search..." oninput="filterSales()"
-                   class="agos-input w-32 sm:w-40 md:w-48" style="width:auto"/>
+            <input type="text" id="search-sales" placeholder="Search..." oninput="filterSales()" class="agos-input" style="width:10rem"/>
           </div>
           <div class="p-5 overflow-x-auto">
-            <table class="agos-table w-full border-collapse min-w-[600px]">
+            <table class="agos-table w-full border-collapse" style="min-width:600px">
               <thead>
-                <tr>
-                  <th>#</th><th>Customer</th><th>Type</th><th>Items</th><th>Amount</th><th>Date</th>
-                </tr>
+                <tr><th>#</th><th>Customer</th><th>Type</th><th>Items</th><th>Amount</th><th>Date</th></tr>
               </thead>
               <tbody id="sales-body">
-                {% if sales %}
-                  {% for sale in sales %}
-                  <tr class="sale-row">
-                    <td style="color:var(--text-muted)">#{{ sale.sale_id }}</td>
-                    <td>{{ sale.customer.full_name if sale.customer else 'Walk-in' }}</td>
-                    <td><span class="agos-badge {% if sale.sale_type == 'Walk-in' %}agos-badge-info{% else %}agos-badge-warning{% endif %}">{{ sale.sale_type }}</span></td>
-                    <td style="color:var(--text-muted);font-size:0.75rem">
-                      {% for item in sale.sale_items %}{{ item.quantity }}× {{ item.product.product_name }}{% if not loop.last %}, {% endif %}{% endfor %}
-                    </td>
-                    <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(sale.total_amount) }}</td>
-                    <td style="color:var(--text-muted);font-size:0.75rem">{{ sale.sale_date.strftime('%b %d, %Y %I:%M %p') }}</td>
-                  </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr><td colspan="6" class="text-center py-8" style="color:var(--text-faint)">No sales recorded yet.</td></tr>
+                {% if sales %}{% for sale in sales %}
+                <tr class="sale-row">
+                  <td style="color:var(--text-muted)">#{{ sale.sale_id }}</td>
+                  <td>{{ sale.customer.full_name if sale.customer else 'Walk-in' }}</td>
+                  <td><span class="agos-badge {% if sale.sale_type == 'Walk-in' %}agos-badge-info{% else %}agos-badge-warning{% endif %}">{{ sale.sale_type }}</span></td>
+                  <td style="color:var(--text-muted);font-size:0.75rem">{% for item in sale.sale_items %}{{ item.quantity }}× {{ item.product.product_name }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                  <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(sale.total_amount) }}</td>
+                  <td style="color:var(--text-muted);font-size:0.75rem">{{ sale.sale_date.strftime('%b %d, %Y %I:%M %p') }}</td>
+                </tr>
+                {% endfor %}{% else %}
+                <tr><td colspan="6" class="text-center py-8" style="color:var(--text-faint)">No sales recorded yet.</td></tr>
                 {% endif %}
               </tbody>
             </table>
@@ -236,7 +173,7 @@
   </div>
 </div>
 
-<!-- ══ SALE CONFIRM MODAL ══ -->
+<!-- SALE CONFIRM MODAL -->
 <div id="sale-confirm-modal" class="agos-modal-overlay" style="display:none">
   <div class="w-full max-w-2xl mx-auto px-4">
     <div class="agos-modal-box w-full">
@@ -255,19 +192,10 @@
       </div>
       <div class="px-8 py-7 space-y-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="rounded-xl p-4" style="background:var(--bg-input);border:1px solid var(--border-card)">
-            <div class="text-xs uppercase mb-1" style="color:var(--text-muted)">Type</div>
-            <div id="receipt-sale-type" class="font-semibold" style="color:var(--text-primary)"></div>
-          </div>
-          <div class="rounded-xl p-4" style="background:var(--bg-input);border:1px solid var(--border-card)">
-            <div class="text-xs uppercase mb-1" style="color:var(--text-muted)">Customer</div>
-            <div id="receipt-customer" class="font-semibold truncate" style="color:var(--text-primary)"></div>
-          </div>
+          <div class="rounded-xl p-4" style="background:var(--bg-input);border:1px solid var(--border-card)"><div class="text-xs uppercase mb-1" style="color:var(--text-muted)">Type</div><div id="receipt-sale-type" class="font-semibold" style="color:var(--text-primary)"></div></div>
+          <div class="rounded-xl p-4" style="background:var(--bg-input);border:1px solid var(--border-card)"><div class="text-xs uppercase mb-1" style="color:var(--text-muted)">Customer</div><div id="receipt-customer" class="font-semibold truncate" style="color:var(--text-primary)"></div></div>
         </div>
-        <div>
-          <div class="text-xs uppercase mb-3" style="color:var(--text-muted)">Items</div>
-          <div id="receipt-items" class="space-y-2"></div>
-        </div>
+        <div><div class="text-xs uppercase mb-3" style="color:var(--text-muted)">Items</div><div id="receipt-items" class="space-y-2"></div></div>
         <div class="flex justify-between items-center border-t pt-4" style="border-color:var(--border-section)">
           <span class="font-semibold" style="color:var(--text-primary)">Total</span>
           <span id="receipt-total" class="text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--accent)"></span>
@@ -281,18 +209,14 @@
   </div>
 </div>
 
-<!-- ══ LOGOUT MODAL ══ -->
+<!-- LOGOUT MODAL -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-      </div>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></div>
       <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
-      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out of your account?</p>
-      <div class="flex items-center gap-4 justify-center">
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex gap-3 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
         <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -310,141 +234,60 @@
   const _orig = window.toggleTheme;
   window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
 
-  /* ── Sale mode: walkin | existing | new ── */
   function setSaleMode(mode) {
-    // Update tab styles
     const tabs = { walkin: 'tab-walkin', existing: 'tab-existing', new: 'tab-new' };
     Object.entries(tabs).forEach(([key, id]) => {
       const el = document.getElementById(id);
       el.style.background = key === mode ? 'var(--accent)' : 'transparent';
       el.style.color       = key === mode ? '#fff' : 'var(--text-muted)';
     });
-
-    // Show/hide panels
     document.getElementById('existing-customer-block').style.display = mode === 'existing' ? '' : 'none';
     document.getElementById('new-customer-fields').style.display     = mode === 'new'      ? '' : 'none';
-
-    // Reset customer selection
     const sel = document.getElementById('customer_id');
     const nameField = document.getElementById('new_customer_name');
-
-    if (mode === 'walkin') {
-      sel.value = '';
-      document.getElementById('sale-type-input').value = 'Walk-in';
-      nameField.required = false;
-      clearNewCustomerFields();
-    } else if (mode === 'existing') {
-      sel.value = '';
-      document.getElementById('sale-type-input').value = 'Walk-in'; // backend type, customer presence makes it linked
-      nameField.required = false;
-      clearNewCustomerFields();
-    } else {
-      sel.value = 'new';
-      document.getElementById('sale-type-input').value = 'Walk-in';
-      nameField.required = true;
-    }
+    if (mode === 'walkin') { sel.value = ''; document.getElementById('sale-type-input').value = 'Walk-in'; nameField.required = false; clearNewCustomerFields(); }
+    else if (mode === 'existing') { sel.value = ''; document.getElementById('sale-type-input').value = 'Walk-in'; nameField.required = false; clearNewCustomerFields(); }
+    else { sel.value = 'new'; document.getElementById('sale-type-input').value = 'Walk-in'; nameField.required = true; }
   }
-
-  function clearNewCustomerFields() {
-    ['new_customer_name','new_customer_number','new_customer_address'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-  }
-
-  function syncCustomerSelect(val) {
-    const sel = document.getElementById('customer_id');
-    if (!val) { sel.value = ''; return; }
-    const matched = Array.from(sel.options).find(o => o.text.trim().startsWith(val.split(' (')[0]));
-    sel.value = matched ? matched.value : '';
-  }
-
-  function toggleNewCustomerFields() { /* kept for compatibility */ }
-
-  function syncProductSelect(input) {
-    const row = input.closest('.item-row');
-    const sel = row.querySelector('.product-select');
-    const name = input.value.split(' — ')[0].trim();
-    const matched = Array.from(sel.options).find(o => o.text.trim().startsWith(name));
-    sel.value = matched ? matched.value : '';
-    computeTotal();
-  }
-
-  function addItem() {
-    const container = document.getElementById('items-container');
-    const clone = container.querySelector('.item-row').cloneNode(true);
-    clone.querySelector('.product-search').value = '';
-    clone.querySelector('.product-select').value = '';
-    clone.querySelector('input[type=number]').value = 1;
-    container.appendChild(clone);
-  }
-
-  function removeItem(btn) {
-    const rows = document.querySelectorAll('.item-row');
-    if (rows.length > 1) { btn.closest('.item-row').remove(); computeTotal(); }
-  }
-
+  function clearNewCustomerFields() { ['new_customer_name','new_customer_number','new_customer_address'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
+  function syncCustomerSelect(val) { const sel = document.getElementById('customer_id'); if (!val) { sel.value = ''; return; } const matched = Array.from(sel.options).find(o => o.text.trim().startsWith(val.split(' (')[0])); sel.value = matched ? matched.value : ''; }
+  function syncProductSelect(input) { const row = input.closest('.item-row'); const sel = row.querySelector('.product-select'); const name = input.value.split(' — ')[0].trim(); const matched = Array.from(sel.options).find(o => o.text.trim().startsWith(name)); sel.value = matched ? matched.value : ''; computeTotal(); }
+  function addItem() { const container = document.getElementById('items-container'); const clone = container.querySelector('.item-row').cloneNode(true); clone.querySelector('.product-search').value = ''; clone.querySelector('.product-select').value = ''; clone.querySelector('input[type=number]').value = 1; container.appendChild(clone); }
+  function removeItem(btn) { const rows = document.querySelectorAll('.item-row'); if (rows.length > 1) { btn.closest('.item-row').remove(); computeTotal(); } }
   function updateSubtotal() { computeTotal(); }
-
   function computeTotal() {
     let total = 0;
-    document.querySelectorAll('.item-row').forEach(row => {
-      const sel = row.querySelector('.product-select');
-      const qty = parseFloat(row.querySelector('input[type=number]').value) || 0;
-      const opt = sel.options[sel.selectedIndex];
-      total += (opt ? parseFloat(opt.dataset.price || 0) : 0) * qty;
-    });
+    document.querySelectorAll('.item-row').forEach(row => { const sel = row.querySelector('.product-select'); const qty = parseFloat(row.querySelector('input[type=number]').value) || 0; const opt = sel.options[sel.selectedIndex]; total += (opt ? parseFloat(opt.dataset.price || 0) : 0) * qty; });
     document.getElementById('total-display').textContent = '₱' + total.toFixed(2);
     document.getElementById('total-input').value = total.toFixed(2);
   }
-
+  function getActiveMode() {
+    if (document.getElementById('new-customer-fields').style.display !== 'none') return 'new';
+    if (document.getElementById('existing-customer-block').style.display !== 'none') return 'existing';
+    return 'walkin';
+  }
   function validateForm() {
     const mode = getActiveMode();
-    if (mode === 'existing' && !document.getElementById('customer_id').value) {
-      alert('Please select an existing customer.'); return false;
-    }
-    if (mode === 'new') {
-      const name  = document.getElementById('new_customer_name').value.trim();
-      const phone = document.getElementById('new_customer_number').value.trim();
-      if (!name || !/^[A-Za-z ]+$/.test(name)) { alert('Customer name must contain only letters and spaces.'); return false; }
-      if (phone && !/^\d{11}$/.test(phone)) { alert('Contact Number must be exactly 11 digits.'); return false; }
-    }
-    for (const row of document.querySelectorAll('.item-row')) {
-      if (!row.querySelector('.product-select').value) { alert('Please select a product for each line item.'); return false; }
-    }
+    if (mode === 'existing' && !document.getElementById('customer_id').value) { alert('Please select an existing customer.'); return false; }
+    if (mode === 'new') { const name = document.getElementById('new_customer_name').value.trim(); const phone = document.getElementById('new_customer_number').value.trim(); if (!name || !/^[A-Za-z ]+$/.test(name)) { alert('Customer name must contain only letters and spaces.'); return false; } if (phone && !/^\d{11}$/.test(phone)) { alert('Contact Number must be exactly 11 digits.'); return false; } }
+    for (const row of document.querySelectorAll('.item-row')) { if (!row.querySelector('.product-select').value) { alert('Please select a product for each line item.'); return false; } }
     if (parseFloat(document.getElementById('total-input').value) <= 0) { alert('Total amount must be greater than zero.'); return false; }
     return true;
   }
-
-  function getActiveMode() {
-    if (document.getElementById('tab-new').style.background.includes('accent') ||
-        document.getElementById('new-customer-fields').style.display !== 'none') return 'new';
-    if (document.getElementById('tab-existing').style.background.includes('accent') ||
-        document.getElementById('existing-customer-block').style.display !== 'none') return 'existing';
-    return 'walkin';
-  }
-
   function openSaleConfirmModal() {
     if (!validateForm()) return;
     document.getElementById('receipt-sale-type').textContent = document.getElementById('sale-type-input').value;
-    const customerSel = document.getElementById('customer_id');
     const mode = getActiveMode();
     let customerLabel = 'Walk-In';
     if (mode === 'new') { const n = document.getElementById('new_customer_name').value.trim(); customerLabel = n ? n + ' (New)' : 'New Customer'; }
-    else if (mode === 'existing' && customerSel.value) { customerLabel = document.getElementById('customer-search').value.replace(/\s*\(.*pts\)/, '').trim(); }
+    else if (mode === 'existing' && document.getElementById('customer_id').value) { customerLabel = document.getElementById('customer-search').value.replace(/\s*\(.*pts\)/, '').trim(); }
     document.getElementById('receipt-customer').textContent = customerLabel;
-    const itemsContainer = document.getElementById('receipt-items');
-    itemsContainer.innerHTML = '';
+    const itemsContainer = document.getElementById('receipt-items'); itemsContainer.innerHTML = '';
     let total = 0;
     document.querySelectorAll('.item-row').forEach(row => {
-      const sel = row.querySelector('.product-select');
-      const qty = parseInt(row.querySelector('input[type=number]').value) || 0;
-      const opt = sel.options[sel.selectedIndex];
+      const sel = row.querySelector('.product-select'); const qty = parseInt(row.querySelector('input[type=number]').value) || 0; const opt = sel.options[sel.selectedIndex];
       if (!opt || !opt.value) return;
-      const name = opt.text.split(' — ')[0];
-      const price = parseFloat(opt.dataset.price || 0);
-      const subtotal = price * qty;
-      total += subtotal;
+      const name = opt.text.split(' — ')[0]; const price = parseFloat(opt.dataset.price || 0); const subtotal = price * qty; total += subtotal;
       const item = document.createElement('div');
       item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:14px;border:1px solid var(--border-card);background:var(--bg-input)';
       item.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><span style="background:var(--accent);color:white;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600">${qty}×</span><span style="font-weight:500;color:var(--text-primary)">${name}</span></div><div style="text-align:right"><div style="font-size:12px;color:var(--text-muted)">₱${price.toFixed(2)}</div><div style="font-weight:700;color:var(--text-primary)">₱${subtotal.toFixed(2)}</div></div>`;
@@ -452,19 +295,12 @@
     });
     document.getElementById('receipt-total').textContent = '₱' + total.toFixed(2);
     document.getElementById('receipt-datetime').textContent = new Date().toLocaleString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const modal = document.getElementById('sale-confirm-modal');
-    modal.style.display = 'flex';
+    document.getElementById('sale-confirm-modal').style.display = 'flex';
   }
-
   function closeSaleConfirmModal() { document.getElementById('sale-confirm-modal').style.display = 'none'; }
   function submitSaleForm() { document.getElementById('sale-form').submit(); }
-
   document.getElementById('sale-confirm-modal').addEventListener('click', function(e) { if (e.target === this) closeSaleConfirmModal(); });
-
-  function filterSales() {
-    const q = document.getElementById('search-sales').value.toLowerCase();
-    document.querySelectorAll('.sale-row').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
-  }
+  function filterSales() { const q = document.getElementById('search-sales').value.toLowerCase(); document.querySelectorAll('.sale-row').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; }); }
 </script>
 </body>
 </html>

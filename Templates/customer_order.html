@@ -8,15 +8,20 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
   <style>
-    .product-card{border:1.5px solid var(--border-card);background:var(--bg-card);border-radius:.75rem;padding:1rem;cursor:pointer;transition:border-color .18s,background .18s,transform .15s;user-select:none}
-    .product-card:hover{transform:translateY(-1px)}
-    .product-card.selected{border-color:var(--accent)!important;background:var(--accent-softer)!important}
-    .product-check{background:var(--bg-input);border:1.5px solid var(--border-input);transition:background .18s,border-color .18s}
-    .product-card.selected .product-check{background:var(--accent)!important;border-color:var(--accent)!important}
-    .product-card.selected .product-qty-divider{border-top-color:var(--border-section)}
-    .qty-minus{background:var(--bg-input);color:var(--accent);border:none;width:1.5rem;height:1.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;cursor:pointer}
-    .qty-plus{background:var(--accent);color:#fff;border:none;width:1.5rem;height:1.5rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;cursor:pointer}
+    /* ── .product-card.selected toggled by JS — ancestor-state selector stays CSS ── */
+    .product-card.selected {
+      border-color: var(--accent) !important;
+      background: var(--accent-softer) !important;
+    }
+    .product-card.selected .product-check {
+      background: var(--accent) !important;
+      border-color: var(--accent) !important;
+    }
+    .product-card.selected .product-qty-divider {
+      border-top-color: var(--border-section);
+    }
   </style>
 </head>
 <body class="agos-body m-0 p-0">
@@ -26,7 +31,7 @@
 
   {% include '_sidebar_customer.html' %}
 
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
 
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
@@ -90,14 +95,14 @@
                   <label class="agos-label">Delivery Address <span style="color:#d32f2f">*</span></label>
                   <textarea name="delivery_address" id="delivery-address" rows="2" required
                             placeholder="e.g. Blk 5 Lot 12 Sampaguita St., Brgy. San Jose"
-                            class="agos-input" style="resize:none">{{ customer.address or '' }}</textarea>
+                            class="agos-input resize-none">{{ customer.address or '' }}</textarea>
                   <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">Pre-filled from your account. Edit if different.</div>
                 </div>
                 <div class="sm:col-span-2">
                   <label class="agos-label">Special Instructions</label>
                   <textarea name="notes" rows="2"
                             placeholder="e.g. Leave at the gate, call before delivery…"
-                            class="agos-input" style="resize:none"></textarea>
+                            class="agos-input resize-none"></textarea>
                 </div>
               </div>
             </div>
@@ -111,9 +116,12 @@
               <div class="p-5">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4" id="products-grid">
                   {% for product in products %}
-                  <div class="product-card"
+
+                  <!-- product-card: base styles inline; .selected state handled by CSS above -->
+                  <div class="product-card border-[1.5px] border-[var(--border-card)] bg-[var(--bg-card)] rounded-xl p-4 cursor-pointer transition-[border-color,background,transform] duration-[0.18s] select-none hover:-translate-y-px"
                        id="card-{{ product.product_id }}"
                        onclick="toggleProduct({{ product.product_id }}, '{{ product.product_name | replace("'", "\\'") }}', {{ product.price }})">
+
                     <div class="flex items-start justify-between gap-2">
                       <div class="flex-1">
                         <div class="flex items-center gap-2 mb-1">
@@ -125,25 +133,36 @@
                         <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">per {{ product.unit }}</div>
                         {% endif %}
                       </div>
-                      <div class="product-check w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                      <!-- product-check: base styles inline; .selected state handled by CSS above -->
+                      <div class="product-check w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border-[1.5px] border-[var(--border-input)]"
+                           style="background:var(--bg-input)"
                            id="check-{{ product.product_id }}">
                         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="opacity-0" id="checkmark-{{ product.product_id }}">
                           <path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                       </div>
                     </div>
-                    <div id="qty-ctrl-{{ product.product_id }}" class="hidden mt-3 pt-3 product-qty-divider" style="border-top:1px solid var(--border-section)">
+
+                    <!-- Quantity controls — hidden until selected -->
+                    <div id="qty-ctrl-{{ product.product_id }}" class="product-qty-divider hidden mt-3 pt-3 border-t border-[var(--border-section)]">
                       <div class="flex items-center justify-between">
                         <span class="text-[0.72rem] font-medium" style="color:var(--text-muted)">Quantity</span>
                         <div class="flex items-center gap-2">
-                          <button type="button" onclick="event.stopPropagation();changeQty({{ product.product_id }}, -1)" class="qty-minus">−</button>
+                          <!-- qty-minus -->
+                          <button type="button" onclick="event.stopPropagation();changeQty({{ product.product_id }}, -1)"
+                                  class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-base cursor-pointer border-none"
+                                  style="background:var(--bg-input);color:var(--accent)">−</button>
                           <span class="text-[0.85rem] font-bold w-5 text-center" id="qty-display-{{ product.product_id }}" style="color:var(--text-primary)">1</span>
-                          <button type="button" onclick="event.stopPropagation();changeQty({{ product.product_id }}, 1)" class="qty-plus">+</button>
+                          <!-- qty-plus -->
+                          <button type="button" onclick="event.stopPropagation();changeQty({{ product.product_id }}, 1)"
+                                  class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-base cursor-pointer border-none text-white"
+                                  style="background:var(--accent)">+</button>
                         </div>
                       </div>
                       <input type="hidden" name="product_id[]" value="{{ product.product_id }}" id="hidden-pid-{{ product.product_id }}" disabled/>
                       <input type="hidden" name="quantity[]" value="1" id="hidden-qty-{{ product.product_id }}" disabled/>
                     </div>
+
                   </div>
                   {% endfor %}
                 </div>
@@ -282,25 +301,17 @@
     if (!productState[id]) productState[id] = { name, price, qty: 1, selected: false };
     const state = productState[id];
     state.selected = !state.selected;
-
     const card   = document.getElementById('card-' + id);
     const mark   = document.getElementById('checkmark-' + id);
     const ctrl   = document.getElementById('qty-ctrl-' + id);
     const hidPid = document.getElementById('hidden-pid-' + id);
     const hidQty = document.getElementById('hidden-qty-' + id);
-
     if (state.selected) {
-      card.classList.add('selected');
-      mark.classList.remove('opacity-0');
-      ctrl.classList.remove('hidden');
-      hidPid.disabled = false;
-      hidQty.disabled = false;
+      card.classList.add('selected'); mark.classList.remove('opacity-0');
+      ctrl.classList.remove('hidden'); hidPid.disabled = false; hidQty.disabled = false;
     } else {
-      card.classList.remove('selected');
-      mark.classList.add('opacity-0');
-      ctrl.classList.add('hidden');
-      hidPid.disabled = true;
-      hidQty.disabled = true;
+      card.classList.remove('selected'); mark.classList.add('opacity-0');
+      ctrl.classList.add('hidden'); hidPid.disabled = true; hidQty.disabled = true;
     }
     updateSummary();
   }
@@ -320,16 +331,13 @@
     const summaryCount = document.getElementById('summary-count');
     const orderTotal   = document.getElementById('order-total');
     const selected = Object.entries(productState).filter(([,s]) => s.selected);
-
     summaryItems.querySelectorAll('.summary-item-row').forEach(el => el.remove());
-
     if (selected.length === 0) {
       summaryEmpty.style.display = 'flex';
       summaryCount.textContent = 'No items selected yet';
       orderTotal.textContent = '₱0.00';
       return;
     }
-
     summaryEmpty.style.display = 'none';
     let total = 0;
     selected.forEach(([id, s]) => {
@@ -343,11 +351,9 @@
           <span style="background:var(--accent);color:white;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:600">${s.qty}×</span>
           <span style="color:var(--text-secondary)">${s.name}</span>
         </div>
-        <span style="font-weight:600;color:var(--text-primary)">₱${subtotal.toFixed(2)}</span>
-      `;
+        <span style="font-weight:600;color:var(--text-primary)">₱${subtotal.toFixed(2)}</span>`;
       summaryItems.insertBefore(row, summaryEmpty);
     });
-
     summaryCount.textContent = `${selected.length} item${selected.length !== 1 ? 's' : ''} selected`;
     orderTotal.textContent = '₱' + total.toFixed(2);
   }
@@ -359,19 +365,16 @@
     if (!dateVal) { alert('Please select a delivery date.'); return; }
     const addressVal = document.getElementById('delivery-address').value.trim();
     if (!addressVal) { alert('Please enter a delivery address.'); return; }
-
     const dateObj = new Date(dateVal + 'T00:00:00');
     document.getElementById('modal-date').textContent = dateObj.toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
     const timeEl = document.querySelector('[name=preferred_time]');
     document.getElementById('modal-time').textContent = timeEl ? timeEl.value : '—';
     document.getElementById('modal-address').textContent = addressVal;
     document.getElementById('modal-datetime').textContent = 'Order placed: ' + new Date().toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
-
     const notesVal = document.querySelector('[name=notes]').value.trim();
     const notesWrapper = document.getElementById('modal-notes-wrapper');
     if (notesVal) { notesWrapper.classList.remove('hidden'); document.getElementById('modal-notes').textContent = notesVal; }
     else { notesWrapper.classList.add('hidden'); }
-
     const itemsContainer = document.getElementById('modal-items');
     itemsContainer.innerHTML = '';
     let total = 0;
@@ -388,18 +391,15 @@
         <div style="text-align:right">
           <div style="font-size:11px;color:var(--text-muted)">₱${s.price.toFixed(2)} ea</div>
           <div style="font-weight:700;color:var(--text-primary);font-size:13px">₱${subtotal.toFixed(2)}</div>
-        </div>
-      `;
+        </div>`;
       itemsContainer.appendChild(row);
     });
-
     document.getElementById('modal-total').textContent = '₱' + total.toFixed(2);
     document.getElementById('order-confirm-modal').classList.add('open');
   }
 
   function closeOrderConfirm() { document.getElementById('order-confirm-modal').classList.remove('open'); }
   function submitOrder() { document.getElementById('order-form').submit(); }
-
   document.getElementById('order-confirm-modal').addEventListener('click', function(e) {
     if (e.target === this) closeOrderConfirm();
   });

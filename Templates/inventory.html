@@ -10,77 +10,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body class="agos-body m-0 p-0">
-<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
+  {% include '_sidebar.html' %}
 
-  <!-- ══ SIDEBAR ══ -->
-  <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/></svg>
-      </div>
-      <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
-      </div>
-    </div>
-    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      <div>
-        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
-      </div>
-    </div>
-   <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link">Dashboard</a>
-      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link active">Inventory</a>
-      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      {% if session.get('role') in ['Admin',  'Super Admin'] %}
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
-      {% endif %}
-      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
-      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') in ['Admin',  'Super Admin'] %}
-      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
-      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
-      {% endif %}
-    </nav>
-    <div class="agos-sidebar-footer flex-shrink-0 p-3">
-      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
-    </div>
-  </aside>
-
-  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
-
-  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
-
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+        <button onclick="toggleSidebar()" class="block md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         </button>
         <div>
           <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Inventory Management</div>
-          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Monitor and adjust stock levels</div>
+          <div class="text-xs" style="color:var(--text-muted)">Monitor and adjust stock levels</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
-        <div class="agos-theme-row">
-          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
-          <label class="agos-theme-toggle" title="Toggle dark/light mode">
-            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
-            <span class="agos-theme-track"></span>
-          </label>
-        </div>
+        <div class="agos-theme-row"><span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span><label class="agos-theme-toggle"><input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label></div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
     </header>
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
-
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
           <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
@@ -97,13 +48,9 @@
           </div>
           <div class="p-5">
             <form id="inventory-form" action="{{ url_for('inventory') }}" method="POST" class="flex flex-col gap-4">
-
               <div>
                 <label class="agos-label">Product</label>
-                <input type="text" id="product-search" list="inventory-products-list"
-                       placeholder="Type to search product…"
-                       oninput="syncInventoryProduct(this.value)"
-                       class="agos-input"/>
+                <input type="text" id="product-search" list="inventory-products-list" placeholder="Type to search product…" oninput="syncInventoryProduct(this.value)" class="agos-input"/>
                 <datalist id="inventory-products-list">
                   {% for item in inventory_items %}
                     <option value="{{ item.product.product_name }} ({{ item.quantity }} in stock)" data-id="{{ item.product.product_id }}">{{ item.product.product_name }}</option>
@@ -111,30 +58,21 @@
                 </datalist>
                 <select name="product_id" id="inventory-product-select" required style="display:none">
                   <option value="">Select a product</option>
-                  {% for item in inventory_items %}
-                    <option value="{{ item.product.product_id }}">{{ item.product.product_name }}</option>
-                  {% endfor %}
+                  {% for item in inventory_items %}<option value="{{ item.product.product_id }}">{{ item.product.product_name }}</option>{% endfor %}
                 </select>
               </div>
-
               <div>
                 <label class="agos-label">Action</label>
                 <div class="flex rounded-xl overflow-hidden" style="border:1.5px solid var(--border-input)">
-                  <button type="button" id="tab-add" onclick="setAction('add')"
-                          class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
-                          style="background:var(--accent);color:#fff;font-family:'Outfit',sans-serif">Add Stock</button>
-                  <button type="button" id="tab-deduct" onclick="setAction('deduct')"
-                          class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
-                          style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">Deduct Stock</button>
+                  <button type="button" id="tab-add" onclick="setAction('add')" class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all" style="background:var(--accent);color:#fff;font-family:'Outfit',sans-serif">Add Stock</button>
+                  <button type="button" id="tab-deduct" onclick="setAction('deduct')" class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all" style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">Deduct Stock</button>
                 </div>
                 <input type="hidden" name="action" id="action-input" value="add"/>
               </div>
-
               <div>
                 <label class="agos-label">Quantity</label>
                 <input type="number" name="quantity" id="inv-quantity" min="1" value="1" required class="agos-input"/>
               </div>
-
               <button type="button" onclick="openInventoryConfirm()" class="agos-btn-primary w-full py-3">Review Adjustment</button>
             </form>
           </div>
@@ -147,54 +85,43 @@
             <div class="agos-card-subtitle">{{ inventory_items | length }} product{{ 's' if inventory_items | length != 1 }}</div>
           </div>
           <div class="overflow-x-auto">
-            <table class="agos-table w-full border-collapse min-w-[480px]">
-              <thead>
-                <tr><th>#</th><th>Product</th><th>Price</th><th>Qty in Stock</th><th>Status</th></tr>
-              </thead>
+            <table class="agos-table w-full border-collapse" style="min-width:480px">
+              <thead><tr><th>#</th><th>Product</th><th>Price</th><th>Qty in Stock</th><th>Status</th></tr></thead>
               <tbody>
-                {% if inventory_items %}
-                  {% for item in inventory_items %}
-                  <tr>
-                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
-                    <td class="font-medium" style="color:var(--text-primary)">{{ item.product.product_name }}</td>
-                    <td>₱{{ "%.2f"|format(item.product.price) }}</td>
-                    <td><span class="font-bold" style="color:var(--text-primary)">{{ item.quantity }}</span> <span style="color:var(--text-muted);font-size:0.75rem">units</span></td>
-                    <td>
-                      {% if item.quantity == 0 %}
-                        <span class="agos-badge agos-badge-danger">Out of Stock</span>
-                      {% elif item.quantity <= (item.minimum_stock or 10) %}
-                        <span class="agos-badge agos-badge-warning">Low Stock</span>
-                      {% else %}
-                        <span class="agos-badge agos-badge-info">In Stock</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr><td colspan="5" class="text-center py-10" style="color:var(--text-faint)">No inventory items found.</td></tr>
+                {% if inventory_items %}{% for item in inventory_items %}
+                <tr>
+                  <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                  <td class="font-medium" style="color:var(--text-primary)">{{ item.product.product_name }}</td>
+                  <td>₱{{ "%.2f"|format(item.product.price) }}</td>
+                  <td><span class="font-bold" style="color:var(--text-primary)">{{ item.quantity }}</span> <span style="color:var(--text-muted);font-size:0.75rem">units</span></td>
+                  <td>
+                    {% if item.quantity == 0 %}<span class="agos-badge agos-badge-danger">Out of Stock</span>
+                    {% elif item.quantity <= (item.minimum_stock or 10) %}<span class="agos-badge agos-badge-warning">Low Stock</span>
+                    {% else %}<span class="agos-badge agos-badge-info">In Stock</span>{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}{% else %}
+                <tr><td colspan="5" class="text-center py-10" style="color:var(--text-faint)">No inventory items found.</td></tr>
                 {% endif %}
               </tbody>
             </table>
           </div>
         </div>
-
       </div>
     </main>
   </div>
 </div>
 
-<!-- ══ INVENTORY CONFIRM MODAL ══ -->
+<!-- INVENTORY CONFIRM MODAL -->
 <div id="inventory-confirm-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
       <div id="inv-confirm-icon" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0v10l-8 4m0-14v14m-8-4l8 4"/>
-        </svg>
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0v10l-8 4m0-14v14m-8-4l8 4"/></svg>
       </div>
       <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Stock Adjustment</h3>
       <p class="text-sm mb-5" id="inv-confirm-message" style="color:var(--text-muted)">Are you sure you want to proceed?</p>
-      <div class="flex items-center gap-4 justify-center">
+      <div class="flex gap-4 justify-center">
         <button onclick="submitInventoryForm()" id="inv-confirm-btn" class="agos-btn-primary px-7 py-2.5">Yes, Confirm</button>
         <button onclick="closeInventoryConfirm()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -202,18 +129,14 @@
   </div>
 </div>
 
-<!-- ══ LOGOUT MODAL ══ -->
+<!-- LOGOUT MODAL -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-      </div>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></div>
       <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
-      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out of your account?</p>
-      <div class="flex items-center gap-4 justify-center">
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex gap-3 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
         <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -223,52 +146,29 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const lbl = document.getElementById('theme-label');
-    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
-  });
+  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
   const _orig = window.toggleTheme;
   window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
-
-  function syncInventoryProduct(val) {
-    const sel = document.getElementById('inventory-product-select');
-    const name = val.split(' (')[0].trim();
-    const matched = Array.from(sel.options).find(o => o.text.trim() === name);
-    sel.value = matched ? matched.value : '';
-  }
-
+  function syncInventoryProduct(val) { const sel = document.getElementById('inventory-product-select'); const name = val.split(' (')[0].trim(); const matched = Array.from(sel.options).find(o => o.text.trim() === name); sel.value = matched ? matched.value : ''; }
   function setAction(type) {
     document.getElementById('action-input').value = type;
     const addBtn = document.getElementById('tab-add'), deductBtn = document.getElementById('tab-deduct');
-    if (type === 'add') {
-      addBtn.style.background = 'var(--accent)'; addBtn.style.color = '#fff';
-      deductBtn.style.background = 'transparent'; deductBtn.style.color = 'var(--text-muted)';
-    } else {
-      deductBtn.style.background = 'var(--danger-text)'; deductBtn.style.color = '#fff';
-      addBtn.style.background = 'transparent'; addBtn.style.color = 'var(--text-muted)';
-    }
+    if (type === 'add') { addBtn.style.background = 'var(--accent)'; addBtn.style.color = '#fff'; deductBtn.style.background = 'transparent'; deductBtn.style.color = 'var(--text-muted)'; }
+    else { deductBtn.style.background = 'var(--danger-text)'; deductBtn.style.color = '#fff'; addBtn.style.background = 'transparent'; addBtn.style.color = 'var(--text-muted)'; }
   }
-
   function openInventoryConfirm() {
-    const sel = document.getElementById('inventory-product-select');
-    const qty = document.getElementById('inv-quantity').value;
-    const action = document.getElementById('action-input').value;
+    const sel = document.getElementById('inventory-product-select'); const qty = document.getElementById('inv-quantity').value; const action = document.getElementById('action-input').value;
     if (!sel.value) { alert('Please select a valid product from the list.'); return; }
     if (!qty || qty < 1) { alert('Please enter a valid quantity.'); return; }
     const productName = sel.options[sel.selectedIndex].text;
-    const actionLabel = action === 'add' ? 'add' : 'deduct';
-    document.getElementById('inv-confirm-message').textContent = `You're about to ${actionLabel} ${qty} unit(s) for "${productName}". This will update the stock immediately.`;
-    const icon = document.getElementById('inv-confirm-icon');
-    const btn = document.getElementById('inv-confirm-btn');
+    document.getElementById('inv-confirm-message').textContent = `You're about to ${action} ${qty} unit(s) for "${productName}". This will update the stock immediately.`;
+    const icon = document.getElementById('inv-confirm-icon'); const btn = document.getElementById('inv-confirm-btn');
     icon.style.background = action === 'add' ? 'var(--accent-soft)' : 'var(--danger-bg)';
-    btn.style.background = action === 'add' ? 'var(--accent)' : 'var(--danger-text)';
+    btn.style.background  = action === 'add' ? 'var(--accent)' : 'var(--danger-text)';
     document.getElementById('inventory-confirm-modal').classList.add('open');
   }
-
   function closeInventoryConfirm() { document.getElementById('inventory-confirm-modal').classList.remove('open'); }
   function submitInventoryForm() { document.getElementById('inventory-form').submit(); }
-
   document.getElementById('inventory-confirm-modal').addEventListener('click', function(e) { if (e.target === this) closeInventoryConfirm(); });
 </script>
 </body>

@@ -10,79 +10,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20,400,0,0" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
   <style>
-    /* ── KPI cards ── */
-    .kpi-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;padding:1.1rem 1.25rem;transition:transform .2s,background .25s;display:flex;flex-direction:column;gap:.2rem}
-    .kpi-card:hover{transform:translateY(-2px)}
-    .kpi-icon{width:2.25rem;height:2.25rem;border-radius:.625rem;display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.35rem}
-    .kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);font-family:'Outfit',sans-serif}
-    .kpi-value{font-size:1.75rem;font-weight:800;line-height:1.1;color:var(--text-primary);font-family:'Inconsolata',monospace}
-    .kpi-sub{font-size:.68rem;color:var(--text-muted)}
+    /* ── Tracker pulse animation — @keyframes cannot be Tailwind without custom config ── */
+    @keyframes tracker-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,149,200,.35); }
+      50%       { box-shadow: 0 0 0 8px rgba(0,149,200,0); }
+    }
+    .tracker-step-active { animation: tracker-pulse 2s ease-in-out infinite; }
 
-    /* ── Generic chart / content cards ── */
-    .chart-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;overflow:hidden;transition:background .25s,border-color .25s}
-    .chart-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border-section);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-    .chart-title{font-size:.95rem;font-weight:700;color:var(--text-primary);font-family:'Inconsolata',monospace}
-    .chart-sub{font-size:.68rem;color:var(--text-muted);margin-top:.1rem}
-    canvas{max-height:240px}
-
-    /* ── Loyalty progress bar ── */
-    .pb-track{height:8px;border-radius:999px;background:var(--accent-softer);overflow:hidden;margin-top:.3rem}
-    .pb-fill{height:100%;border-radius:999px}
-
-    /* ── Tracker Material Symbol icons ── */
+    /* ── Material Symbol icon font ── */
     .tracker-icon {
       font-family: 'Material Symbols Rounded', sans-serif;
-      font-size: 24px;
-      line-height: 1;
-      letter-spacing: normal;
-      font-style: normal;
-      user-select: none;
-      color: inherit;
-    }
-
-    /* ── Delivery Tracker ── */
-    .tracker-step-circle{
-      width:3rem;height:3rem;
-      border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      transition:background .3s,border-color .3s,color .3s;
-      position:relative;z-index:2;
-      flex-shrink:0;
-    }
-    .tracker-step-inactive{
-      background:var(--bg-input);
-      border:2px solid var(--border-card);
-      color:var(--text-faint);
-    }
-    .tracker-step-active{
-      background:var(--accent);
-      border:2px solid var(--accent);
-      color:#fff;
-      animation:tracker-pulse 2s ease-in-out infinite;
-    }
-    .tracker-step-done{
-      background:var(--success-bg);
-      border:2px solid var(--success-text);
-      color:var(--success-text);
-    }
-    @keyframes tracker-pulse{
-      0%,100%{box-shadow:0 0 0 0 rgba(0,149,200,.35);}
-      50%     {box-shadow:0 0 0 8px rgba(0,149,200,0);}
-    }
-    /* The thin connector line between steps */
-    .tracker-connector{
-      flex:1;
-      height:2px;
-      position:relative;
-      top:calc(1.5rem - 1px); /* vertically centers the 2px bar with the 3rem circles */
-      background:var(--border-card);
-      overflow:hidden;
-    }
-    .tracker-connector-fill{
-      height:100%;
-      transition:width .7s ease;
-      background:linear-gradient(90deg,var(--accent),rgba(91,184,224,.8));
+      font-size: 24px; line-height: 1; letter-spacing: normal;
+      font-style: normal; user-select: none; color: inherit;
     }
   </style>
 </head>
@@ -139,53 +80,60 @@
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════════
-           ROW 2 — KPI 2×2  |  Loyalty Rewards (ABOVE FOLD)
-           ══════════════════════════════════════════════════ -->
+      <!-- ══ ROW 1 — KPI 2×2 | Loyalty Rewards ══ -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         <!-- KPI 2×2 grid -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="kpi-card">
-            <div class="kpi-icon" style="background:var(--accent-soft)">🚚</div>
-            <div class="kpi-label">Total Orders</div>
-            <div class="kpi-value">{{ total_orders }}</div>
-            <div class="kpi-sub">All time</div>
+
+          <!-- Total Orders -->
+          <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl px-5 py-[1.1rem] transition-transform duration-200 hover:-translate-y-0.5 flex flex-col gap-1">
+            <div class="w-9 h-9 rounded-[0.625rem] flex items-center justify-center text-base mb-1.5" style="background:var(--accent-soft)">🚚</div>
+            <div class="text-[0.68rem] font-bold uppercase tracking-[0.09em]" style="color:var(--text-muted);font-family:'Outfit',sans-serif">Total Orders</div>
+            <div class="text-[1.75rem] font-extrabold leading-[1.1]" style="color:var(--text-primary);font-family:'Inconsolata',monospace">{{ total_orders }}</div>
+            <div class="text-[0.68rem]" style="color:var(--text-muted)">All time</div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-icon" style="background:var(--warning-bg)">⏳</div>
-            <div class="kpi-label">Pending</div>
-            <div class="kpi-value" style="color:{% if pending_orders > 0 %}var(--warning-text){% else %}var(--success-text){% endif %}">{{ pending_orders }}</div>
-            <div class="kpi-sub">Awaiting delivery</div>
+
+          <!-- Pending -->
+          <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl px-5 py-[1.1rem] transition-transform duration-200 hover:-translate-y-0.5 flex flex-col gap-1">
+            <div class="w-9 h-9 rounded-[0.625rem] flex items-center justify-center text-base mb-1.5" style="background:var(--warning-bg)">⏳</div>
+            <div class="text-[0.68rem] font-bold uppercase tracking-[0.09em]" style="color:var(--text-muted);font-family:'Outfit',sans-serif">Pending</div>
+            <div class="text-[1.75rem] font-extrabold leading-[1.1]" style="color:{% if pending_orders > 0 %}var(--warning-text){% else %}var(--success-text){% endif %};font-family:'Inconsolata',monospace">{{ pending_orders }}</div>
+            <div class="text-[0.68rem]" style="color:var(--text-muted)">Awaiting delivery</div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-icon" style="background:var(--success-bg)">✅</div>
-            <div class="kpi-label">Delivered</div>
-            <div class="kpi-value">{{ delivered_orders }}</div>
-            <div class="kpi-sub">Completed</div>
+
+          <!-- Delivered -->
+          <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl px-5 py-[1.1rem] transition-transform duration-200 hover:-translate-y-0.5 flex flex-col gap-1">
+            <div class="w-9 h-9 rounded-[0.625rem] flex items-center justify-center text-base mb-1.5" style="background:var(--success-bg)">✅</div>
+            <div class="text-[0.68rem] font-bold uppercase tracking-[0.09em]" style="color:var(--text-muted);font-family:'Outfit',sans-serif">Delivered</div>
+            <div class="text-[1.75rem] font-extrabold leading-[1.1]" style="color:var(--text-primary);font-family:'Inconsolata',monospace">{{ delivered_orders }}</div>
+            <div class="text-[0.68rem]" style="color:var(--text-muted)">Completed</div>
           </div>
-          <div class="kpi-card">
-            <div class="kpi-icon" style="background:var(--warning-bg)">⭐</div>
-            <div class="kpi-label">Loyalty Pts</div>
-            <div class="kpi-value" style="color:var(--warning-text)">{{ customer.loyalty_points }}</div>
-            <div class="kpi-sub">Redeemable</div>
+
+          <!-- Loyalty Points -->
+          <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl px-5 py-[1.1rem] transition-transform duration-200 hover:-translate-y-0.5 flex flex-col gap-1">
+            <div class="w-9 h-9 rounded-[0.625rem] flex items-center justify-center text-base mb-1.5" style="background:var(--warning-bg)">⭐</div>
+            <div class="text-[0.68rem] font-bold uppercase tracking-[0.09em]" style="color:var(--text-muted);font-family:'Outfit',sans-serif">Loyalty Pts</div>
+            <div class="text-[1.75rem] font-extrabold leading-[1.1]" style="color:var(--warning-text);font-family:'Inconsolata',monospace">{{ customer.loyalty_points }}</div>
+            <div class="text-[0.68rem]" style="color:var(--text-muted)">Redeemable</div>
           </div>
+
         </div>
 
-        <!-- ── Loyalty Rewards (full detail) — MOVED HERE for above-fold visibility ── -->
-        <div class="chart-card flex flex-col">
-          <div class="chart-header">
-            <div class="chart-title">⭐ Loyalty Rewards</div>
+        <!-- ── Loyalty Rewards card ── -->
+        <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl overflow-hidden flex flex-col">
+          <div class="px-5 py-[0.9rem] border-b border-[var(--border-section)] flex items-center justify-between flex-shrink-0">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">⭐ Loyalty Rewards</div>
             <a href="{{ url_for('customer_order') }}" class="text-xs font-semibold no-underline" style="color:var(--accent)">Redeem →</a>
           </div>
           <div class="p-5 flex flex-col gap-4 flex-1 justify-between">
 
             <!-- Ring + summary -->
             <div class="flex items-center gap-4">
-              <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+              <div class="relative w-20 h-20 flex-shrink-0">
                 <canvas id="loyaltyRing" width="80" height="80"></canvas>
-                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column">
-                  <span class="text-lg font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary);line-height:1">{{ customer.loyalty_points }}</span>
+                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                  <span class="text-lg font-bold leading-none" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ customer.loyalty_points }}</span>
                   <span class="text-[0.58rem]" style="color:var(--text-muted)">pts</span>
                 </div>
               </div>
@@ -202,8 +150,9 @@
                 <span>Progress to next free refill</span>
                 <span>{{ 10 - next_reward }}/10</span>
               </div>
-              <div class="pb-track">
-                <div class="pb-fill" style="width:{{ ((10 - next_reward) / 10 * 100)|round }}%;background:linear-gradient(90deg,#d4a843,#f0c040)"></div>
+              <!-- progress track -->
+              <div class="h-2 rounded-full overflow-hidden mt-1.5" style="background:var(--accent-softer)">
+                <div class="h-full rounded-full" style="width:{{ ((10 - next_reward) / 10 * 100)|round }}%;background:linear-gradient(90deg,#d4a843,#f0c040)"></div>
               </div>
               <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">
                 {{ next_reward }} more order{{ 's' if next_reward != 1 }} to earn your next free refill
@@ -220,33 +169,25 @@
               💧 Keep ordering to earn free refills!
             </div>
             {% endif %}
-
           </div>
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════════
-           ROW 3 — Order History  |  Delivery Tracker (NEW)
-           ══════════════════════════════════════════════════ -->
+      <!-- ══ ROW 2 — Order History | Delivery Tracker ══ -->
       <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
 
-        <!-- Order History bar chart (unchanged) -->
-        <div class="chart-card">
-          <div class="chart-header">
+        <!-- Order History bar chart -->
+        <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl overflow-hidden">
+          <div class="px-5 py-[0.9rem] border-b border-[var(--border-section)] flex items-center justify-between flex-shrink-0">
             <div>
-              <div class="chart-title">Order History — Last 6 Months</div>
-              <div class="chart-sub">Number of orders placed per month</div>
+              <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Order History — Last 6 Months</div>
+              <div class="text-[0.68rem] mt-[0.1rem]" style="color:var(--text-muted)">Number of orders placed per month</div>
             </div>
           </div>
-          <div class="p-4"><canvas id="custOrderHistory"></canvas></div>
+          <div class="p-4"><canvas id="custOrderHistory" class="max-h-60"></canvas></div>
         </div>
 
-        <!-- ── DELIVERY PROGRESS TRACKER ── -->
-        {#
-          active_delivery is injected by app.py (the latest Pending/Confirmed order).
-          Falls back to scanning recent_orders via namespace in case the variable isn't
-          present (e.g., older app.py without the update).
-        #}
+        <!-- ── Delivery Progress Tracker ── -->
         {% if active_delivery is defined %}
           {% set disp = active_delivery %}
         {% else %}
@@ -257,11 +198,11 @@
           {% set disp = ns.disp %}
         {% endif %}
 
-        <div class="chart-card flex flex-col min-h-[280px]">
-          <div class="chart-header">
+        <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl overflow-hidden flex flex-col min-h-[280px]">
+          <div class="px-5 py-[0.9rem] border-b border-[var(--border-section)] flex items-center justify-between flex-shrink-0">
             <div>
-              <div class="chart-title">Delivery Tracker</div>
-              <div class="chart-sub">
+              <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Delivery Tracker</div>
+              <div class="text-[0.68rem] mt-[0.1rem]" style="color:var(--text-muted)">
                 {% if disp %}
                   REF-{{ '%06d' % disp.delivery_id }} &nbsp;·&nbsp; {{ disp.delivery_date.strftime('%b %d, %Y') }}
                 {% else %}
@@ -277,82 +218,72 @@
           </div>
 
           <div class="p-5 flex flex-col gap-5 flex-1 justify-center">
-
             {% if disp %}
-              {# Map status → step number #}
               {% if disp.status == 'Confirmed' %}{% set t_step = 2 %}
               {% elif disp.status == 'Delivered' %}{% set t_step = 3 %}
               {% else %}{% set t_step = 1 %}{% endif %}
 
-              <!-- ── Tracker row: circles + connectors ── -->
+              <!-- Tracker row -->
               <div class="flex items-start w-full px-2">
 
                 <!-- Step 1: Water Station -->
                 <div class="flex flex-col items-center gap-2 flex-1">
-                  <div class="tracker-step-circle
-                    {% if t_step > 1 %}tracker-step-done
-                    {% elif t_step == 1 %}tracker-step-active
-                    {% else %}tracker-step-inactive{% endif %}">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 relative z-[2]
+                    {% if t_step > 1 %}bg-[var(--success-bg)] border-2 border-[var(--success-text)] text-[var(--success-text)]
+                    {% elif t_step == 1 %}bg-[var(--accent)] border-2 border-[var(--accent)] text-white tracker-step-active
+                    {% else %}bg-[var(--bg-input)] border-2 border-[var(--border-card)] text-[var(--text-faint)]{% endif %}">
                     <span class="tracker-icon">water_drop</span>
                   </div>
-                  <span class="text-[0.65rem] font-semibold text-center leading-tight"
-                        style="color:{% if t_step >= 1 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
+                  <span class="text-[0.65rem] font-semibold text-center leading-tight" style="color:{% if t_step >= 1 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
                     Water<br>Station
                   </span>
                 </div>
 
-                <!-- Connector 1 → 2 -->
-                <div class="tracker-connector">
-                  <div class="tracker-connector-fill" style="width:{% if t_step >= 2 %}100{% else %}0{% endif %}%"></div>
+                <!-- Connector 1→2 -->
+                <div class="flex-1 h-[2px] relative bg-[var(--border-card)] overflow-hidden" style="top:calc(1.5rem - 1px)">
+                  <div class="h-full transition-[width] duration-700" style="width:{% if t_step >= 2 %}100{% else %}0{% endif %}%;background:linear-gradient(90deg,var(--accent),rgba(91,184,224,.8))"></div>
                 </div>
 
-                <!-- Step 2: On the Way (Tricycle) -->
+                <!-- Step 2: On the Way -->
                 <div class="flex flex-col items-center gap-2 flex-1">
-                  <div class="tracker-step-circle
-                    {% if t_step > 2 %}tracker-step-done
-                    {% elif t_step == 2 %}tracker-step-active
-                    {% else %}tracker-step-inactive{% endif %}">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 relative z-[2]
+                    {% if t_step > 2 %}bg-[var(--success-bg)] border-2 border-[var(--success-text)] text-[var(--success-text)]
+                    {% elif t_step == 2 %}bg-[var(--accent)] border-2 border-[var(--accent)] text-white tracker-step-active
+                    {% else %}bg-[var(--bg-input)] border-2 border-[var(--border-card)] text-[var(--text-faint)]{% endif %}">
                     <span class="tracker-icon">local_shipping</span>
                   </div>
-                  <span class="text-[0.65rem] font-semibold text-center leading-tight"
-                        style="color:{% if t_step >= 2 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
+                  <span class="text-[0.65rem] font-semibold text-center leading-tight" style="color:{% if t_step >= 2 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
                     On the<br>Way
                   </span>
                 </div>
 
-                <!-- Connector 2 → 3 -->
-                <div class="tracker-connector">
-                  <div class="tracker-connector-fill" style="width:{% if t_step >= 3 %}100{% else %}0{% endif %}%"></div>
+                <!-- Connector 2→3 -->
+                <div class="flex-1 h-[2px] relative bg-[var(--border-card)] overflow-hidden" style="top:calc(1.5rem - 1px)">
+                  <div class="h-full transition-[width] duration-700" style="width:{% if t_step >= 3 %}100{% else %}0{% endif %}%;background:linear-gradient(90deg,var(--accent),rgba(91,184,224,.8))"></div>
                 </div>
 
                 <!-- Step 3: Home Delivery -->
                 <div class="flex flex-col items-center gap-2 flex-1">
-                  <div class="tracker-step-circle
-                    {% if t_step >= 3 %}tracker-step-active
-                    {% else %}tracker-step-inactive{% endif %}">
+                  <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 relative z-[2]
+                    {% if t_step >= 3 %}bg-[var(--accent)] border-2 border-[var(--accent)] text-white tracker-step-active
+                    {% else %}bg-[var(--bg-input)] border-2 border-[var(--border-card)] text-[var(--text-faint)]{% endif %}">
                     <span class="tracker-icon">home</span>
                   </div>
-                  <span class="text-[0.65rem] font-semibold text-center leading-tight"
-                        style="color:{% if t_step >= 3 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
+                  <span class="text-[0.65rem] font-semibold text-center leading-tight" style="color:{% if t_step >= 3 %}var(--text-primary){% else %}var(--text-faint){% endif %}">
                     Home<br>Delivery
                   </span>
                 </div>
 
-              </div><!-- /tracker row -->
+              </div>
 
-              <!-- Status message banner -->
+              <!-- Status banner -->
               <div class="rounded-xl p-3 text-center"
                    style="background:{% if t_step == 1 %}var(--warning-bg){% elif t_step == 2 %}var(--accent-softer){% else %}var(--success-bg){% endif %};
                           border:1px solid {% if t_step == 1 %}rgba(212,168,67,.18){% elif t_step == 2 %}var(--accent-border){% else %}rgba(46,170,110,.2){% endif %}">
-                <div class="text-[0.80rem] font-semibold"
-                     style="color:{% if t_step == 1 %}var(--warning-text){% elif t_step == 2 %}var(--accent){% else %}var(--success-text){% endif %}">
-                  {% if t_step == 1 %}
-                    ⏳ Your order is being prepared at the station
-                  {% elif t_step == 2 %}
-                    🛺 Your delivery is on its way!
-                  {% else %}
-                    ✅ Delivered — Enjoy your water!
-                  {% endif %}
+                <div class="text-[0.80rem] font-semibold" style="color:{% if t_step == 1 %}var(--warning-text){% elif t_step == 2 %}var(--accent){% else %}var(--success-text){% endif %}">
+                  {% if t_step == 1 %}⏳ Your order is being prepared at the station
+                  {% elif t_step == 2 %}🛺 Your delivery is on its way!
+                  {% else %}✅ Delivered — Enjoy your water!{% endif %}
                 </div>
                 <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">
                   Expected: {{ disp.delivery_date.strftime('%B %d, %Y') }}
@@ -369,46 +300,41 @@
               </div>
 
             {% else %}
-              <!-- ── Empty state: no active delivery ── -->
+              <!-- Empty state -->
               <div class="flex flex-col items-center justify-center py-6 gap-4 text-center">
                 <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background:var(--accent-soft)">
                   <span style="font-family:'Material Symbols Rounded',sans-serif;font-size:32px;color:var(--accent);line-height:1;font-style:normal;user-select:none">water_drop</span>
                 </div>
                 <div>
                   <div class="text-[0.85rem] font-semibold mb-1" style="color:var(--text-primary)">No Active Delivery</div>
-                  <div class="text-[0.72rem]" style="color:var(--text-muted)">
-                    Place an order to start tracking<br>your delivery here.
-                  </div>
+                  <div class="text-[0.72rem]" style="color:var(--text-muted)">Place an order to start tracking<br>your delivery here.</div>
                 </div>
                 <a href="{{ url_for('customer_order') }}" class="agos-btn-primary px-5 py-2 text-sm no-underline">Order Now</a>
               </div>
             {% endif %}
-
           </div>
-        </div><!-- /tracker card -->
+        </div>
 
       </div>
 
-      <!-- ══════════════════════════════════════════════════
-           ROW 4 — Monthly Spending  |  Recent Orders
-           ══════════════════════════════════════════════════ -->
+      <!-- ══ ROW 3 — Monthly Spending | Recent Orders ══ -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        <!-- Monthly Spending chart -->
-        <div class="chart-card">
-          <div class="chart-header">
+        <!-- Monthly Spending -->
+        <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl overflow-hidden">
+          <div class="px-5 py-[0.9rem] border-b border-[var(--border-section)] flex items-center justify-between flex-shrink-0">
             <div>
-              <div class="chart-title">Monthly Spending</div>
-              <div class="chart-sub">Your total spend per month</div>
+              <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Monthly Spending</div>
+              <div class="text-[0.68rem] mt-[0.1rem]" style="color:var(--text-muted)">Your total spend per month</div>
             </div>
           </div>
-          <div class="p-4"><canvas id="custSpend"></canvas></div>
+          <div class="p-4"><canvas id="custSpend" class="max-h-60"></canvas></div>
         </div>
 
-        <!-- Recent Orders list -->
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title">Recent Orders</div>
+        <!-- Recent Orders -->
+        <div class="bg-[var(--bg-card)] border border-[var(--border-card)] [box-shadow:var(--shadow-card)] rounded-2xl overflow-hidden">
+          <div class="px-5 py-[0.9rem] border-b border-[var(--border-section)] flex items-center justify-between flex-shrink-0">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Recent Orders</div>
             <a href="{{ url_for('customer_deliveries') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a>
           </div>
           <div class="p-4 flex flex-col gap-2 max-h-[300px] overflow-y-auto">
@@ -464,7 +390,6 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-/* ── Chart data injected by Flask ── */
 const OH_LABELS = {{ order_history_labels | tojson }};
 const OH_VALUES = {{ order_history_values | tojson }};
 const SP_LABELS = {{ spend_labels | tojson }};
@@ -473,96 +398,43 @@ const LOYALTY   = {{ customer.loyalty_points | default(0) }};
 
 let _c = {};
 
-function gc(){
+function gc() {
   const d = document.documentElement.getAttribute('data-theme') === 'dark';
-  return {
-    grid: d ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)',
-    tick: d ? '#5a8aaa' : '#7a99ae'
-  };
+  return { grid: d ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)', tick: d ? '#5a8aaa' : '#7a99ae' };
 }
 
-function build(){
+function build() {
   Chart.defaults.font.family = "'Outfit',sans-serif";
   Chart.defaults.font.size   = 11;
   Object.values(_c).forEach(c => c.destroy());
   _c = {};
   const c = gc();
 
-  /* Order History bar */
   _c.oh = new Chart('custOrderHistory', {
     type: 'bar',
-    data: {
-      labels: OH_LABELS,
-      datasets:[{
-        label: 'Orders',
-        data: OH_VALUES,
-        backgroundColor: 'rgba(0,149,200,0.70)',
-        borderRadius: 5,
-        borderSkipped: false
-      }]
-    },
-    options:{
-      responsive: true,
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => x.parsed.y + ' orders' } } },
-      scales:{
-        x:{ grid:{ display:false }, ticks:{ color:c.tick } },
-        y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, stepSize:1 }, beginAtZero:true }
-      }
-    }
+    data: { labels: OH_LABELS, datasets:[{ label:'Orders', data:OH_VALUES, backgroundColor:'rgba(0,149,200,0.70)', borderRadius:5, borderSkipped:false }] },
+    options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:x=>x.parsed.y+' orders'}} }, scales:{ x:{grid:{display:false},ticks:{color:c.tick}}, y:{grid:{color:c.grid},ticks:{color:c.tick,stepSize:1},beginAtZero:true} } }
   });
 
-  /* Monthly Spending bar */
   _c.sp = new Chart('custSpend', {
     type: 'bar',
-    data:{
-      labels: SP_LABELS,
-      datasets:[{
-        label: 'Spent (₱)',
-        data: SP_VALUES,
-        backgroundColor: 'rgba(91,184,224,0.70)',
-        borderRadius: 5,
-        borderSkipped: false
-      }]
-    },
-    options:{
-      responsive: true,
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label: x => '₱' + x.parsed.y.toFixed(2) } } },
-      scales:{
-        x:{ grid:{ display:false }, ticks:{ color:c.tick } },
-        y:{ grid:{ color:c.grid }, ticks:{ color:c.tick, callback: v => '₱' + v }, beginAtZero:true }
-      }
-    }
+    data: { labels:SP_LABELS, datasets:[{ label:'Spent (₱)', data:SP_VALUES, backgroundColor:'rgba(91,184,224,0.70)', borderRadius:5, borderSkipped:false }] },
+    options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:x=>'₱'+x.parsed.y.toFixed(2)}} }, scales:{ x:{grid:{display:false},ticks:{color:c.tick}}, y:{grid:{color:c.grid},ticks:{color:c.tick,callback:v=>'₱'+v},beginAtZero:true} } }
   });
 
-  /* Loyalty ring (small donut) */
   const loyCanvas = document.getElementById('loyaltyRing');
-  if(loyCanvas){
+  if (loyCanvas) {
     const isDark   = document.documentElement.getAttribute('data-theme') === 'dark';
     const progress = Math.min((LOYALTY % 10) / 10, 1);
     _c._loyRing = new Chart(loyCanvas.getContext('2d'), {
       type: 'doughnut',
-      data:{
-        datasets:[{
-          data: [progress, 1 - progress],
-          backgroundColor: [
-            '#d4a843',
-            isDark ? 'rgba(45,136,184,0.15)' : 'rgba(45,136,184,0.08)'
-          ],
-          borderWidth: 0
-        }]
-      },
-      options:{
-        cutout: '75%',
-        plugins:{ legend:{ display:false }, tooltip:{ enabled:false } },
-        animation:{ duration:800 }
-      }
+      data: { datasets:[{ data:[progress,1-progress], backgroundColor:['#d4a843', isDark?'rgba(45,136,184,0.15)':'rgba(45,136,184,0.08)'], borderWidth:0 }] },
+      options: { cutout:'75%', plugins:{legend:{display:false},tooltip:{enabled:false}}, animation:{duration:800} }
     });
   }
 }
 
 document.addEventListener('DOMContentLoaded', build);
-
-/* Rebuild charts on theme toggle to update grid/tick colors */
 const _oT = window.toggleTheme;
 window.toggleTheme = function(){ _oT(); setTimeout(build, 280); };
 </script>

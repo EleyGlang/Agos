@@ -10,115 +10,44 @@
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
-    .kpi-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;padding:1.1rem 1.25rem;transition:transform .2s,background .25s,border-color .25s;display:flex;flex-direction:column;gap:.2rem}
-    .kpi-card:hover{transform:translateY(-2px)}
-    .kpi-icon{width:2.25rem;height:2.25rem;border-radius:.625rem;display:flex;align-items:center;justify-content:center;font-size:1rem;margin-bottom:.35rem;flex-shrink:0}
-    .kpi-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted);font-family:'Outfit',sans-serif}
-    .kpi-value{font-size:1.75rem;font-weight:800;line-height:1.1;color:var(--text-primary);font-family:'Inconsolata',monospace}
-    .kpi-sub{font-size:.68rem;color:var(--text-muted);font-family:'Outfit',sans-serif}
-    .chart-card{background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card);border-radius:1rem;overflow:hidden;transition:background .25s,border-color .25s}
-    .chart-header{padding:.9rem 1.25rem;border-bottom:1px solid var(--border-section);display:flex;align-items:center;justify-content:space-between}
-    .chart-title{font-size:.95rem;font-weight:700;color:var(--text-primary);font-family:'Inconsolata',monospace}
-    .chart-sub{font-size:.68rem;color:var(--text-muted);margin-top:.1rem;font-family:'Outfit',sans-serif}
-    canvas{max-height:240px}
-    .pb-track{height:7px;border-radius:999px;background:var(--accent-softer);overflow:hidden;margin-top:.3rem}
-    .pb-fill{height:100%;border-radius:999px}
+    canvas { max-height: 240px; }
   </style>
 </head>
 <body class="agos-body m-0 p-0">
-<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 <div class="flex min-h-screen">
 
-  <!-- ══ SIDEBAR ══ -->
-  <!-- ══ SIDEBAR ══ -->
- <aside id="sidebar" class="fixed top-0 left-0 bottom-0 z-40 flex flex-col overflow-y-auto transition-transform duration-300 w-[260px] md:translate-x-0 -translate-x-full agos-sidebar">
-    <div class="agos-sidebar-logo-wrap flex items-center gap-3 flex-shrink-0 px-5 py-5">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-           style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 12px rgba(0,149,200,0.35)">
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-          <path d="M11 2C11 2 4 9 4 13.5a7 7 0 0014 0C18 9 11 2 11 2z" fill="white" opacity=".95"/>
-        </svg>
-      </div>
-        <svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-      <div>
-        <div class="text-xl font-bold text-white leading-tight" style="font-family:'Inconsolata',monospace">Agos</div>
-        <div class="text-[0.6rem] font-medium tracking-widest uppercase" style="color:var(--sidebar-badge-text)">EP-Bluelife System</div>
-      </div>
-    </div>
-    <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
-      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
-      <div>
-        <div class="text-[0.82rem] font-medium leading-tight" style="color:rgba(204,234,247,0.90)">{{ session['full_name'] }}</div>
-        <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
-      </div>
-    </div>
-   <nav class="flex-1 py-2">
-      <a href="{{ url_for('dashboard') }}"       class="agos-sidebar-link active">Dashboard</a>
-      <a href="{{ url_for('sales') }}"            class="agos-sidebar-link ">Record Sales</a>
-      <a href="{{ url_for('inventory') }}"        class="agos-sidebar-link">Inventory</a>
-      <a href="{{ url_for('products') }}"         class="agos-sidebar-link">Products</a>
-      <a href="{{ url_for('deliveries') }}"       class="agos-sidebar-link">Deliveries</a>
-      <a href="{{ url_for('user_management') }}"  class="agos-sidebar-link">Users</a>
-      <a href="{{ url_for('expenses') }}"         class="agos-sidebar-link">Expenses</a>
-      <a href="{{ url_for('reports') }}"          class="agos-sidebar-link">Reports</a>
-      {% if session.get('role') in ['Admin',  'Super Admin'] %}
-      <a href="{{ url_for('activity_log') }}"     class="agos-sidebar-link">Activity Log</a>
-      <a href="{{ url_for('landing_editor') }}"          class="agos-sidebar-link">Landing Editor</a>
-      {% endif %}
-    </nav>
-    <div class="agos-sidebar-footer flex-shrink-0 p-3">
-      <button class="agos-logout-btn" onclick="openLogoutModal()">Log Out</button>
-    </div>
-  </aside>
+  {% include '_sidebar.html' %}
 
-  <div id="overlay" onclick="closeSidebar()" class="agos-overlay"></div>
+  <!-- ══ MAIN ══ -->
+  <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
 
-  <div class="flex flex-col flex-1 min-h-screen ml-0 agos-main-wrap">
+    <!-- TOPBAR -->
     <header class="agos-topbar flex items-center justify-between px-6 py-3">
-  <div class="flex items-center gap-4">
-
-    <button id="menu-btn" onclick="toggleSidebar()"
-            class="md:hidden bg-transparent border-none cursor-pointer p-1"
-            style="color:var(--accent)">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M3 5h14M3 10h14M3 15h14"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"/>
-      </svg>
-    </button>
-
-    <div>
-      <div class="text-xl font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">
-        Admin Dashboard
+      <div class="flex items-center gap-4">
+        <button onclick="toggleSidebar()"
+                class="block md:hidden bg-transparent border-none cursor-pointer p-1"
+                style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div>
+          <div class="text-xl font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Admin Dashboard</div>
+          <div class="text-xs" style="color:var(--text-muted)">EP-Bluelife Water Refilling Station</div>
+        </div>
       </div>
-      <div class="text-xs" style="color:var(--text-muted)">
-        EP-Bluelife Water Refilling Station
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span id="theme-label" class="text-xs hidden sm:inline" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle"><input type="checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label>
+        </div>
+        <div id="topbar-date" class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+             style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
       </div>
-    </div>
+    </header>
 
-  </div>
-
-  <div class="flex items-center gap-4">
-
-    <div class="flex items-center gap-2">
-      <span id="theme-label" class="text-xs" style="color:var(--text-muted)">Dark</span>
-      <label class="agos-theme-toggle">
-        <input type="checkbox" onchange="toggleTheme()"/>
-        <span class="agos-theme-track"></span>
-      </label>
-    </div>
-
-    <div id="topbar-date" class="text-xs px-3 py-1 rounded-md agos-topbar-date"></div>
-
-    <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-         style="background:linear-gradient(135deg,#0095c8,#5bb8e0)">
-      {{ session['full_name'][0].upper() }}
-    </div>
-
-  </div>
-</header>
-
+    <!-- CONTENT -->
     <main class="flex-1 p-4 md:p-5 lg:p-7 flex flex-col gap-5">
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -145,55 +74,41 @@
 
       <!-- KPI strip -->
       <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--accent-soft)">💧</div>
-          <div class="kpi-label">Today's Sales</div>
-          <div class="kpi-value">₱{{ "%.0f"|format(today_sales) }}</div>
-          <div class="kpi-sub">Walk-in &amp; delivery</div>
+        {% for icon, label, value, sub, bg, color in [
+          ('💧','Today\'s Sales','₱'~"%.0f"|format(today_sales),'Walk-in & delivery','var(--accent-soft)',''),
+          ('💰','Monthly Revenue','₱'~"%.0f"|format(monthly_revenue),'This month','var(--success-bg)',''),
+          ('📊','Net Profit','₱'~"%.0f"|format(net_profit),'Revenue − expenses',('var(--success-bg)' if net_profit >= 0 else 'var(--danger-bg)'),('var(--success-text)' if net_profit >= 0 else 'var(--danger-text)')),
+          ('🚚','Pending Deliveries',pending_deliveries,'Awaiting dispatch','var(--warning-bg)',''),
+          ('👥','Customers',total_customers,'Total registered','var(--accent-soft)',''),
+          ('📦','Low Stock',low_stock_items,'Below minimum',('var(--danger-bg)' if low_stock_items > 0 else 'var(--success-bg)'),('var(--danger-text)' if low_stock_items > 0 else 'var(--success-text)'))
+        ] %}
+        <div class="flex flex-col gap-1 rounded-2xl p-4 transition-transform duration-200 hover:-translate-y-0.5"
+             style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="w-9 h-9 rounded-[10px] flex items-center justify-center text-base mb-1 shrink-0" style="background:{{ bg }}">{{ icon }}</div>
+          <div class="text-[0.68rem] font-bold uppercase tracking-[0.09em]" style="color:var(--text-muted)">{{ label }}</div>
+          <div class="text-[1.75rem] font-extrabold leading-none" style="color:{{ color if color else 'var(--text-primary)' }};font-family:'Inconsolata',monospace">{{ value }}</div>
+          <div class="text-[0.68rem]" style="color:var(--text-muted)">{{ sub }}</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--success-bg)">💰</div>
-          <div class="kpi-label">Monthly Revenue</div>
-          <div class="kpi-value">₱{{ "%.0f"|format(monthly_revenue) }}</div>
-          <div class="kpi-sub">This month</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:{% if net_profit >= 0 %}var(--success-bg){% else %}var(--danger-bg){% endif %}">📊</div>
-          <div class="kpi-label">Net Profit</div>
-          <div class="kpi-value" style="color:{% if net_profit >= 0 %}var(--success-text){% else %}var(--danger-text){% endif %}">₱{{ "%.0f"|format(net_profit) }}</div>
-          <div class="kpi-sub">Revenue − expenses</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--warning-bg)">🚚</div>
-          <div class="kpi-label">Pending Deliveries</div>
-          <div class="kpi-value">{{ pending_deliveries }}</div>
-          <div class="kpi-sub">Awaiting dispatch</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:var(--accent-soft)">👥</div>
-          <div class="kpi-label">Customers</div>
-          <div class="kpi-value">{{ total_customers }}</div>
-          <div class="kpi-sub">Total registered</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-icon" style="background:{% if low_stock_items > 0 %}var(--danger-bg){% else %}var(--success-bg){% endif %}">📦</div>
-          <div class="kpi-label">Low Stock</div>
-          <div class="kpi-value" style="color:{% if low_stock_items > 0 %}var(--danger-text){% else %}var(--success-text){% endif %}">{{ low_stock_items }}</div>
-          <div class="kpi-sub">Below minimum</div>
-        </div>
+        {% endfor %}
       </div>
 
       <!-- Charts row 1 -->
       <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-        <div class="chart-card">
-          <div class="chart-header">
-            <div><div class="chart-title">Sales — Last 7 Days</div><div class="chart-sub">Daily revenue from all sale types</div></div>
+        <div class="rounded-2xl overflow-hidden transition-colors" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem] flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
+            <div>
+              <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Sales — Last 7 Days</div>
+              <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">Daily revenue from all sale types</div>
+            </div>
           </div>
           <div class="p-4"><canvas id="salesTrend"></canvas></div>
         </div>
-        <div class="chart-card">
-          <div class="chart-header">
-            <div><div class="chart-title">Revenue vs Expenses</div><div class="chart-sub">This month's financial split</div></div>
+        <div class="rounded-2xl overflow-hidden transition-colors" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem] flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
+            <div>
+              <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Revenue vs Expenses</div>
+              <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">This month's financial split</div>
+            </div>
           </div>
           <div class="p-4 flex flex-col items-center gap-4">
             <canvas id="revExpDonut" style="max-height:180px;max-width:180px"></canvas>
@@ -208,8 +123,12 @@
 
       <!-- Charts row 2 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div class="chart-card">
-          <div class="chart-header"><div><div class="chart-title">Sale Type Split</div><div class="chart-sub">Walk-in vs delivery this month</div></div></div>
+        <!-- Sale type pie -->
+        <div class="rounded-2xl overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem]" style="border-bottom:1px solid var(--border-section)">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Sale Type Split</div>
+            <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">Walk-in vs delivery this month</div>
+          </div>
           <div class="p-4 flex flex-col items-center gap-3">
             <canvas id="saleTypePie" style="max-height:180px;max-width:180px"></canvas>
             <div class="w-full flex justify-around text-[0.75rem]">
@@ -218,12 +137,20 @@
             </div>
           </div>
         </div>
-        <div class="chart-card">
-          <div class="chart-header"><div><div class="chart-title">Top Products</div><div class="chart-sub">By units sold this month</div></div></div>
+        <!-- Top products -->
+        <div class="rounded-2xl overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem]" style="border-bottom:1px solid var(--border-section)">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Top Products</div>
+            <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">By units sold this month</div>
+          </div>
           <div class="p-4"><canvas id="topProductsBar"></canvas></div>
         </div>
-        <div class="chart-card">
-          <div class="chart-header"><div><div class="chart-title">Expense Breakdown</div><div class="chart-sub">Monthly spend by category</div></div></div>
+        <!-- Expense breakdown -->
+        <div class="rounded-2xl overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem]" style="border-bottom:1px solid var(--border-section)">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Expense Breakdown</div>
+            <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">Monthly spend by category</div>
+          </div>
           <div class="p-4 flex flex-col gap-3">
             {% if expense_by_category %}
               {% set max_exp = namespace(v=1) %}
@@ -231,7 +158,7 @@
               {% for cat, amt in expense_by_category %}
               <div>
                 <div class="flex justify-between text-[0.74rem] mb-1"><span style="color:var(--text-secondary)">{{ cat }}</span><span class="font-semibold" style="color:var(--text-primary)">₱{{ "%.0f"|format(amt) }}</span></div>
-                <div class="pb-track"><div class="pb-fill" style="width:{{ (amt/max_exp.v*100)|round }}%;background:linear-gradient(90deg,#2d88b8,#0095c8)"></div></div>
+                <div class="h-[7px] rounded-full overflow-hidden mt-1" style="background:var(--accent-softer)"><div class="h-full rounded-full" style="width:{{ (amt/max_exp.v*100)|round }}%;background:linear-gradient(90deg,#2d88b8,#0095c8)"></div></div>
               </div>
               {% endfor %}
             {% else %}
@@ -243,10 +170,13 @@
 
       <!-- Recent transactions + inventory -->
       <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4">
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Recent Transactions</div><a href="{{ url_for('sales') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a></div>
+        <div class="rounded-2xl overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem] flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Recent Transactions</div>
+            <a href="{{ url_for('sales') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a>
+          </div>
           <div class="overflow-x-auto">
-            <table class="agos-table w-full border-collapse min-w-[480px]">
+            <table class="agos-table w-full border-collapse" style="min-width:480px">
               <thead><tr><th>Customer</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
               <tbody>
                 {% if recent_sales %}{% for sale in recent_sales[:8] %}
@@ -263,34 +193,38 @@
             </table>
           </div>
         </div>
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Stock Levels</div><a href="{{ url_for('inventory') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">Manage →</a></div>
+        <div class="rounded-2xl overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem] flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Stock Levels</div>
+            <a href="{{ url_for('inventory') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">Manage →</a>
+          </div>
           <div class="p-4 flex flex-col gap-3">
-            {% if inventory_items %}
-              {% for item in inventory_items %}
-              {% set cap = (item.minimum_stock or 10) * 3 %}
-              {% set pct = [[(item.quantity / cap * 100)|round, 100]|min, 0]|max %}
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-[0.76rem] font-medium" style="color:var(--text-secondary)">{{ item.product.product_name }}</span>
-                  <span class="agos-badge text-[0.64rem] {% if item.quantity == 0 %}agos-badge-danger{% elif item.quantity <= (item.minimum_stock or 10) %}agos-badge-warning{% else %}agos-badge-success{% endif %}">{{ item.quantity }}</span>
-                </div>
-                <div class="pb-track"><div class="pb-fill" style="width:{{ pct }}%;background:{% if item.quantity == 0 %}linear-gradient(90deg,#e05252,#c0392b){% elif item.quantity <= (item.minimum_stock or 10) %}linear-gradient(90deg,#d4a843,#c8962a){% else %}linear-gradient(90deg,#2eaa6e,#27ae60){% endif %}"></div></div>
+            {% if inventory_items %}{% for item in inventory_items %}
+            {% set cap = (item.minimum_stock or 10) * 3 %}
+            {% set pct = [[(item.quantity / cap * 100)|round, 100]|min, 0]|max %}
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[0.76rem] font-medium" style="color:var(--text-secondary)">{{ item.product.product_name }}</span>
+                <span class="agos-badge text-[0.64rem] {% if item.quantity == 0 %}agos-badge-danger{% elif item.quantity <= (item.minimum_stock or 10) %}agos-badge-warning{% else %}agos-badge-success{% endif %}">{{ item.quantity }}</span>
               </div>
-              {% endfor %}
-            {% else %}
+              <div class="h-[7px] rounded-full overflow-hidden" style="background:var(--accent-softer)"><div class="h-full rounded-full" style="width:{{ pct }}%;background:{% if item.quantity == 0 %}linear-gradient(90deg,#e05252,#c0392b){% elif item.quantity <= (item.minimum_stock or 10) %}linear-gradient(90deg,#d4a843,#c8962a){% else %}linear-gradient(90deg,#2eaa6e,#27ae60){% endif %}"></div></div>
+            </div>
+            {% endfor %}{% else %}
               <div class="flex items-center justify-center h-32 text-xs" style="color:var(--text-faint)">No inventory data.</div>
             {% endif %}
           </div>
         </div>
       </div>
 
-      <!-- Super Admin exclusive -->
+      <!-- Super Admin exclusive: user roles + activity -->
       {% if session.get('role') == 'Super Admin' %}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="chart-card">
-          <div class="chart-header">
-            <div><div class="chart-title">User Accounts Breakdown</div><div class="chart-sub">System accounts by role</div></div>
+        <div class="rounded-2xl overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem] flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
+            <div>
+              <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">User Accounts Breakdown</div>
+              <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">System accounts by role</div>
+            </div>
             <a href="{{ url_for('user_management') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">Manage →</a>
           </div>
           <div class="p-4 flex flex-col sm:flex-row items-center gap-5">
@@ -298,33 +232,31 @@
             <div class="flex flex-col gap-2 w-full">
               {% for role_name, count in user_role_counts %}
               <div class="flex items-center justify-between text-[0.78rem]">
-                <div class="flex items-center gap-2">
-                  <span class="inline-block w-2.5 h-2.5 rounded-full" style="background:{{ ['#7c3aed','#0095c8','#2d88b8'][ loop.index0 % 3 ] }}"></span>
-                  <span style="color:var(--text-secondary)">{{ role_name }}</span>
-                </div>
+                <div class="flex items-center gap-2"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:{{ ['#7c3aed','#0095c8','#2d88b8'][ loop.index0 % 3 ] }}"></span><span style="color:var(--text-secondary)">{{ role_name }}</span></div>
                 <span class="font-bold" style="color:var(--text-primary)">{{ count }}</span>
               </div>
-              <div class="pb-track"><div class="pb-fill" style="width:{{ (count / total_users * 100)|round if total_users > 0 else 0 }}%;background:{{ ['linear-gradient(90deg,#7c3aed,#a855f7)','linear-gradient(90deg,#0095c8,#5bb8e0)','linear-gradient(90deg,#2d88b8,#4aabda)'][ loop.index0 % 3 ] }}"></div></div>
+              <div class="h-[7px] rounded-full overflow-hidden" style="background:var(--accent-softer)"><div class="h-full rounded-full" style="width:{{ (count / total_users * 100)|round if total_users > 0 else 0 }}%;background:{{ ['linear-gradient(90deg,#7c3aed,#a855f7)','linear-gradient(90deg,#0095c8,#5bb8e0)','linear-gradient(90deg,#2d88b8,#4aabda)'][ loop.index0 % 3 ] }}"></div></div>
               {% endfor %}
             </div>
           </div>
         </div>
-        <div class="chart-card">
-          <div class="chart-header"><div class="chart-title">Recent System Activity</div><a href="{{ url_for('activity_log') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">Full log →</a></div>
+        <div class="rounded-2xl overflow-hidden" style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+          <div class="px-5 py-[0.9rem] flex items-center justify-between" style="border-bottom:1px solid var(--border-section)">
+            <div class="text-[0.95rem] font-bold" style="color:var(--text-primary);font-family:'Inconsolata',monospace">Recent System Activity</div>
+            <a href="{{ url_for('activity_log') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">Full log →</a>
+          </div>
           <div class="p-4 flex flex-col gap-2 max-h-[260px] overflow-y-auto">
-            {% if recent_activity %}
-              {% for log in recent_activity[:8] %}
-              <div class="flex items-start gap-3 py-2" style="border-bottom:1px solid var(--border-section)">
-                <div class="w-7 h-7 rounded-full flex items-center justify-center text-[0.62rem] font-bold text-white flex-shrink-0 mt-0.5" style="background:linear-gradient(135deg,#2d88b8,#0095c8)">{{ log.actor_name[0].upper() }}</div>
-                <div class="min-w-0">
-                  <div class="text-[0.74rem] font-semibold" style="color:var(--text-primary)">{{ log.action }}</div>
-                  <div class="text-[0.68rem] truncate" style="color:var(--text-muted)">{{ log.description }}</div>
-                  <div class="text-[0.64rem] mt-0.5" style="color:var(--text-faint)">{{ log.created_at.strftime('%b %d, %I:%M %p') }} · {{ log.actor_name }}</div>
-                </div>
+            {% if recent_activity %}{% for log in recent_activity[:8] %}
+            <div class="flex items-start gap-3 py-2" style="border-bottom:1px solid var(--border-section)">
+              <div class="w-7 h-7 rounded-full flex items-center justify-center text-[0.62rem] font-bold text-white flex-shrink-0 mt-0.5" style="background:linear-gradient(135deg,#2d88b8,#0095c8)">{{ log.actor_name[0].upper() }}</div>
+              <div class="min-w-0">
+                <div class="text-[0.74rem] font-semibold" style="color:var(--text-primary)">{{ log.action }}</div>
+                <div class="text-[0.68rem] truncate" style="color:var(--text-muted)">{{ log.description }}</div>
+                <div class="text-[0.64rem] mt-0.5" style="color:var(--text-faint)">{{ log.created_at.strftime('%b %d, %I:%M %p') }} · {{ log.actor_name }}</div>
               </div>
-              {% endfor %}
-            {% else %}
-              <div class="text-center py-6 text-xs" style="color:var(--text-faint)">No activity recorded yet.</div>
+            </div>
+            {% endfor %}{% else %}
+            <div class="text-center py-6 text-xs" style="color:var(--text-faint)">No activity recorded yet.</div>
             {% endif %}
           </div>
         </div>
@@ -340,13 +272,11 @@
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
       <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
       </div>
       <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
       <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
-      <div class="flex items-center gap-4 justify-center">
+      <div class="flex gap-3 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
         <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -356,7 +286,6 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-/* Chart data from Flask */
 const SALES_LABELS = {{ sales_trend_labels | tojson }};
 const SALES_VALUES = {{ sales_trend_values | tojson }};
 const WALKIN       = {{ walkin_count   | default(0) }};
@@ -374,81 +303,35 @@ let _charts = {};
 
 function gc() {
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-  return { grid: dark ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)',
-           tick: dark ? '#5a8aaa' : '#7a99ae' };
+  return { grid: dark ? 'rgba(45,136,184,0.12)' : 'rgba(45,136,184,0.07)', tick: dark ? '#5a8aaa' : '#7a99ae' };
 }
 
 function buildCharts() {
   Chart.defaults.font.family = "'Outfit',sans-serif";
-  Chart.defaults.font.size   = 11;
+  Chart.defaults.font.size = 11;
   Object.values(_charts).forEach(c => c.destroy()); _charts = {};
   const c = gc();
-
-  _charts.trend = new Chart('salesTrend', {
-    type:'line',
-    data:{ labels:SALES_LABELS, datasets:[{ label:'Revenue (₱)', data:SALES_VALUES,
-      borderColor:'#0095c8', backgroundColor:'rgba(0,149,200,0.10)',
-      borderWidth:2.5, pointBackgroundColor:'#0095c8', pointRadius:4,
-      pointHoverRadius:6, fill:true, tension:0.4 }]},
-    options:{ responsive:true, plugins:{ legend:{display:false},
-      tooltip:{callbacks:{label:x=>' ₱'+x.parsed.y.toFixed(2)}}},
-      scales:{ x:{grid:{color:c.grid},ticks:{color:c.tick}},
-               y:{grid:{color:c.grid},ticks:{color:c.tick,callback:v=>'₱'+v},beginAtZero:true}}}
-  });
-
-  _charts.donut = new Chart('revExpDonut', {
-    type:'doughnut',
-    data:{ labels:['Revenue','Expenses'], datasets:[{data:[M_REV,M_EXP],
-      backgroundColor:['#0095c8','#e05252'], borderWidth:0, hoverOffset:6}]},
-    options:{ cutout:'68%', plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:x=>' ₱'+x.parsed.toFixed(2)}}}}
-  });
-
-  _charts.pie = new Chart('saleTypePie', {
-    type:'doughnut',
-    data:{ labels:['Walk-in','Delivery'], datasets:[{data:[WALKIN,DELIVERY],
-      backgroundColor:['#0095c8','#d4a843'], borderWidth:0, hoverOffset:6}]},
-    options:{ cutout:'60%', plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:x=>x.parsed+' orders'}}}}
-  });
-
-  _charts.prods = new Chart('topProductsBar', {
-    type:'bar',
-    data:{ labels:PROD_NAMES, datasets:[{label:'Units Sold', data:PROD_QTYS,
-      backgroundColor:'rgba(0,149,200,0.75)', borderRadius:5, borderSkipped:false}]},
-    options:{ responsive:true, indexAxis:'y', plugins:{legend:{display:false}},
-      scales:{ x:{grid:{color:c.grid},ticks:{color:c.tick},beginAtZero:true},
-               y:{grid:{display:false},ticks:{color:c.tick}}}}
-  });
-
+  _charts.trend = new Chart('salesTrend', { type:'line', data:{ labels:SALES_LABELS, datasets:[{ label:'Revenue (₱)', data:SALES_VALUES, borderColor:'#0095c8', backgroundColor:'rgba(0,149,200,0.10)', borderWidth:2.5, pointBackgroundColor:'#0095c8', pointRadius:4, pointHoverRadius:6, fill:true, tension:0.4 }]}, options:{ responsive:true, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:x=>' ₱'+x.parsed.y.toFixed(2)}}}, scales:{ x:{grid:{color:c.grid},ticks:{color:c.tick}}, y:{grid:{color:c.grid},ticks:{color:c.tick,callback:v=>'₱'+v},beginAtZero:true}}}});
+  _charts.donut = new Chart('revExpDonut', { type:'doughnut', data:{ labels:['Revenue','Expenses'], datasets:[{data:[M_REV,M_EXP], backgroundColor:['#0095c8','#e05252'], borderWidth:0, hoverOffset:6}]}, options:{ cutout:'68%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:x=>' ₱'+x.parsed.toFixed(2)}}}}});
+  _charts.pie = new Chart('saleTypePie', { type:'doughnut', data:{ labels:['Walk-in','Delivery'], datasets:[{data:[WALKIN,DELIVERY], backgroundColor:['#0095c8','#d4a843'], borderWidth:0, hoverOffset:6}]}, options:{ cutout:'60%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:x=>x.parsed+' orders'}}}}});
+  _charts.prods = new Chart('topProductsBar', { type:'bar', data:{ labels:PROD_NAMES, datasets:[{label:'Units Sold', data:PROD_QTYS, backgroundColor:'rgba(0,149,200,0.75)', borderRadius:5, borderSkipped:false}]}, options:{ responsive:true, indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{grid:{color:c.grid},ticks:{color:c.tick},beginAtZero:true}, y:{grid:{display:false},ticks:{color:c.tick}}}}});
   {% if session.get('role') == 'Super Admin' %}
   if (document.getElementById('userRolesDonut')) {
-    _charts.roles = new Chart('userRolesDonut', {
-      type:'doughnut',
-      data:{ labels:UR_LABELS, datasets:[{data:UR_VALUES,
-        backgroundColor:['#7c3aed','#0095c8','#2d88b8'], borderWidth:0, hoverOffset:6}]},
-      options:{ cutout:'65%', plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:x=>x.parsed+' accounts'}}}}
-    });
+    _charts.roles = new Chart('userRolesDonut', { type:'doughnut', data:{ labels:UR_LABELS, datasets:[{data:UR_VALUES, backgroundColor:['#7c3aed','#0095c8','#2d88b8'], borderWidth:0, hoverOffset:6}]}, options:{ cutout:'65%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:x=>x.parsed+' accounts'}}}}});
   }
   {% endif %}
 }
 
 document.addEventListener('DOMContentLoaded', buildCharts);
 
-/* Rebuild charts on theme change so colors update */
 const _origToggle = window.toggleTheme;
-
 window.toggleTheme = function() {
   _origToggle();
-
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const lbl = document.getElementById('theme-label');
   if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
-
   setTimeout(buildCharts, 280);
 };
-
 document.addEventListener('DOMContentLoaded', function() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const lbl = document.getElementById('theme-label');

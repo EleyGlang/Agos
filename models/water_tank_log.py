@@ -4,20 +4,29 @@ from datetime import datetime
 
 class WaterTankLog(db.Model):
     """
-    Records every refill and usage event for the 20-gallon water tank.
-    Current level = SUM(refills) − SUM(usage), capped at [0, TANK_CAPACITY].
+    Audit trail for every tank change.
+ 
+    action       : 'refill' | 'usage'
+    source       : 'manual' | 'sale' | 'delivery' | 'daily'
+    reference_id : sale_id or delivery_id when source is 'sale'/'delivery'
+    level_after  : tank level (gallons) immediately after this entry — stored
+                   so the table can display it accurately without re-computing
+                   from the full log history.
     """
     __tablename__ = 'water_tank_log'
+ 
+    log_id       = db.Column(db.Integer,     primary_key=True)
+    action       = db.Column(db.String(20),  nullable=False)          # 'refill' | 'usage'
+    gallons      = db.Column(db.Float,       nullable=False)
+    level_after  = db.Column(db.Float,       nullable=True)
+    note         = db.Column(db.String(255), nullable=True)
+    source       = db.Column(db.String(20),  nullable=False, default='manual')
+    reference_id = db.Column(db.Integer,     nullable=True)
+    user_id      = db.Column(db.Integer,     db.ForeignKey('user.user_id'), nullable=True)
+    created_at   = db.Column(db.DateTime,    default=datetime.now)
+ 
+    user = db.relationship('User', backref=db.backref('water_tank_logs', lazy=True))
 
-    id         = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    action     = db.Column(db.String(16), nullable=False)        # 'refill' | 'usage'
-    gallons    = db.Column(db.Float,      nullable=False)
-    note       = db.Column(db.String(255), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.user_id', ondelete='SET NULL'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-
-    # Relationship — lets you do log.user.first_name in templates
-    user = db.relationship('User', backref=db.backref('tank_logs', lazy='dynamic'))
 
     def __repr__(self):
         return f'<WaterTankLog {self.action} {self.gallons}gal @ {self.created_at}>'
