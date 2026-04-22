@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Deliveries — Agos</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="agos-body m-0 p-0">
+<a data-logout-url="{{ url_for('customer_logout') }}" style="display:none"></a>
+
+<div class="flex min-h-screen">
+  {% include '_sidebar_customer.html' %}
+
+  <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
+
+    <!-- Topbar -->
+    <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
+      <div class="flex items-center gap-4">
+        <button id="menu-btn" onclick="toggleSidebar()"
+                class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div>
+          <div class="text-lg md:text-2xl font-bold leading-tight"
+               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">My Deliveries</div>
+          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Track all your delivery orders</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle" title="Toggle theme">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
+        <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+          {{ session['customer_name'][0].upper() }}
+        </div>
+      </div>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-1 p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}{% endif %}
+      {% endwith %}
+
+      <!-- Summary stat pills (computed fully in Jinja — no undefined variables) -->
+      {% set pending_count   = orders | selectattr('status','equalto','Pending')   | list | length %}
+      {% set confirmed_count = orders | selectattr('status','equalto','Confirmed') | list | length %}
+      {% set delivered_count = orders | selectattr('status','equalto','Delivered') | list | length %}
+      {% set cancelled_count = orders | selectattr('status','equalto','Cancelled') | list | length %}
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <span class="text-[0.7rem] font-medium uppercase tracking-wide" style="color:var(--text-muted)">Total</span>
+          <span class="text-2xl font-extrabold"
+                style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ orders | length }}</span>
+        </div>
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <span class="text-[0.7rem] font-medium uppercase tracking-wide" style="color:var(--text-muted)">Pending</span>
+          <span class="text-2xl font-extrabold"
+                style="font-family:'Inconsolata',monospace;color:{% if pending_count > 0 %}var(--warning-text){% else %}var(--text-primary){% endif %}">
+            {{ pending_count }}</span>
+        </div>
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <span class="text-[0.7rem] font-medium uppercase tracking-wide" style="color:var(--text-muted)">Delivered</span>
+          <span class="text-2xl font-extrabold"
+                style="font-family:'Inconsolata',monospace;color:var(--info-text)">{{ delivered_count }}</span>
+        </div>
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <span class="text-[0.7rem] font-medium uppercase tracking-wide" style="color:var(--text-muted)">Cancelled</span>
+          <span class="text-2xl font-extrabold"
+                style="font-family:'Inconsolata',monospace;color:{% if cancelled_count > 0 %}var(--danger-text){% else %}var(--text-primary){% endif %}">
+            {{ cancelled_count }}</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <form method="GET" action="{{ url_for('customer_deliveries') }}"
+            class="agos-card p-4 flex flex-col sm:flex-row flex-wrap gap-3 items-end">
+        <div class="flex flex-col gap-1 flex-1 min-w-[140px]">
+          <label class="agos-label">Search</label>
+          <input type="text" name="search" value="{{ search }}"
+                 placeholder="Product or status…" class="agos-input"/>
+        </div>
+        <div class="flex flex-col gap-1 min-w-[130px]">
+          <label class="agos-label">Status</label>
+          <select name="status" class="agos-input">
+            {% for s in ['All','Pending','Confirmed','Delivered','Cancelled'] %}
+              <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="flex flex-col gap-1 min-w-[140px]">
+          <label class="agos-label">From</label>
+          <input type="date" name="date_from" value="{{ date_from or '' }}" class="agos-input"/>
+        </div>
+        <div class="flex flex-col gap-1 min-w-[140px]">
+          <label class="agos-label">To</label>
+          <input type="date" name="date_to" value="{{ date_to or '' }}" class="agos-input"/>
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="agos-btn-primary px-5 py-2">Filter</button>
+          <a href="{{ url_for('customer_deliveries') }}" class="agos-btn-ghost px-5 py-2">Reset</a>
+        </div>
+      </form>
+
+      <!-- Orders table -->
+      <div class="agos-card overflow-hidden">
+        <div class="agos-card-header">
+          <div class="agos-card-title">Order History</div>
+          <div class="agos-card-subtitle">
+            {% if orders %}Showing {{ orders | length }} order{{ 's' if orders | length != 1 }}
+            {% else %}No orders match your filters{% endif %}
+          </div>
+        </div>
+
+        {% if orders %}
+        <div class="overflow-x-auto">
+          <table class="agos-table w-full border-collapse min-w-[560px]">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Delivery Date</th>
+                <th>Items</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+              <tr>
+                <td style="color:var(--text-muted)">#{{ order.delivery_id }}</td>
+                <td>
+                  {% if order.delivery_date %}
+                    {% if order.delivery_date is string %}{{ order.delivery_date }}
+                    {% else %}{{ order.delivery_date.strftime('%b %d, %Y') }}{% endif %}
+                  {% else %}—{% endif %}
+                </td>
+                <td>
+                  {% if order.delivery_items %}
+                    <button type="button"
+                            onclick="openItemsModal({{ order.delivery_id }})"
+                            class="text-[0.78rem] font-medium border-none bg-transparent cursor-pointer p-0 hover:underline"
+                            style="color:var(--accent)">
+                      {{ order.delivery_items | length }} item{{ 's' if order.delivery_items | length != 1 }}
+                    </button>
+                  {% else %}
+                    <span style="color:var(--text-faint)">—</span>
+                  {% endif %}
+                </td>
+                <td class="font-semibold" style="color:var(--text-primary)">
+                  &#x20B1;{{ "%.2f"|format(order.total_amount) if order.total_amount else '0.00' }}
+                </td>
+                <td>
+                  {% if order.status == 'Delivered' %}<span class="agos-badge agos-badge-info">Delivered</span>
+                  {% elif order.status == 'Confirmed' %}<span class="agos-badge agos-badge-success">Confirmed</span>
+                  {% elif order.status == 'Cancelled' %}<span class="agos-badge agos-badge-danger">Cancelled</span>
+                  {% else %}<span class="agos-badge agos-badge-warning">Pending</span>{% endif %}
+                </td>
+                <td class="text-[0.8rem]" style="color:var(--text-muted)">
+                  {{ order.notes if order.notes else '—' }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Item data for JS modal — emitted once after the table -->
+        <script>
+          window._orderItems = window._orderItems || {};
+          {% for order in orders %}
+          window._orderItems[{{ order.delivery_id }}] = [
+            {% for item in order.delivery_items %}
+            { name: {{ item.product.product_name | tojson }},
+              qty:   {{ item.quantity }},
+              price: {{ item.price | float }},
+              sub:   {{ item.subtotal | float }} }{% if not loop.last %},{% endif %}
+            {% endfor %}
+          ];
+          {% endfor %}
+        </script>
+
+        {% else %}
+        <!-- Empty state -->
+        <div class="flex flex-col items-center justify-center py-16 gap-3">
+          <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+               style="color:var(--text-faint)" stroke-width="1.2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0H4"/>
+          </svg>
+          <p class="text-sm" style="color:var(--text-faint)">No delivery orders found.</p>
+          <a href="{{ url_for('customer_order') }}"
+             class="agos-btn-primary px-5 py-2 text-sm mt-1">Place an Order</a>
+        </div>
+        {% endif %}
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Order Items Modal -->
+<div id="items-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold"
+            style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Order Items</h3>
+        <button onclick="closeItemsModal()"
+                class="w-8 h-8 rounded-full flex items-center justify-center border-none cursor-pointer text-lg"
+                style="background:var(--bg-hover);color:var(--text-muted)">&#x2715;</button>
+      </div>
+      <div id="items-modal-body" class="flex flex-col gap-2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Modal -->
+<div id="logout-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box p-8 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--accent)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
+      <div class="flex items-center gap-4 justify-center">
+        <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
+        <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  });
+  const _orig = window.toggleTheme;
+  window.toggleTheme = function () {
+    _orig();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  };
+
+  function openItemsModal(deliveryId) {
+    const items = (window._orderItems || {})[deliveryId] || [];
+    const body  = document.getElementById('items-modal-body');
+    if (!items.length) {
+      body.innerHTML = '<p style="color:var(--text-faint)">No items found.</p>';
+    } else {
+      const rows = items.map(i =>
+        `<div class="flex items-center justify-between py-2.5"
+              style="border-bottom:1px solid var(--border-soft)">
+          <div>
+            <div class="text-sm font-medium" style="color:var(--text-primary)">${i.name}</div>
+            <div class="text-xs mt-0.5" style="color:var(--text-muted)">
+              &#x20B1;${i.price.toFixed(2)} &times; ${i.qty}
+            </div>
+          </div>
+          <div class="text-sm font-semibold" style="color:var(--text-primary)">
+            &#x20B1;${i.sub.toFixed(2)}
+          </div>
+        </div>`
+      ).join('');
+      const total = items.reduce((s, i) => s + i.sub, 0).toFixed(2);
+      body.innerHTML = rows +
+        `<div class="flex justify-between pt-3 mt-1">
+          <span class="text-sm font-bold" style="color:var(--text-primary)">Total</span>
+          <span class="text-sm font-bold"
+                style="color:var(--accent);font-family:'Inconsolata',monospace">
+            &#x20B1;${total}
+          </span>
+        </div>`;
+    }
+    document.getElementById('items-modal').classList.add('open');
+  }
+
+  function closeItemsModal() {
+    document.getElementById('items-modal').classList.remove('open');
+  }
+
+  // Close on backdrop click
+  document.getElementById('items-modal').addEventListener('click', function (e) {
+    if (e.target === this) closeItemsModal();
+  });
+</script>
+</body>
+</html>

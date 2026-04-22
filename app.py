@@ -12,7 +12,7 @@ from models import (
          Sale, SaleItem, DeliveryOrder, DeliveryItem,
          Expense, LoyaltyTransaction, ActivityLog,
          Return_Model as Return, ReturnItem,
-         WaterTank, WaterTankLog          # ← NEW
+         WaterTank, WaterTankLog  
      )
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -174,12 +174,11 @@ def _deduct_tank(gallons: float, source: str, reference_id: int, note: str):
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'user_id' not in session:
+        if 'user_id' not in session and 'customer_id' not in session:
             flash('Please log in to continue.', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
-
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -1034,6 +1033,9 @@ def admin_update_user_info(user_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
 
+    referrer = request.referrer or ''
+    if 'user_management' in referrer:
+        return redirect(url_for('user_management'))
     return redirect(url_for('profile'))
 
 
@@ -1085,6 +1087,9 @@ def admin_update_customer_info(customer_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
 
+    referrer = request.referrer or ''
+    if 'user_management' in referrer:
+        return redirect(url_for('user_management'))
     return redirect(url_for('profile'))
 
 
@@ -1113,8 +1118,15 @@ def admin_reset_customer_password(customer_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
 
+    referrer = request.referrer or ''
+    if 'user_management' in referrer:
+        return redirect(url_for('user_management'))
     return redirect(url_for('profile'))
 
+
+# ══════════════════════════════════════════════════════
+#  ACTIVITY LOG
+# ══════════════════════════════════════════════════════
 
 # ══════════════════════════════════════════════════════
 #  ACTIVITY LOG
@@ -1124,18 +1136,119 @@ def admin_reset_customer_password(customer_id):
 @login_required
 @admin_required
 def activity_log():
-    page     = request.args.get('page', 1, type=int)
-    module   = request.args.get('module', '')
-    per_page = 50
-    query    = ActivityLog.query.order_by(ActivityLog.created_at.desc())
-    if module:
-        query = query.filter(ActivityLog.module == module)
-    total   = query.count()
-    logs    = query.offset((page - 1) * per_page).limit(per_page).all()
-    modules = [r[0] for r in db.session.query(ActivityLog.module).distinct().all()]
+    from sqlalchemy import func
+
+    page      = request.args.get('page',      1,    type=int)
+    per_page  = request.args.get('per_page',  25,   type=int)
+    search    = request.args.get('search',    '',   type=str).strip()
+    module_f  = request.args.get('module',    '',   type=str)
+    action_f  = request.args.get('action',    '',   type=str)
+    role_f    = request.args.get('role',      '',   type=str)
+    date_from = request.args.get('date_from', '',   type=str)
+    date_to   = request.args.get('date_to',   '',   type=str)
+
+    query = ActivityLog.query.order_by(ActivityLog.created_at.desc())
+
+    if search:
+        like = f'%{search}%'
+        query = query.filter(db.or_(
+            ActivityLog.actor_name.ilike(like),
+            ActivityLog.description.ilike(like),
+            ActivityLog.action.ilike(like),
+        ))
+    if module_f:
+        query = query.filter(ActivityLog.module == module_f)
+    if action_f:
+        query = query.filter(ActivityLog.action == action_f)
+    if role_f:
+        query = query.filter(ActivityLog.actor_role == role_f)
+    if date_from:
+        try:
+            query = query.filter(ActivityLog.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            dt_to = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(ActivityLog.created_at < dt_to)
+        except ValueError:
+            pass
+
+    total      = query.count()
+    logs       = query.offset((page - 1) * per_page).limit(per_page).all()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    # Dropdown options
+    modules = [r[0] for r in db.session.query(ActivityLog.module).distinct().order_by(ActivityLog.module)]
+    actions = [r[0] for r in db.session.query(ActivityLog.action).distinct().order_by(ActivityLog.action)]
+    roles   = [r[0] for r in db.session.query(ActivityLog.actor_role).distinct().order_by(ActivityLog.actor_role)]
+
+    # Quick stat counts
+    since_30  = datetime.utcnow() - timedelta(days=30)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    total_30  = ActivityLog.query.filter(ActivityLog.created_at >= since_30).count()
+    today_ct  = ActivityLog.query.filter(ActivityLog.created_at >= today_start).count()
+    total_all = ActivityLog.query.count()
+
     return render_template('activity_log.html',
         logs=logs, total=total, page=page, per_page=per_page,
-        modules=modules, selected_module=module, active_page='activity_log')
+        total_pages=total_pages,
+        modules=modules, actions=actions, roles=roles,
+        search=search, module_f=module_f, action_f=action_f,
+        role_f=role_f, date_from=date_from, date_to=date_to,
+        total_30=total_30, today_ct=today_ct, total_all=total_all,
+        active_page='activity_log',
+    )
+
+
+@app.route('/activity-log/export')
+@login_required
+@admin_required
+def export_activity_log():
+    import csv, io as _io
+    search    = request.args.get('search',    '', type=str).strip()
+    module_f  = request.args.get('module',    '', type=str)
+    action_f  = request.args.get('action',    '', type=str)
+    role_f    = request.args.get('role',      '', type=str)
+    date_from = request.args.get('date_from', '', type=str)
+    date_to   = request.args.get('date_to',   '', type=str)
+
+    query = ActivityLog.query.order_by(ActivityLog.created_at.desc())
+    if search:
+        like = f'%{search}%'
+        query = query.filter(db.or_(
+            ActivityLog.actor_name.ilike(like),
+            ActivityLog.description.ilike(like),
+            ActivityLog.action.ilike(like),
+        ))
+    if module_f:  query = query.filter(ActivityLog.module     == module_f)
+    if action_f:  query = query.filter(ActivityLog.action     == action_f)
+    if role_f:    query = query.filter(ActivityLog.actor_role == role_f)
+    if date_from:
+        try:
+            query = query.filter(ActivityLog.created_at >= datetime.strptime(date_from, '%Y-%m-%d'))
+        except ValueError: pass
+    if date_to:
+        try:
+            query = query.filter(ActivityLog.created_at < datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1))
+        except ValueError: pass
+
+    rows   = query.limit(10000).all()
+    output = _io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Log ID','Timestamp','Actor','Role','Module','Action','Description','Target Type','Target ID','IP'])
+    for r in rows:
+        writer.writerow([
+            r.log_id, r.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            r.actor_name, r.actor_role, r.module, r.action,
+            r.description, r.target_type or '', r.target_id or '', r.ip_address or '',
+        ])
+
+    from flask import make_response
+    resp = make_response(output.getvalue())
+    resp.headers['Content-Type']        = 'text/csv'
+    resp.headers['Content-Disposition'] = f'attachment; filename=activity_log_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    return resp
 
 
 # ══════════════════════════════════════════════════════
@@ -1870,7 +1983,7 @@ def customer_deliveries():
         orders = [o for o in orders
                   if search in (o.status or '').lower()
                   or any(search in i.product.product_name.lower() for i in o.delivery_items)]
-    return render_template('dashboard_customer.html', orders=orders,
+    return render_template('customer_deliveries.html', orders=orders,
         search=search, date_from=date_from, date_to=date_to,
         status=status or 'All', active_page='customer_deliveries')
 

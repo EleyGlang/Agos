@@ -298,34 +298,7 @@
             </div>
           </div>
 
-          <!-- Recent Activity Feed -->
-          <div class="agos-card overflow-hidden">
-            <div class="agos-card-header">
-              <div class="agos-card-title">Recent Activity</div>
-              {% if session.get('role') in ['Admin','Super Admin'] %}
-              <a href="{{ url_for('activity_log') }}" class="text-xs font-semibold no-underline hover:underline" style="color:var(--accent)">View all →</a>
-              {% endif %}
-            </div>
-            <div class="p-3 flex flex-col gap-1 max-h-[280px] overflow-y-auto">
-              {% if recent_activity %}
-                {% for log in recent_activity %}
-                <div class="flex items-start gap-2.5 py-2" style="border-bottom:1px solid var(--border-section)">
-                  <div class="w-6 h-6 rounded-full flex items-center justify-center text-[0.6rem] font-bold text-white flex-shrink-0 mt-0.5"
-                       style="background:linear-gradient(135deg,#2d88b8,#0095c8)">
-                    {{ log.actor_name[0].upper() if log.actor_name else '?' }}
-                  </div>
-                  <div class="min-w-0">
-                    <div class="text-[0.72rem] font-semibold truncate" style="color:var(--text-primary)">{{ log.action }}</div>
-                    <div class="text-[0.66rem] truncate" style="color:var(--text-muted)">{{ log.description }}</div>
-                    <div class="text-[0.62rem] mt-0.5" style="color:var(--text-faint)">{{ log.created_at.strftime('%b %d, %I:%M %p') }}</div>
-                  </div>
-                </div>
-                {% endfor %}
-              {% else %}
-                <div class="text-center py-8 text-xs" style="color:var(--text-faint)">No activity yet.</div>
-              {% endif %}
-            </div>
-          </div>
+          
 
         </div>
         <!-- end right col -->

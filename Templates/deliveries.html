@@ -14,15 +14,19 @@
 <div class="flex min-h-screen">
 
   {% include '_sidebar.html' %}
-  
+
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button id="menu-btn" onclick="toggleSidebar()" class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <button id="menu-btn" onclick="toggleSidebar()"
+                class="hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
         </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delivery Management</div>
+          <div class="text-lg md:text-2xl font-bold leading-tight"
+               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delivery Management</div>
           <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Create and track delivery orders</div>
         </div>
       </div>
@@ -35,7 +39,10 @@
           </label>
         </div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+          {{ session['full_name'][0].upper() }}
+        </div>
       </div>
     </header>
 
@@ -43,13 +50,15 @@
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}{% for category, message in messages %}
-          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
+          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">
+            {{ message }}
+          </div>
         {% endfor %}{% endif %}
       {% endwith %}
 
       <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
 
-        <!-- New Delivery Form -->
+        <!-- ═══ New Delivery Form ═══ -->
         <div class="agos-card overflow-hidden self-start">
           <div class="agos-card-header">
             <div class="agos-card-title">Create Delivery Order</div>
@@ -86,51 +95,70 @@
                 <label class="agos-label">Products</label>
                 <div id="delivery-items-container" class="flex flex-col gap-2">
                   <div class="delivery-item-row flex items-center gap-2">
-                    <input type="text" class="delivery-product-search agos-input flex-1" list="delivery-products-list" placeholder="Select product…" oninput="syncDeliveryProduct(this)" style="width:auto"/>
-                    <select name="product_id[]" class="delivery-product-select" style="display:none" onchange="updateDeliveryTotal()">
+                    <input type="text" class="delivery-product-search agos-input flex-1"
+                           list="delivery-products-list" placeholder="Select product…"
+                           oninput="syncDeliveryProduct(this)" style="width:auto"/>
+                    <select name="product_id[]" class="delivery-product-select" style="display:none"
+                            onchange="updateDeliveryTotal()">
                       <option value="">Select product</option>
                       {% for product in products %}
-                        <option value="{{ product.product_id }}" data-price="{{ product.price }}">{{ product.product_name }} — ₱{{ "%.2f"|format(product.price) }}</option>
+                        <option value="{{ product.product_id }}" data-price="{{ product.price }}">
+                          {{ product.product_name }} — &#x20B1;{{ "%.2f"|format(product.price) }}
+                        </option>
                       {% endfor %}
                     </select>
-                    <input type="number" name="quantity[]" value="1" min="1" onchange="updateDeliveryTotal()"
+                    <input type="number" name="quantity[]" value="1" min="1"
+                           onchange="updateDeliveryTotal()"
                            class="w-16 px-2 py-2 rounded-xl text-[0.82rem] text-center outline-none"
                            style="background:var(--bg-input);border:1.5px solid var(--border-input);color:var(--text-primary)"/>
-                    <button type="button" onclick="removeDeliveryItem(this)" class="w-7 h-7 rounded-full flex items-center justify-center text-sm border-none cursor-pointer flex-shrink-0" style="background:var(--danger-bg);color:var(--danger-text)">✕</button>
+                    <button type="button" onclick="removeDeliveryItem(this)"
+                            class="w-7 h-7 rounded-full flex items-center justify-center text-sm border-none cursor-pointer flex-shrink-0"
+                            style="background:var(--danger-bg);color:var(--danger-text)">&#x2715;</button>
                   </div>
                 </div>
                 <datalist id="delivery-products-list">
                   {% for product in products %}
-                    <option value="{{ product.product_name }} — ₱{{ '%.2f'|format(product.price) }}" data-id="{{ product.product_id }}" data-price="{{ product.price }}">{{ product.product_name }}</option>
+                    <option value="{{ product.product_name }} — &#x20B1;{{ '%.2f'|format(product.price) }}"
+                            data-id="{{ product.product_id }}" data-price="{{ product.price }}">
+                      {{ product.product_name }}
+                    </option>
                   {% endfor %}
                 </datalist>
-                <button type="button" onclick="addDeliveryItem()" class="mt-2 text-xs font-medium border-none bg-transparent cursor-pointer p-0 hover:underline" style="color:var(--accent)">+ Add another product</button>
+                <button type="button" onclick="addDeliveryItem()"
+                        class="mt-2 text-xs font-medium border-none bg-transparent cursor-pointer p-0 hover:underline"
+                        style="color:var(--accent)">+ Add another product</button>
               </div>
 
               <div>
                 <label class="agos-label">Notes</label>
-                <textarea name="notes" rows="2" placeholder="e.g. Leave at gate" class="agos-input" style="resize:none"></textarea>
+                <textarea name="notes" rows="2" placeholder="e.g. Leave at gate"
+                          class="agos-input" style="resize:none"></textarea>
               </div>
 
-              <div class="rounded-xl p-3 flex items-center justify-between" style="background:var(--accent-softer);border:1px solid var(--accent-border)">
+              <div class="rounded-xl p-3 flex items-center justify-between"
+                   style="background:var(--accent-softer);border:1px solid var(--accent-border)">
                 <span class="text-[0.82rem] font-semibold" style="color:var(--accent)">Total Amount</span>
-                <span class="text-xl font-bold" id="delivery-total-display" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">₱0.00</span>
+                <span class="text-xl font-bold" id="delivery-total-display"
+                      style="font-family:'Inconsolata',monospace;color:var(--text-primary)">&#x20B1;0.00</span>
               </div>
 
-              <button type="button" onclick="openDeliveryConfirm()" class="agos-btn-primary w-full py-3">Review &amp; Create Order</button>
+              <button type="button" onclick="openDeliveryConfirm()"
+                      class="agos-btn-primary w-full py-3">Review &amp; Create Order</button>
             </form>
           </div>
         </div>
 
-        <!-- Delivery History -->
+        <!-- ═══ Delivery History ═══ -->
         <div class="agos-card overflow-hidden">
           <div class="agos-card-header flex items-center justify-between">
             <div>
               <div class="agos-card-title">Delivery Orders</div>
-              <div class="agos-card-subtitle">{{ deliveries_list | length }} total order{{ 's' if deliveries_list | length != 1 }}</div>
+              <div class="agos-card-subtitle">
+                {{ deliveries_list | length }} total order{{ 's' if deliveries_list | length != 1 }}
+              </div>
             </div>
-            <input type="text" id="search-deliveries" placeholder="Search..." oninput="filterDeliveries()"
-                   class="agos-input" style="width:9rem"/>
+            <input type="text" id="search-deliveries" placeholder="Search..."
+                   oninput="filterDeliveries()" class="agos-input" style="width:9rem"/>
           </div>
           <div class="overflow-x-auto">
             <table class="agos-table w-full border-collapse min-w-[600px]">
@@ -143,8 +171,12 @@
                   <tr class="delivery-row">
                     <td style="color:var(--text-muted)">#{{ delivery.delivery_id }}</td>
                     <td>{{ delivery.customer.full_name if delivery.customer else '—' }}</td>
-                    <td style="color:var(--text-muted)">{{ delivery.delivery_date.strftime('%b %d, %Y') if delivery.delivery_date else '—' }}</td>
-                    <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(delivery.total_amount) if delivery.total_amount else '0.00' }}</td>
+                    <td style="color:var(--text-muted)">
+                      {{ delivery.delivery_date.strftime('%b %d, %Y') if delivery.delivery_date else '—' }}
+                    </td>
+                    <td class="font-semibold" style="color:var(--text-primary)">
+                      &#x20B1;{{ "%.2f"|format(delivery.total_amount) if delivery.total_amount else '0.00' }}
+                    </td>
                     <td>
                       {% if delivery.status == 'Delivered' %}
                         <span class="agos-badge agos-badge-info">Delivered</span>
@@ -159,31 +191,41 @@
                     <td>
                       {% if delivery.status in ('Pending', 'Confirmed') %}
                         <div class="flex items-center gap-1.5 flex-wrap">
+
                           {% if delivery.status == 'Pending' %}
-                            <!-- Confirm button -->
-                            <button type="button"
-                                    onclick="openConfirmOrderModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
-                                    class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
-                                    style="background:var(--success-bg);color:var(--success-text)">Confirm</button>
-                            <form id="confirm-form-{{ delivery.delivery_id }}" action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}" method="POST" style="display:none">
-                              <input type="hidden" name="status" value="Confirmed"/>
-                            </form>
+                          <!-- Confirm -->
+                          <button type="button"
+                                  onclick="openConfirmOrderModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
+                                  class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
+                                  style="background:var(--success-bg);color:var(--success-text)">Confirm</button>
+                          <form id="confirm-form-{{ delivery.delivery_id }}"
+                                action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}"
+                                method="POST" style="display:none">
+                            <input type="hidden" name="status" value="Confirmed"/>
+                          </form>
                           {% endif %}
-                          <!-- Mark Delivered button -->
+
+                          <!-- Mark Delivered -->
                           <button type="button"
                                   onclick="openMarkDeliveredModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
                                   class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
                                   style="background:var(--info-bg);color:var(--info-text)">Mark Delivered</button>
-                          <form id="mark-form-{{ delivery.delivery_id }}" action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}" method="POST" style="display:none">
+                          <form id="mark-form-{{ delivery.delivery_id }}"
+                                action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}"
+                                method="POST" style="display:none">
                             <input type="hidden" name="status" value="Delivered"/>
                           </form>
-                          <!-- Cancel button -->
+
+                          <!-- Cancel -->
                           <button type="button"
                                   onclick="openCancelModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
                                   class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
                                   style="background:var(--danger-bg);color:var(--danger-text)">Cancel</button>
-                          <form id="cancel-form-{{ delivery.delivery_id }}" action="{{ url_for('cancel_delivery', delivery_id=delivery.delivery_id) }}" method="POST" style="display:none">
-                            <input type="hidden" name="cancel_reason" id="cancel-reason-{{ delivery.delivery_id }}" value=""/>
+                          <form id="cancel-form-{{ delivery.delivery_id }}"
+                                action="{{ url_for('cancel_delivery', delivery_id=delivery.delivery_id) }}"
+                                method="POST" style="display:none">
+                            <input type="hidden" name="cancel_reason"
+                                   id="cancel-reason-{{ delivery.delivery_id }}" value=""/>
                           </form>
                         </div>
                       {% else %}
@@ -193,7 +235,11 @@
                   </tr>
                   {% endfor %}
                 {% else %}
-                  <tr><td colspan="6" class="text-center py-10" style="color:var(--text-faint)">No delivery orders yet.</td></tr>
+                  <tr>
+                    <td colspan="6" class="text-center py-10" style="color:var(--text-faint)">
+                      No delivery orders yet.
+                    </td>
+                  </tr>
                 {% endif %}
               </tbody>
             </table>
@@ -209,12 +255,16 @@
 <div id="delivery-confirm-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--warning-bg)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--warning-text)" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--warning-bg)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--warning-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
         </svg>
       </div>
-      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Delivery Order</h3>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Delivery Order</h3>
       <p class="text-sm mb-2" id="delivery-confirm-summary" style="color:var(--text-muted)"></p>
       <p class="text-sm mb-5" style="color:var(--text-muted)">This will create a new pending delivery order.</p>
       <div class="flex items-center gap-4 justify-center">
@@ -229,15 +279,19 @@
 <div id="mark-delivered-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--success-bg)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--success-text)" stroke-width="2">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--success-bg)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--success-text)" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
         </svg>
       </div>
-      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Mark as Delivered?</h3>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Mark as Delivered?</h3>
       <p class="text-sm mb-5" id="mark-delivered-message" style="color:var(--text-muted)"></p>
       <div class="flex items-center gap-4 justify-center">
-        <button id="mark-delivered-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--success-text)">Yes, Mark Delivered</button>
+        <button id="mark-delivered-confirm-btn" class="agos-btn-primary px-7 py-2.5"
+                style="background:var(--success-text)">Yes, Mark Delivered</button>
         <button onclick="closeMarkDeliveredModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
     </div>
@@ -248,15 +302,20 @@
 <div id="confirm-order-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--success-bg)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--success-text)" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--success-bg)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--success-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
       </div>
-      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Delivery Order?</h3>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Delivery Order?</h3>
       <p class="text-sm mb-5" id="confirm-order-message" style="color:var(--text-muted)"></p>
       <div class="flex items-center gap-4 justify-center">
-        <button id="confirm-order-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--success-text)">Yes, Confirm Order</button>
+        <button id="confirm-order-btn" class="agos-btn-primary px-7 py-2.5"
+                style="background:var(--success-text)">Yes, Confirm Order</button>
         <button onclick="closeConfirmOrderModal()" class="agos-btn-ghost px-7 py-2.5">Back</button>
       </div>
     </div>
@@ -267,17 +326,22 @@
 <div id="cancel-delivery-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--danger-bg)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--danger-text)" stroke-width="2">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--danger-bg)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--danger-text)" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
         </svg>
       </div>
-      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Cancel Delivery?</h3>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Cancel Delivery?</h3>
       <p class="text-sm mb-4" id="cancel-delivery-message" style="color:var(--text-muted)"></p>
-      <textarea id="cancel-reason-input" rows="2" placeholder="Reason for cancellation (optional)"
+      <textarea id="cancel-reason-input" rows="2"
+                placeholder="Reason for cancellation (optional)"
                 class="agos-input w-full mb-5 text-sm" style="resize:none"></textarea>
       <div class="flex items-center gap-4 justify-center">
-        <button id="cancel-delivery-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--danger-text)">Yes, Cancel Order</button>
+        <button id="cancel-delivery-confirm-btn" class="agos-btn-primary px-7 py-2.5"
+                style="background:var(--danger-text)">Yes, Cancel Order</button>
         <button onclick="closeCancelModal()" class="agos-btn-ghost px-7 py-2.5">Back</button>
       </div>
     </div>
@@ -288,13 +352,19 @@
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--accent)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
         </svg>
       </div>
-      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
-      <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out of your account?</p>
+      <h3 class="mb-2 text-2xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <p class="mb-6 text-sm" style="color:var(--text-muted)">
+        Are you sure you want to log out of your account?
+      </p>
       <div class="flex items-center gap-4 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
         <button onclick="closeLogoutModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
@@ -305,15 +375,27 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
+  // ── Theme label sync ──────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  });
   const _orig = window.toggleTheme;
-  window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
+  window.toggleTheme = function () {
+    _orig();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  };
 
+  // ── Delivery form helpers ─────────────────────────────────────
   function syncDeliveryCustomer(val) {
     const sel = document.getElementById('delivery-customer-select');
     const matched = Array.from(sel.options).find(o => o.text.trim() === val.trim());
     sel.value = matched ? matched.value : '';
   }
+
   function syncDeliveryProduct(input) {
     const row = input.closest('.delivery-item-row');
     const sel = row.querySelector('.delivery-product-select');
@@ -322,18 +404,23 @@
     sel.value = matched ? matched.value : '';
     updateDeliveryTotal();
   }
+
   function addDeliveryItem() {
     const container = document.getElementById('delivery-items-container');
     const clone = container.querySelector('.delivery-item-row').cloneNode(true);
     clone.querySelector('.delivery-product-search').value = '';
     clone.querySelector('.delivery-product-select').value = '';
     clone.querySelector('input[type=number]').value = 1;
+    // re-attach oninput since cloneNode copies attributes but not listeners
+    clone.querySelector('.delivery-product-search').setAttribute('oninput', 'syncDeliveryProduct(this)');
     container.appendChild(clone);
   }
+
   function removeDeliveryItem(btn) {
     const rows = document.querySelectorAll('.delivery-item-row');
     if (rows.length > 1) { btn.closest('.delivery-item-row').remove(); updateDeliveryTotal(); }
   }
+
   function updateDeliveryTotal() {
     let total = 0;
     document.querySelectorAll('.delivery-item-row').forEach(row => {
@@ -342,53 +429,82 @@
       const opt = sel.options[sel.selectedIndex];
       total += (opt ? parseFloat(opt.dataset.price || 0) : 0) * qty;
     });
+    document.getElementById('delivery-total-display').textContent = '&#x20B1;' + total.toFixed(2);
+    // use textContent so the entity renders as a glyph
     document.getElementById('delivery-total-display').textContent = '₱' + total.toFixed(2);
   }
+
   function openDeliveryConfirm() {
     const custSel = document.getElementById('delivery-customer-select');
     if (!custSel.value) { alert('Please select a valid customer.'); return; }
     for (const row of document.querySelectorAll('.delivery-item-row')) {
-      if (!row.querySelector('.delivery-product-select').value) { alert('Please select a valid product for each row.'); return; }
+      if (!row.querySelector('.delivery-product-select').value) {
+        alert('Please select a valid product for each row.'); return;
+      }
     }
     const custName = custSel.options[custSel.selectedIndex].text;
     const total = document.getElementById('delivery-total-display').textContent;
-    document.getElementById('delivery-confirm-summary').textContent = `Customer: ${custName} — Total: ${total}`;
+    document.getElementById('delivery-confirm-summary').textContent =
+      `Customer: ${custName} — Total: ${total}`;
     document.getElementById('delivery-confirm-modal').classList.add('open');
   }
-  function closeDeliveryConfirm() { document.getElementById('delivery-confirm-modal').classList.remove('open'); }
+  function closeDeliveryConfirm() {
+    document.getElementById('delivery-confirm-modal').classList.remove('open');
+  }
   function submitDeliveryForm() { document.getElementById('delivery-form').submit(); }
 
+  // ── Confirm order modal ───────────────────────────────────────
   function openConfirmOrderModal(id, customerName) {
-    document.getElementById('confirm-order-message').textContent = `Confirm the delivery order for "${customerName}"? The customer will be notified that their order is confirmed.`;
-    document.getElementById('confirm-order-btn').onclick = function() { document.getElementById('confirm-form-' + id).submit(); };
+    document.getElementById('confirm-order-message').textContent =
+      `Confirm the delivery order for "${customerName}"? The customer will be notified.`;
+    document.getElementById('confirm-order-btn').onclick = function () {
+      document.getElementById('confirm-form-' + id).submit();
+    };
     document.getElementById('confirm-order-modal').classList.add('open');
   }
-  function closeConfirmOrderModal() { document.getElementById('confirm-order-modal').classList.remove('open'); }
+  function closeConfirmOrderModal() {
+    document.getElementById('confirm-order-modal').classList.remove('open');
+  }
 
+  // ── Mark delivered modal ──────────────────────────────────────
+  // FIX: was missing the `function` keyword — the modal never opened
+  function openMarkDeliveredModal(id, customerName) {
+    document.getElementById('mark-delivered-message').textContent =
+      `You're about to mark the delivery for "${customerName}" as delivered. This cannot be undone.`;
+    document.getElementById('mark-delivered-confirm-btn').onclick = function () {
+      document.getElementById('mark-form-' + id).submit();
+    };
+    document.getElementById('mark-delivered-modal').classList.add('open');
+  }
+  function closeMarkDeliveredModal() {
+    document.getElementById('mark-delivered-modal').classList.remove('open');
+  }
+
+  // ── Cancel modal ──────────────────────────────────────────────
   let _cancelDeliveryId = null;
   function openCancelModal(id, customerName) {
     _cancelDeliveryId = id;
-    document.getElementById('cancel-delivery-message').textContent = `You're about to cancel the delivery for "${customerName}". This action cannot be undone.`;
+    document.getElementById('cancel-delivery-message').textContent =
+      `You're about to cancel the delivery for "${customerName}". This action cannot be undone.`;
     document.getElementById('cancel-reason-input').value = '';
-    document.getElementById('cancel-delivery-confirm-btn').onclick = function() {
+    document.getElementById('cancel-delivery-confirm-btn').onclick = function () {
       const reason = document.getElementById('cancel-reason-input').value.trim();
       document.getElementById('cancel-reason-' + id).value = reason;
       document.getElementById('cancel-form-' + id).submit();
     };
     document.getElementById('cancel-delivery-modal').classList.add('open');
   }
-  function closeCancelModal() { document.getElementById('cancel-delivery-modal').classList.remove('open'); _cancelDeliveryId = null; }
-
-
-    document.getElementById('mark-delivered-message').textContent = `You're about to mark the delivery for "${customerName}" as delivered. This cannot be undone.`;
-    document.getElementById('mark-delivered-confirm-btn').onclick = function() { document.getElementById('mark-form-' + id).submit(); };
-    document.getElementById('mark-delivered-modal').classList.add('open');
+  function closeCancelModal() {
+    document.getElementById('cancel-delivery-modal').classList.remove('open');
+    _cancelDeliveryId = null;
   }
-  function closeMarkDeliveredModal() { document.getElementById('mark-delivered-modal').classList.remove('open'); }
 
+  // ── Table search ──────────────────────────────────────────────
   function filterDeliveries() {
     const q = document.getElementById('search-deliveries').value.toLowerCase();
-    document.querySelectorAll('.delivery-row').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+    document.querySelectorAll('.delivery-row').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
   }
 </script>
 </body>

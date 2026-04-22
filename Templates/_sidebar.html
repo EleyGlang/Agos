@@ -84,25 +84,25 @@
 
     <a href="{{ url_for('dashboard') }}" title="Dashboard"
        class="agos-sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
-      <span class="agos-nav-icon">dashboard</span>
+      <span class="agos-nav-icon">empty_dashboard</span>
       <span class="sidebar-label">Dashboard</span>
     </a>
 
     <a href="{{ url_for('sales') }}" title="Sales Management"
        class="agos-sidebar-link {% if active_page == 'sales' %}active{% endif %}">
-      <span class="agos-nav-icon">point_of_sale</span>
+      <span class="agos-nav-icon">attach_money</span>
       <span class="sidebar-label">Sales Management</span>
     </a>
 
     <a href="{{ url_for('inventory') }}" title="Inventory"
        class="agos-sidebar-link {% if active_page == 'inventory' %}active{% endif %}">
-      <span class="agos-nav-icon">inventory_2</span>
+      <span class="agos-nav-icon">inventory</span>
       <span class="sidebar-label">Inventory</span>
     </a>
 
     <a href="{{ url_for('products') }}" title="Products"
        class="agos-sidebar-link {% if active_page == 'products' %}active{% endif %}">
-      <span class="agos-nav-icon">category</span>
+      <span class="agos-nav-icon">water_bottle_large</span>
       <span class="sidebar-label">Products</span>
     </a>
 
@@ -120,17 +120,10 @@
 
     <a href="{{ url_for('returns') }}" title="Returns & Refunds"
        class="agos-sidebar-link {% if active_page == 'returns' %}active{% endif %}">
-      <span class="agos-nav-icon">assignment_return</span>
+      <span class="agos-nav-icon">request_quote</span>
       <span class="sidebar-label">Returns &amp; Refunds</span>
     </a>
 
-    {% if session.get('role') in ['Admin', 'Super Admin'] %}
-    <a href="{{ url_for('customers') }}" title="Customers"
-       class="agos-sidebar-link {% if active_page == 'customers' %}active{% endif %}">
-      <span class="agos-nav-icon">group</span>
-      <span class="sidebar-label">Customers</span>
-    </a>
-    {% endif %}
 
     {% if session.get('role') in ('Super Admin', 'Admin') %}
     <div class="mx-3 my-2 sidebar-section-divider opacity-20" style="border-top:1px solid rgba(91,184,224,0.5)"></div>

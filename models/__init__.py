@@ -16,3 +16,4 @@ from models.activity_log        import ActivityLog
 from models.return_model        import Return_Model
 from models.return_item         import ReturnItem
 from models.water_tank_log      import WaterTankLog
+from models.watertank           import WaterTank
