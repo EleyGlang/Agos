@@ -8,11 +8,46 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Toast notifications ── */
+    #toast-container {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.25rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: all;
+      min-width: 260px;
+      max-width: 360px;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      animation: toastIn 0.3s ease;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .toast.hide { opacity: 0; transform: translateX(40px); }
+    .toast-success { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-text); }
+    .toast-error   { background: var(--danger-bg);  color: var(--danger-text);  border: 1px solid var(--danger-text); }
+    @keyframes toastIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+  </style>
 </head>
 <body class="agos-body m-0 p-0">
-<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
-<div class="flex min-h-screen">
 
+<!-- Toast container -->
+<div id="toast-container"></div>
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+
+<div class="flex min-h-screen">
   {% include '_sidebar.html' %}
 
   <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
@@ -54,12 +89,11 @@
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
 
+      <!-- Flash messages rendered as toasts via JS below -->
       {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}{% for category, message in messages %}
-          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">
-            {{ message }}
-          </div>
-        {% endfor %}{% endif %}
+        {% if messages %}
+          <script>window._flashMessages = {{ messages | tojson }};</script>
+        {% endif %}
       {% endwith %}
 
       <!-- Super Admin banner -->
@@ -286,12 +320,11 @@
                 <button onclick="filterByRole('all')" id="pill-all"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
-                            {% if session.get('role') == 'Super Admin' %}
+                {% if session.get('role') == 'Super Admin' %}
                 <button onclick="filterByRole('Super Admin')" id="pill-Super Admin"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Super Admin</button>
-                            {% endif %}
-
+                {% endif %}
                 <button onclick="filterByRole('Admin')" id="pill-Admin"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Admin</button>
@@ -308,6 +341,7 @@
           </div>
 
           <div class="overflow-x-auto">
+            <p class="text-[0.65rem] text-center py-1 sm:hidden" style="color:var(--text-faint)">← Scroll to see all columns →</p>
             <table class="agos-table w-full border-collapse" style="min-width:640px">
               <thead>
                 <tr>
@@ -359,53 +393,61 @@
                   <td>
                     <div class="flex items-center gap-1.5 flex-wrap">
                       {% if user.role != 'Super Admin' and user.user_id != session['user_id'] %}
-                        {# ── Edit button (matches products page Edit pattern) ── #}
+
+                        {# ── Edit button ──
+                            FIX: was using replace("'","\'") inside double-quoted attribute
+                                 which terminated the attribute on the first double-quote.
+                                 Now uses | tojson which produces a safe, self-quoting JS string. #}
                         {% if is_super_admin or user.role == 'Operator' %}
                           <button type="button"
                                   onclick="openEditUserModal(
                                     {{ user.user_id }},
-                                    '{{ (user.first_name or '')|replace("'","\\'") }}',
-                                    '{{ (user.middle_initial or '')|replace("'","\\'") }}',
-                                    '{{ (user.last_name or '')|replace("'","\\'") }}',
-                                    '{{ user.role }}'
+                                    {{ (user.first_name or '') | tojson }},
+                                    {{ (user.middle_initial or '') | tojson }},
+                                    {{ (user.last_name or '') | tojson }},
+                                    {{ user.role | tojson }}
                                   )"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                                   style="background:var(--info-bg);color:var(--info-text)">Edit</button>
                         {% endif %}
 
-                        {# ── Toggle button ── #}
+                        {# ── Toggle button ──
+                            FIX: bare '{{ user.full_name }}' was unsafe — now uses | tojson #}
                         {% if is_super_admin or user.role == 'Operator' %}
                           <form id="toggle-form-{{ user.user_id }}"
                                 action="{{ url_for('toggle_user_status', user_id=user.user_id) }}"
                                 method="POST" style="display:none"></form>
                           <button type="button"
-                                  onclick="openToggleStatusModal({{ user.user_id }}, '{{ user.full_name }}', '{{ user.status }}')"
+                                  onclick="openToggleStatusModal({{ user.user_id }}, {{ user.full_name | tojson }}, {{ user.status | tojson }})"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                                   style="{% if user.status == 'Active' %}background:var(--warning-bg);color:var(--warning-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
                             {{ 'Deactivate' if user.status == 'Active' else 'Activate' }}
                           </button>
                         {% endif %}
 
-                        {# ── Reset PW (Super Admin only) ── #}
+                        {# ── Reset PW (Super Admin only) ──
+                            FIX: bare '{{ user.full_name }}' — now uses | tojson #}
                         {% if is_super_admin %}
                           <button type="button"
-                                  onclick="openResetPasswordModal({{ user.user_id }}, '{{ user.full_name }}')"
+                                  onclick="openResetPasswordModal({{ user.user_id }}, {{ user.full_name | tojson }})"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                                   style="background:var(--accent-soft);color:var(--accent)">
                             Reset PW
                           </button>
                         {% endif %}
 
-                        {# ── Delete (Super Admin only) ── #}
+                        {# ── Delete (Super Admin only) ──
+                            FIX: bare '{{ user.full_name }}' — now uses | tojson #}
                         {% if is_super_admin %}
                           <form id="delete-user-form-{{ user.user_id }}"
                                 action="{{ url_for('delete_user', user_id=user.user_id) }}"
                                 method="POST" style="display:none"></form>
                           <button type="button"
-                                  onclick="openDeleteUserModal({{ user.user_id }}, '{{ user.full_name }}')"
+                                  onclick="openDeleteUserModal({{ user.user_id }}, {{ user.full_name | tojson }})"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                                   style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
                         {% endif %}
+
                       {% else %}
                         <span style="color:var(--text-faint)">—</span>
                       {% endif %}
@@ -448,7 +490,7 @@
                   </td>
                   <td>
                     <div class="flex items-center gap-1.5 flex-wrap">
-                      {# ── Edit (matches products page Edit pattern) ── #}
+                      {# ── Edit — uses tojson, was already correct ── #}
                       <button type="button"
                               onclick="openEditCustomerModal({
                                 id: {{ c.customer_id }},
@@ -460,7 +502,8 @@
                               })"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--info-bg);color:var(--info-text)">Edit</button>
-                      {# ── View Info ── #}
+
+                      {# ── View Info — uses tojson, was already correct ── #}
                       <button type="button"
                               onclick="openViewCustomerModal({
                                 id: {{ c.customer_id }},
@@ -473,16 +516,31 @@
                                 address: {{ (c.address or '') | tojson }},
                                 email: {{ (c.email or '') | tojson }},
                                 points: {{ c.loyalty_points }},
-                                created: '{% if c.created_at %}{{ c.created_at.strftime("%b %d, %Y") }}{% else %}—{% endif %}'
+                                created: '{% if c.created_at %}{{ c.created_at.strftime("%b %d, %Y") }}{% else %}—{% endif %}',
+                                has_login: {{ 'true' if c.username else 'false' }}
                               })"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--accent-soft);color:var(--accent)">View</button>
+
+                      {# ── Reset Customer PW (Admin/Super Admin) — new feature ── #}
+                      {% if c.username %}
+                        <button type="button"
+                                onclick="openResetCustomerPwModal({{ c.customer_id }}, {{ c.full_name | tojson }})"
+                                class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                                style="background:var(--accent-soft);color:var(--accent)">Reset PW</button>
+                        <form id="reset-cust-pw-form-{{ c.customer_id }}"
+                              action="{{ url_for('admin_reset_customer_password', customer_id=c.customer_id) }}"
+                              method="POST" style="display:none">
+                          <input type="hidden" name="new_password" id="reset-cust-pw-val-{{ c.customer_id }}"/>
+                        </form>
+                      {% endif %}
+
                       {# ── Delete ── #}
                       <form id="delete-cust-form-{{ c.customer_id }}"
                             action="{{ url_for('delete_customer_account', customer_id=c.customer_id) }}"
                             method="POST" style="display:none"></form>
                       <button type="button"
-                              onclick="openDeleteCustomerModal({{ c.customer_id }}, {{ c.full_name|tojson }})"
+                              onclick="openDeleteCustomerModal({{ c.customer_id }}, {{ c.full_name | tojson }})"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
                     </div>
@@ -517,7 +575,7 @@
 
 <!-- ═══════════════════════════════ MODALS ═══════════════════════════════ -->
 
-<!-- ══ EDIT STAFF USER MODAL (mirrors products Edit modal exactly) ══ -->
+<!-- ══ EDIT STAFF USER MODAL ══ -->
 <div id="edit-user-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box">
@@ -554,7 +612,7 @@
                   style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">read-only</span>
           </label>
           <input type="text" id="edit-user-role-display" disabled class="agos-input opacity-60 cursor-not-allowed"/>
-          <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">Role changes must be done by creating a new account.</p>
+          <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">Role changes require creating a new account.</p>
         </div>
         <div class="flex gap-3 pt-1">
           <button type="submit" class="agos-btn-primary flex-1 py-2.5">Save Changes</button>
@@ -565,7 +623,7 @@
   </div>
 </div>
 
-<!-- ══ EDIT CUSTOMER MODAL (mirrors products Edit modal exactly) ══ -->
+<!-- ══ EDIT CUSTOMER MODAL ══ -->
 <div id="edit-customer-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box">
@@ -679,11 +737,14 @@
           </div>
         </div>
       </div>
-      <div class="px-6 pb-5 flex gap-3">
+      <div class="px-6 pb-5 flex gap-3 flex-wrap">
         <button onclick="closeModal('view-customer-modal')" class="agos-btn-ghost flex-1 py-2.5">Close</button>
         <button id="vcm-edit-btn" type="button"
                 class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
                 style="background:var(--info-bg);color:var(--info-text)">Edit Info</button>
+        <button id="vcm-reset-pw-btn" type="button"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
+                style="background:var(--accent-soft);color:var(--accent)">Reset PW</button>
         <button id="vcm-delete-btn" type="button"
                 class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
                 style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
@@ -745,12 +806,12 @@
   </div>
 </div>
 
-<!-- ══ RESET PASSWORD MODAL ══ -->
+<!-- ══ RESET STAFF PASSWORD MODAL ══ -->
 <div id="reset-pw-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box">
       <div class="px-6 py-4" style="border-bottom:1px solid var(--border-section)">
-        <div class="agos-card-title">Reset Password</div>
+        <div class="agos-card-title">Reset Staff Password</div>
         <div class="agos-card-subtitle" id="reset-pw-subtitle"></div>
       </div>
       <form id="reset-pw-form" method="POST" class="p-6 flex flex-col gap-4">
@@ -769,6 +830,35 @@
           <button type="button" onclick="closeModal('reset-pw-modal')" class="agos-btn-ghost flex-1 py-2.5">Cancel</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RESET CUSTOMER PASSWORD MODAL (new) ══ -->
+<div id="reset-cust-pw-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box">
+      <div class="px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div class="agos-card-title">Reset Customer Password</div>
+        <div class="agos-card-subtitle" id="reset-cust-pw-subtitle"></div>
+      </div>
+      <div class="p-6 flex flex-col gap-4">
+        <div>
+          <label class="agos-label">New Password</label>
+          <div class="relative">
+            <input type="password" id="reset-cust-pw-input" required
+                   minlength="8" placeholder="Minimum 8 characters" class="agos-input" style="padding-right:2.5rem"/>
+            <button type="button" onclick="togglePw('reset-cust-pw-input')"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer"
+                    style="color:var(--text-muted)">👁</button>
+          </div>
+        </div>
+        <div class="flex gap-3">
+          <button id="reset-cust-pw-submit" type="button" onclick="submitResetCustomerPw()"
+                  class="agos-btn-primary flex-1 py-2.5">Reset</button>
+          <button type="button" onclick="closeModal('reset-cust-pw-modal')" class="agos-btn-ghost flex-1 py-2.5">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -835,7 +925,28 @@
 <script>
 const IS_SUPER_ADMIN = {{ 'true' if is_super_admin else 'false' }};
 
-// ── Theme label sync ─────────────────────────────────────────────────
+// ── Toast helper ──────────────────────────────────────────────────────
+function showToast(message, type) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  const icon = type === 'success' ? '✓' : '✕';
+  toast.innerHTML = `<span style="font-size:1rem;font-weight:700">${icon}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('hide');
+    setTimeout(() => toast.remove(), 400);
+  }, 4000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (window._flashMessages) {
+    window._flashMessages.forEach(([cat, msg]) => showToast(msg, cat === 'error' ? 'error' : 'success'));
+  }
+  filterRows(); // initialize visible count
+});
+
+// ── Theme label sync ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const lbl = document.getElementById('theme-label');
@@ -893,7 +1004,6 @@ function filterRows() {
   const label = document.getElementById('visible-count');
   if (label) label.textContent = `Showing ${vis} account${vis !== 1 ? 's' : ''}`;
 }
-window.addEventListener('DOMContentLoaded', () => filterRows());
 
 // ── Create tab switcher ───────────────────────────────────────────────
 function switchCreateTab(tab) {
@@ -914,9 +1024,9 @@ function openCreateUserConfirm() {
   const username = document.getElementById('new-username').value.trim();
   const pw       = document.getElementById('new-pw').value;
   const role     = document.querySelector('#create-user-form select[name=role]').value;
-  if (!first || !last)      { alert('Please enter first and last name.'); return; }
-  if (!username)            { alert('Please enter a username.'); return; }
-  if (!pw || pw.length < 8) { alert('Password must be at least 8 characters.'); return; }
+  if (!first || !last)      { showToast('Please enter first and last name.', 'error'); return; }
+  if (!username)            { showToast('Please enter a username.', 'error'); return; }
+  if (!pw || pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
   const parts = [first];
   if (mi) parts.push(mi.replace('.', '') + '.');
   parts.push(last);
@@ -933,10 +1043,10 @@ function openCreateCustomerConfirm() {
   const username = document.getElementById('cust-username').value.trim();
   const pw       = document.getElementById('cust-pw').value;
   const contact  = document.getElementById('cust-contact').value.trim();
-  if (!first || !last)      { alert('Please enter first and last name.'); return; }
-  if (!username)            { alert('Please enter a username.'); return; }
-  if (!pw || pw.length < 8) { alert('Password must be at least 8 characters.'); return; }
-  if (contact && !/^\d{11}$/.test(contact)) { alert('Contact must be exactly 11 digits.'); return; }
+  if (!first || !last)      { showToast('Please enter first and last name.', 'error'); return; }
+  if (!username)            { showToast('Please enter a username.', 'error'); return; }
+  if (!pw || pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+  if (contact && !/^\d{11}$/.test(contact)) { showToast('Contact must be exactly 11 digits.', 'error'); return; }
   document.getElementById('create-customer-summary').textContent =
     `Create a customer portal account for "${first} ${last}" with username "@${username}"?`;
   openModal('create-customer-modal');
@@ -944,53 +1054,49 @@ function openCreateCustomerConfirm() {
 function submitCreateCustomerForm() { document.getElementById('create-customer-form').submit(); }
 
 // ══════════════════════════════════════════════════════════════════
-//  EDIT STAFF USER MODAL  (mirrors products Edit modal)
+//  EDIT STAFF USER MODAL
+//  FIX: Parameters are now proper JS values produced by Jinja's tojson filter.
+//       The old replace("'","\'") pattern broke the HTML attribute because the
+//       inner double-quotes terminated the onclick="..." attribute early.
 // ══════════════════════════════════════════════════════════════════
 function openEditUserModal(id, first, mi, last, role) {
-  document.getElementById('edit-user-form').action    = `/admin/users/${id}/update-info`;
-  document.getElementById('edit-user-first').value    = first;
-  document.getElementById('edit-user-mi').value       = mi;
-  document.getElementById('edit-user-last').value     = last;
-  document.getElementById('edit-user-role-display').value = role;
+  document.getElementById('edit-user-form').action          = `/admin/users/${id}/update-info`;
+  document.getElementById('edit-user-first').value          = first;
+  document.getElementById('edit-user-mi').value             = mi;
+  document.getElementById('edit-user-last').value           = last;
+  document.getElementById('edit-user-role-display').value   = role;
   document.getElementById('edit-user-subtitle').textContent = `Editing: ${first} ${last} (${role})`;
   openModal('edit-user-modal');
 }
 
-document.getElementById('edit-user-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal('edit-user-modal');
-});
-
 // ══════════════════════════════════════════════════════════════════
-//  EDIT CUSTOMER MODAL  (mirrors products Edit modal)
+//  EDIT CUSTOMER MODAL
 // ══════════════════════════════════════════════════════════════════
 function openEditCustomerModal(c) {
   document.getElementById('edit-customer-form').action = `/admin/customers/${c.id}/update-info`;
-  document.getElementById('edit-cust-first').value     = c.first_name   || '';
+  document.getElementById('edit-cust-first').value     = c.first_name    || '';
   document.getElementById('edit-cust-mi').value        = c.middle_initial || '';
-  document.getElementById('edit-cust-last').value      = c.last_name    || '';
-  document.getElementById('edit-cust-contact').value   = c.contact      || '';
-  document.getElementById('edit-cust-address').value   = c.address      || '';
+  document.getElementById('edit-cust-last').value      = c.last_name     || '';
+  document.getElementById('edit-cust-contact').value   = c.contact       || '';
+  document.getElementById('edit-cust-address').value   = c.address       || '';
   openModal('edit-customer-modal');
 }
-
-document.getElementById('edit-customer-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal('edit-customer-modal');
-});
 
 // ── View Customer Info ────────────────────────────────────────────────
 function openViewCustomerModal(c) {
   document.getElementById('vcm-avatar').textContent   = c.name ? c.name[0].toUpperCase() : '?';
   document.getElementById('vcm-name').textContent     = c.name     || '—';
   document.getElementById('vcm-username').textContent = c.username ? `@${c.username}` : 'No portal login';
-  document.getElementById('vcm-first').textContent    = c.first_name    || '—';
+  document.getElementById('vcm-first').textContent    = c.first_name     || '—';
   document.getElementById('vcm-mi').textContent       = c.middle_initial || '—';
-  document.getElementById('vcm-last').textContent     = c.last_name     || '—';
-  document.getElementById('vcm-contact').textContent  = c.contact       || '—';
-  document.getElementById('vcm-email').textContent    = c.email         || '—';
-  document.getElementById('vcm-address').textContent  = c.address       || '—';
+  document.getElementById('vcm-last').textContent     = c.last_name      || '—';
+  document.getElementById('vcm-contact').textContent  = c.contact        || '—';
+  document.getElementById('vcm-email').textContent    = c.email          || '—';
+  document.getElementById('vcm-address').textContent  = c.address        || '—';
   document.getElementById('vcm-points').textContent   = c.points;
-  document.getElementById('vcm-created').textContent  = c.created       || '—';
-  // Edit button → opens edit modal
+  document.getElementById('vcm-created').textContent  = c.created        || '—';
+
+  // Edit button
   document.getElementById('vcm-edit-btn').onclick = () => {
     closeModal('view-customer-modal');
     openEditCustomerModal({
@@ -998,6 +1104,17 @@ function openViewCustomerModal(c) {
       last_name: c.last_name, contact: c.contact, address: c.address
     });
   };
+  // Reset PW button — only show if customer has a login
+  const resetBtn = document.getElementById('vcm-reset-pw-btn');
+  if (c.has_login) {
+    resetBtn.style.display = '';
+    resetBtn.onclick = () => {
+      closeModal('view-customer-modal');
+      openResetCustomerPwModal(c.id, c.name);
+    };
+  } else {
+    resetBtn.style.display = 'none';
+  }
   // Delete button
   document.getElementById('vcm-delete-btn').onclick = () => {
     closeModal('view-customer-modal');
@@ -1007,6 +1124,7 @@ function openViewCustomerModal(c) {
 }
 
 // ── Toggle status ─────────────────────────────────────────────────────
+// FIX: name and status now arrive as proper JS strings via tojson
 function openToggleStatusModal(id, name, currentStatus) {
   const isActive = currentStatus === 'Active';
   document.getElementById('toggle-modal-icon').style.background =
@@ -1023,7 +1141,8 @@ function openToggleStatusModal(id, name, currentStatus) {
   openModal('toggle-status-modal');
 }
 
-// ── Reset password ────────────────────────────────────────────────────
+// ── Reset staff password ──────────────────────────────────────────────
+// FIX: name now arrives as a proper JS string via tojson
 function openResetPasswordModal(id, name) {
   document.getElementById('reset-pw-form').action          = `/admin/users/${id}/reset-password`;
   document.getElementById('reset-pw-subtitle').textContent = `Resetting password for ${name}`;
@@ -1031,7 +1150,25 @@ function openResetPasswordModal(id, name) {
   openModal('reset-pw-modal');
 }
 
+// ── Reset customer password (new) ─────────────────────────────────────
+let _resetCustPwId = null;
+function openResetCustomerPwModal(id, name) {
+  _resetCustPwId = id;
+  document.getElementById('reset-cust-pw-subtitle').textContent = `Resetting password for ${name}`;
+  document.getElementById('reset-cust-pw-input').value = '';
+  openModal('reset-cust-pw-modal');
+}
+function submitResetCustomerPw() {
+  const pw = document.getElementById('reset-cust-pw-input').value.trim();
+  if (!pw || pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+  const hiddenInput = document.getElementById(`reset-cust-pw-val-${_resetCustPwId}`);
+  if (!hiddenInput) { showToast('Could not find password form.', 'error'); return; }
+  hiddenInput.value = pw;
+  document.getElementById(`reset-cust-pw-form-${_resetCustPwId}`).submit();
+}
+
 // ── Delete staff ──────────────────────────────────────────────────────
+// FIX: name now arrives as a proper JS string via tojson
 function openDeleteUserModal(id, name) {
   document.getElementById('delete-user-message').textContent =
     `You're about to permanently delete the account for "${name}". This cannot be undone.`;
@@ -1051,10 +1188,11 @@ function openDeleteCustomerModal(id, name) {
   openModal('delete-customer-modal');
 }
 
-// ── Close on backdrop click ───────────────────────────────────────────
+// ── Close all modals on backdrop click ────────────────────────────────
 [
-  'view-customer-modal','create-user-modal','create-customer-modal',
-  'toggle-status-modal','reset-pw-modal','delete-user-modal',
+  'edit-user-modal','edit-customer-modal','view-customer-modal',
+  'create-user-modal','create-customer-modal','toggle-status-modal',
+  'reset-pw-modal','reset-cust-pw-modal','delete-user-modal',
   'delete-customer-modal','logout-modal'
 ].forEach(id => {
   const el = document.getElementById(id);
