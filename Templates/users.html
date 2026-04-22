@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>User Management — Agos</title>
+  <title>Users — Agos</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -11,34 +11,30 @@
   <style>
     /* ── Toast notifications ── */
     #toast-container {
-      position: fixed;
-      top: 1.25rem;
-      right: 1.25rem;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      pointer-events: none;
+      position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999;
+      display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none;
     }
     .toast {
-      pointer-events: all;
-      min-width: 260px;
-      max-width: 360px;
-      padding: 0.75rem 1rem;
-      border-radius: 0.75rem;
-      font-size: 0.82rem;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
+      pointer-events: all; min-width: 260px; max-width: 360px;
+      padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.82rem;
+      font-weight: 500; display: flex; align-items: center; gap: 0.6rem;
       box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-      animation: toastIn 0.3s ease;
-      transition: opacity 0.4s ease, transform 0.4s ease;
+      animation: toastIn 0.3s ease; transition: opacity 0.4s ease, transform 0.4s ease;
     }
     .toast.hide { opacity: 0; transform: translateX(40px); }
     .toast-success { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-text); }
     .toast-error   { background: var(--danger-bg);  color: var(--danger-text);  border: 1px solid var(--danger-text); }
     @keyframes toastIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+
+    /* ── Search clear btn ── */
+    .search-wrap { position: relative; }
+    .search-wrap .clear-btn {
+      position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 0.2rem;
+      color: var(--text-muted); font-size: 0.75rem; line-height: 1;
+      display: none;
+    }
+    .search-wrap .clear-btn.visible { display: block; }
   </style>
 </head>
 <body class="agos-body m-0 p-0">
@@ -64,7 +60,7 @@
         </button>
         <div>
           <div class="text-lg md:text-2xl font-bold"
-               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">User Management</div>
+               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Users</div>
           <div class="text-xs" style="color:var(--text-muted)">
             {% if is_super_admin %}Full system access — all accounts visible
             {% else %}Manage operator and customer accounts{% endif %}
@@ -89,7 +85,7 @@
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
 
-      <!-- Flash messages rendered as toasts via JS below -->
+      <!-- Flash messages rendered as toasts via JS -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <script>window._flashMessages = {{ messages | tojson }};</script>
@@ -208,6 +204,17 @@
                     </div>
                   </div>
                   <div>
+                    <label class="agos-label">Confirm Password</label>
+                    <div class="relative">
+                      <input type="password" id="new-pw-confirm"
+                             placeholder="Repeat password" required minlength="8"
+                             class="agos-input" style="padding-right:2.5rem"/>
+                      <button type="button" onclick="togglePw('new-pw-confirm')"
+                              class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer"
+                              style="color:var(--text-muted)">👁</button>
+                    </div>
+                  </div>
+                  <div>
                     <label class="agos-label">Role</label>
                     <select name="role" class="agos-input">
                       <option value="Operator">Operator</option>
@@ -252,6 +259,17 @@
                              placeholder="Min. 8 characters" required minlength="8"
                              class="agos-input" style="padding-right:2.5rem"/>
                       <button type="button" onclick="togglePw('cust-pw')"
+                              class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer"
+                              style="color:var(--text-muted)">👁</button>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="agos-label">Confirm Password</label>
+                    <div class="relative">
+                      <input type="password" id="cust-pw-confirm"
+                             placeholder="Repeat password" required minlength="8"
+                             class="agos-input" style="padding-right:2.5rem"/>
+                      <button type="button" onclick="togglePw('cust-pw-confirm')"
                               class="absolute right-3 top-1/2 -translate-y-1/2 text-xs border-none bg-transparent cursor-pointer"
                               style="color:var(--text-muted)">👁</button>
                     </div>
@@ -324,10 +342,10 @@
                 <button onclick="filterByRole('Super Admin')" id="pill-Super Admin"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Super Admin</button>
-                {% endif %}
                 <button onclick="filterByRole('Admin')" id="pill-Admin"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Admin</button>
+                {% endif %}
                 <button onclick="filterByRole('Operator')" id="pill-Operator"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Operator</button>
@@ -335,14 +353,20 @@
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Customer</button>
               </div>
-              <input type="text" id="search-all" placeholder="Search name / username…"
-                     oninput="filterRows()" class="agos-input w-full sm:w-48"/>
+              <!-- Search with clear button -->
+              <div class="search-wrap w-full sm:w-52">
+                <input type="text" id="search-all" placeholder="Search name / username…"
+                       oninput="filterRows(); toggleClearBtn()"
+                       class="agos-input w-full" style="padding-right:2rem"/>
+                <button class="clear-btn" id="search-clear-btn"
+                        onclick="clearSearch()" title="Clear search">✕</button>
+              </div>
             </div>
           </div>
 
           <div class="overflow-x-auto">
             <p class="text-[0.65rem] text-center py-1 sm:hidden" style="color:var(--text-faint)">← Scroll to see all columns →</p>
-            <table class="agos-table w-full border-collapse" style="min-width:640px">
+            <table class="agos-table w-full border-collapse" style="min-width:660px">
               <thead>
                 <tr>
                   <th class="w-8">#</th>
@@ -374,7 +398,9 @@
                                 style="background:var(--info-bg);color:var(--info-text)">You</span>
                           {% endif %}
                         </div>
-                        <div class="text-[0.68rem]" style="color:var(--text-muted)">Staff</div>
+                        <div class="text-[0.68rem]" style="color:var(--text-muted)">
+                          {% if user.created_at %}{{ user.created_at.strftime('%b %d, %Y') }}{% else %}Staff{% endif %}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -392,58 +418,82 @@
                   </td>
                   <td>
                     <div class="flex items-center gap-1.5 flex-wrap">
+
+                      {# ── View button — always shown for non-self, non-super-admin rows ── #}
                       {% if user.role != 'Super Admin' and user.user_id != session['user_id'] %}
 
-                        {# ── Edit button ──
-                            FIX: was using replace("'","\'") inside double-quoted attribute
-                                 which terminated the attribute on the first double-quote.
-                                 Now uses | tojson which produces a safe, self-quoting JS string. #}
+                        {# ── View (all admins can view staff) ── #}
+                        {#
+                          FIX: All action buttons now use data-* attributes to pass per-row data.
+                          Previously: onclick="fn({{ val | tojson | e }})" — BROKEN because tojson
+                          returns a Markup object (safe), so | e is a no-op, and the literal " chars
+                          from tojson terminated the double-quoted onclick="..." attribute early.
+                          Fix: use data-* attrs (HTML-escaped by Jinja auto-escape) + read in JS.
+                        #}
+                        <button type="button"
+                                data-uid="{{ user.user_id }}"
+                                data-name="{{ user.full_name }}"
+                                data-first="{{ user.first_name }}"
+                                data-mi="{{ user.middle_initial or '' }}"
+                                data-last="{{ user.last_name }}"
+                                data-username="{{ user.username }}"
+                                data-role="{{ user.role }}"
+                                data-status="{{ user.status }}"
+                                data-created="{{ user.created_at.strftime('%b %d, %Y') if user.created_at else '—' }}"
+                                onclick="openViewUserModal(this)"
+                                class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                                style="background:var(--info-bg);color:var(--info-text)">View</button>
+
+                        {# ── Edit ── #}
                         {% if is_super_admin or user.role == 'Operator' %}
                           <button type="button"
-                                  onclick="openEditUserModal(
-                                    {{ user.user_id }},
-                                    {{ (user.first_name or '') | tojson }},
-                                    {{ (user.middle_initial or '') | tojson }},
-                                    {{ (user.last_name or '') | tojson }},
-                                    {{ user.role | tojson }}
-                                  )"
+                                  data-uid="{{ user.user_id }}"
+                                  data-first="{{ user.first_name }}"
+                                  data-mi="{{ user.middle_initial or '' }}"
+                                  data-last="{{ user.last_name }}"
+                                  data-role="{{ user.role }}"
+                                  onclick="openEditUserModal(this)"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                  style="background:var(--info-bg);color:var(--info-text)">Edit</button>
+                                  style="background:var(--accent-soft);color:var(--accent)">Edit</button>
                         {% endif %}
 
-                        {# ── Toggle button ──
-                            FIX: bare '{{ user.full_name }}' was unsafe — now uses | tojson #}
+                        {# ── Toggle status ── #}
                         {% if is_super_admin or user.role == 'Operator' %}
                           <form id="toggle-form-{{ user.user_id }}"
                                 action="{{ url_for('toggle_user_status', user_id=user.user_id) }}"
                                 method="POST" style="display:none"></form>
                           <button type="button"
-                                  onclick="openToggleStatusModal({{ user.user_id }}, {{ user.full_name | tojson }}, {{ user.status | tojson }})"
+                                  data-uid="{{ user.user_id }}"
+                                  data-name="{{ user.full_name }}"
+                                  data-status="{{ user.status }}"
+                                  onclick="openToggleStatusModal(this)"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                                   style="{% if user.status == 'Active' %}background:var(--warning-bg);color:var(--warning-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
                             {{ 'Deactivate' if user.status == 'Active' else 'Activate' }}
                           </button>
                         {% endif %}
 
-                        {# ── Reset PW (Super Admin only) ──
-                            FIX: bare '{{ user.full_name }}' — now uses | tojson #}
+                        {# ── Reset PW (Super Admin only) ── #}
                         {% if is_super_admin %}
                           <button type="button"
-                                  onclick="openResetPasswordModal({{ user.user_id }}, {{ user.full_name | tojson }})"
+                                  data-uid="{{ user.user_id }}"
+                                  data-name="{{ user.full_name }}"
+                                  onclick="openResetPasswordModal(this)"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                  style="background:var(--accent-soft);color:var(--accent)">
+                                  style="background:var(--warning-bg);color:var(--warning-text)">
                             Reset PW
                           </button>
                         {% endif %}
 
-                        {# ── Delete (Super Admin only) ──
-                            FIX: bare '{{ user.full_name }}' — now uses | tojson #}
+                        {# ── Delete (Super Admin only) ── #}
                         {% if is_super_admin %}
                           <form id="delete-user-form-{{ user.user_id }}"
                                 action="{{ url_for('delete_user', user_id=user.user_id) }}"
                                 method="POST" style="display:none"></form>
                           <button type="button"
-                                  onclick="openDeleteUserModal({{ user.user_id }}, {{ user.full_name | tojson }})"
+                                  data-uid="{{ user.user_id }}"
+                                  data-name="{{ user.full_name }}"
+                                  onclick="openDeleteUserModal(this)"
                                   class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                                   style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
                         {% endif %}
@@ -451,6 +501,7 @@
                       {% else %}
                         <span style="color:var(--text-faint)">—</span>
                       {% endif %}
+
                     </div>
                   </td>
                 </tr>
@@ -490,44 +541,57 @@
                   </td>
                   <td>
                     <div class="flex items-center gap-1.5 flex-wrap">
-                      {# ── Edit — uses tojson, was already correct ── #}
+
+                      {#
+                        FIX: Customer action buttons now use data-customer='...' (single-quote attr)
+                        with a JSON-serialised object via | tojson.  Single-quote HTML attribute +
+                        double-quote JSON content = no conflict.  The onclick reads the value with
+                        JSON.parse(this.dataset.customer) so no tojson output ever appears inside
+                        a JS inline expression.
+                      #}
+
+                      {# ── Edit ── #}
                       <button type="button"
-                              onclick="openEditCustomerModal({
-                                id: {{ c.customer_id }},
-                                first_name: {{ (c.first_name or '') | tojson }},
-                                middle_initial: {{ (c.middle_initial or '') | tojson }},
-                                last_name: {{ (c.last_name or '') | tojson }},
-                                contact: {{ (c.contact_number or '') | tojson }},
-                                address: {{ (c.address or '') | tojson }}
-                              })"
+                              data-customer='{{ {
+                                "id": c.customer_id,
+                                "first_name": c.first_name or "",
+                                "middle_initial": c.middle_initial or "",
+                                "last_name": c.last_name or "",
+                                "contact": c.contact_number or "",
+                                "address": c.address or ""
+                              } | tojson }}'
+                              onclick="openEditCustomerModal(JSON.parse(this.dataset.customer))"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--info-bg);color:var(--info-text)">Edit</button>
 
-                      {# ── View Info — uses tojson, was already correct ── #}
+                      {# ── View Info ── #}
                       <button type="button"
-                              onclick="openViewCustomerModal({
-                                id: {{ c.customer_id }},
-                                name: {{ c.full_name | tojson }},
-                                first_name: {{ (c.first_name or '') | tojson }},
-                                middle_initial: {{ (c.middle_initial or '') | tojson }},
-                                last_name: {{ (c.last_name or '') | tojson }},
-                                username: {{ (c.username or '') | tojson }},
-                                contact: {{ (c.contact_number or '') | tojson }},
-                                address: {{ (c.address or '') | tojson }},
-                                email: {{ (c.email or '') | tojson }},
-                                points: {{ c.loyalty_points }},
-                                created: '{% if c.created_at %}{{ c.created_at.strftime("%b %d, %Y") }}{% else %}—{% endif %}',
-                                has_login: {{ 'true' if c.username else 'false' }}
-                              })"
+                              data-customer='{{ {
+                                "id": c.customer_id,
+                                "name": c.full_name or "",
+                                "first_name": c.first_name or "",
+                                "middle_initial": c.middle_initial or "",
+                                "last_name": c.last_name or "",
+                                "username": c.username or "",
+                                "contact": c.contact_number or "",
+                                "address": c.address or "",
+                                "email": c.email or "",
+                                "points": c.loyalty_points or 0,
+                                "created": c.created_at.strftime("%b %d, %Y") if c.created_at else "—",
+                                "has_login": (c.username is not none and c.username != "")
+                              } | tojson }}'
+                              onclick="openViewCustomerModal(JSON.parse(this.dataset.customer))"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--accent-soft);color:var(--accent)">View</button>
 
-                      {# ── Reset Customer PW (Admin/Super Admin) — new feature ── #}
+                      {# ── Reset Customer PW (Admin / Super Admin, only if has login) ── #}
                       {% if c.username %}
                         <button type="button"
-                                onclick="openResetCustomerPwModal({{ c.customer_id }}, {{ c.full_name | tojson }})"
+                                data-cid="{{ c.customer_id }}"
+                                data-name="{{ c.full_name }}"
+                                onclick="openResetCustomerPwModal(this.dataset.cid, this.dataset.name)"
                                 class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                style="background:var(--accent-soft);color:var(--accent)">Reset PW</button>
+                                style="background:var(--warning-bg);color:var(--warning-text)">Reset PW</button>
                         <form id="reset-cust-pw-form-{{ c.customer_id }}"
                               action="{{ url_for('admin_reset_customer_password', customer_id=c.customer_id) }}"
                               method="POST" style="display:none">
@@ -540,13 +604,32 @@
                             action="{{ url_for('delete_customer_account', customer_id=c.customer_id) }}"
                             method="POST" style="display:none"></form>
                       <button type="button"
-                              onclick="openDeleteCustomerModal({{ c.customer_id }}, {{ c.full_name | tojson }})"
+                              data-cid="{{ c.customer_id }}"
+                              data-name="{{ c.full_name }}"
+                              onclick="openDeleteCustomerModal(this.dataset.cid, this.dataset.name)"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
+
                     </div>
                   </td>
                 </tr>
                 {% endfor %}
+
+                <!-- ── Empty state row (shown via JS when no results match) ── -->
+                <tr id="no-results-row" style="display:none">
+                  <td colspan="6" class="text-center py-10">
+                    <div class="flex flex-col items-center gap-2">
+                      <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                           style="color:var(--text-faint)" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                      </svg>
+                      <span class="text-sm" style="color:var(--text-faint)">No accounts match your search.</span>
+                      <button onclick="clearSearch()" class="text-xs underline"
+                              style="color:var(--accent);background:none;border:none;cursor:pointer">Clear search</button>
+                    </div>
+                  </td>
+                </tr>
 
                 {% if not users and not customers %}
                 <tr>
@@ -574,6 +657,69 @@
 </div>
 
 <!-- ═══════════════════════════════ MODALS ═══════════════════════════════ -->
+
+<!-- ══ VIEW STAFF USER MODAL (NEW) ══ -->
+<div id="view-user-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box overflow-hidden">
+      <!-- Header -->
+      <div class="px-6 py-5 flex items-center gap-4"
+           style="background:linear-gradient(135deg,#0c1a4e,#1e3a8a);border-bottom:1px solid var(--border-section)">
+        <div id="vum-avatar"
+             class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)"></div>
+        <div class="min-w-0">
+          <div class="text-white font-bold text-base truncate" id="vum-name"></div>
+          <div class="text-[0.72rem] mt-0.5" style="color:rgba(147,197,253,0.80)" id="vum-username"></div>
+          <span id="vum-role-badge"
+                class="text-[0.65rem] px-2 py-0.5 rounded-full mt-1 inline-block"
+                style="background:rgba(59,130,246,0.20);color:#93c5fd"></span>
+        </div>
+      </div>
+      <!-- Body -->
+      <div class="p-6 flex flex-col gap-3">
+        <div class="grid grid-cols-3 gap-2 p-3 rounded-xl text-center mb-1" style="background:var(--bg-input)">
+          <div>
+            <div class="text-[0.62rem] mb-0.5" style="color:var(--text-muted)">First</div>
+            <div class="font-semibold text-[0.82rem]" style="color:var(--text-primary)" id="vum-first">—</div>
+          </div>
+          <div>
+            <div class="text-[0.62rem] mb-0.5" style="color:var(--text-muted)">M.I.</div>
+            <div class="font-semibold text-[0.82rem]" style="color:var(--text-primary)" id="vum-mi">—</div>
+          </div>
+          <div>
+            <div class="text-[0.62rem] mb-0.5" style="color:var(--text-muted)">Last</div>
+            <div class="font-semibold text-[0.82rem]" style="color:var(--text-primary)" id="vum-last">—</div>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-[0.78rem]" style="border-top:1px solid var(--border-section);padding-top:0.75rem">
+          <span style="color:var(--text-muted)">🔐 Status</span>
+          <span id="vum-status-badge"></span>
+        </div>
+        <div class="flex items-center justify-between text-[0.78rem]" style="border-top:1px solid var(--border-section);padding-top:0.75rem">
+          <span style="color:var(--text-muted)">📅 Joined</span>
+          <span class="font-medium" style="color:var(--text-primary)" id="vum-created">—</span>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div class="px-6 pb-5 flex gap-2 flex-wrap">
+        <button onclick="closeModal('view-user-modal')" class="agos-btn-ghost flex-1 py-2.5">Close</button>
+        <button id="vum-edit-btn" type="button"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
+                style="background:var(--accent-soft);color:var(--accent)">Edit Info</button>
+        <button id="vum-toggle-btn" type="button"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
+                style="background:var(--warning-bg);color:var(--warning-text)">Deactivate</button>
+        <button id="vum-reset-pw-btn" type="button"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
+                style="background:var(--warning-bg);color:var(--warning-text);display:none">Reset PW</button>
+        <button id="vum-delete-btn" type="button"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
+                style="background:var(--danger-bg);color:var(--danger-text);display:none">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ EDIT STAFF USER MODAL ══ -->
 <div id="edit-user-modal" class="agos-modal-overlay">
@@ -834,7 +980,7 @@
   </div>
 </div>
 
-<!-- ══ RESET CUSTOMER PASSWORD MODAL (new) ══ -->
+<!-- ══ RESET CUSTOMER PASSWORD MODAL ══ -->
 <div id="reset-cust-pw-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box">
@@ -923,6 +1069,14 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
+/* ══════════════════════════════════════════════════════════════════
+   USERS PAGE — JavaScript
+   All data for modal openers is read from data-* HTML attributes or
+   from the data-customer / data-user JSON blobs (single-quote attrs).
+   This avoids placing tojson output inside double-quoted onclick="..."
+   attributes, which was the root cause of all actions silently failing.
+══════════════════════════════════════════════════════════════════ */
+
 const IS_SUPER_ADMIN = {{ 'true' if is_super_admin else 'false' }};
 
 // ── Toast helper ──────────────────────────────────────────────────────
@@ -943,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (window._flashMessages) {
     window._flashMessages.forEach(([cat, msg]) => showToast(msg, cat === 'error' ? 'error' : 'success'));
   }
-  filterRows(); // initialize visible count
+  filterRows();
 });
 
 // ── Theme label sync ──────────────────────────────────────────────────
@@ -966,7 +1120,7 @@ function togglePw(id) {
   if (el) el.type = el.type === 'password' ? 'text' : 'password';
 }
 
-// ── Modal helpers ─────────────────────────────────────────────────────
+// ── Modal helpers (fallback if agos-theme.js already defines them) ────
 if (typeof openModal === 'undefined') {
   window.openModal  = id => document.getElementById(id)?.classList.add('open');
   window.closeModal = id => document.getElementById(id)?.classList.remove('open');
@@ -1003,6 +1157,21 @@ function filterRows() {
   });
   const label = document.getElementById('visible-count');
   if (label) label.textContent = `Showing ${vis} account${vis !== 1 ? 's' : ''}`;
+  // show / hide empty state
+  const noResults = document.getElementById('no-results-row');
+  if (noResults) noResults.style.display = (vis === 0 && q) ? '' : 'none';
+}
+
+// ── Search clear button ───────────────────────────────────────────────
+function toggleClearBtn() {
+  const val = document.getElementById('search-all').value;
+  const btn = document.getElementById('search-clear-btn');
+  if (btn) btn.classList.toggle('visible', val.length > 0);
+}
+function clearSearch() {
+  document.getElementById('search-all').value = '';
+  toggleClearBtn();
+  filterRows();
 }
 
 // ── Create tab switcher ───────────────────────────────────────────────
@@ -1023,10 +1192,12 @@ function openCreateUserConfirm() {
   const last     = document.getElementById('new-last-name').value.trim();
   const username = document.getElementById('new-username').value.trim();
   const pw       = document.getElementById('new-pw').value;
+  const pwConf   = document.getElementById('new-pw-confirm').value;
   const role     = document.querySelector('#create-user-form select[name=role]').value;
   if (!first || !last)      { showToast('Please enter first and last name.', 'error'); return; }
   if (!username)            { showToast('Please enter a username.', 'error'); return; }
   if (!pw || pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+  if (pw !== pwConf)        { showToast('Passwords do not match.', 'error'); return; }
   const parts = [first];
   if (mi) parts.push(mi.replace('.', '') + '.');
   parts.push(last);
@@ -1042,10 +1213,12 @@ function openCreateCustomerConfirm() {
   const last     = document.getElementById('cust-last-name').value.trim();
   const username = document.getElementById('cust-username').value.trim();
   const pw       = document.getElementById('cust-pw').value;
+  const pwConf   = document.getElementById('cust-pw-confirm').value;
   const contact  = document.getElementById('cust-contact').value.trim();
   if (!first || !last)      { showToast('Please enter first and last name.', 'error'); return; }
   if (!username)            { showToast('Please enter a username.', 'error'); return; }
   if (!pw || pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+  if (pw !== pwConf)        { showToast('Passwords do not match.', 'error'); return; }
   if (contact && !/^\d{11}$/.test(contact)) { showToast('Contact must be exactly 11 digits.', 'error'); return; }
   document.getElementById('create-customer-summary').textContent =
     `Create a customer portal account for "${first} ${last}" with username "@${username}"?`;
@@ -1054,35 +1227,109 @@ function openCreateCustomerConfirm() {
 function submitCreateCustomerForm() { document.getElementById('create-customer-form').submit(); }
 
 // ══════════════════════════════════════════════════════════════════
-//  EDIT STAFF USER MODAL
-//  FIX: Parameters are now proper JS values produced by Jinja's tojson filter.
-//       The old replace("'","\'") pattern broke the HTML attribute because the
-//       inner double-quotes terminated the onclick="..." attribute early.
+//  VIEW STAFF USER MODAL  (new feature)
+//  Reads from data-* attributes on the clicked button.
 // ══════════════════════════════════════════════════════════════════
-function openEditUserModal(id, first, mi, last, role) {
-  document.getElementById('edit-user-form').action          = `/admin/users/${id}/update-info`;
-  document.getElementById('edit-user-first').value          = first;
-  document.getElementById('edit-user-mi').value             = mi;
-  document.getElementById('edit-user-last').value           = last;
-  document.getElementById('edit-user-role-display').value   = role;
-  document.getElementById('edit-user-subtitle').textContent = `Editing: ${first} ${last} (${role})`;
+function openViewUserModal(btn) {
+  const d = btn.dataset;
+  const isActive = d.status === 'Active';
+
+  document.getElementById('vum-avatar').textContent  = (d.name || '?')[0].toUpperCase();
+  document.getElementById('vum-name').textContent    = d.name    || '—';
+  document.getElementById('vum-username').textContent = d.username ? `@${d.username}` : '—';
+  document.getElementById('vum-first').textContent   = d.first   || '—';
+  document.getElementById('vum-mi').textContent      = d.mi      || '—';
+  document.getElementById('vum-last').textContent    = d.last    || '—';
+  document.getElementById('vum-created').textContent = d.created || '—';
+
+  // Role badge
+  const roleBadge = document.getElementById('vum-role-badge');
+  roleBadge.textContent = d.role || '—';
+  roleBadge.style.background = d.role === 'Admin' ? 'rgba(59,130,246,0.20)' : 'rgba(100,116,139,0.20)';
+  roleBadge.style.color      = d.role === 'Admin' ? '#93c5fd' : '#94a3b8';
+
+  // Status badge
+  const statusBadge = document.getElementById('vum-status-badge');
+  statusBadge.textContent = d.status || '—';
+  statusBadge.className   = 'agos-badge ' + (isActive ? 'agos-badge-success' : 'agos-badge-danger');
+
+  // Edit button
+  document.getElementById('vum-edit-btn').onclick = () => {
+    closeModal('view-user-modal');
+    // Reuse the edit-user-modal with the same data
+    const fakeBtn = { dataset: { uid: d.uid, first: d.first, mi: d.mi, last: d.last, role: d.role } };
+    openEditUserModal(fakeBtn);
+  };
+
+  // Toggle button
+  const toggleBtn = document.getElementById('vum-toggle-btn');
+  toggleBtn.textContent = isActive ? 'Deactivate' : 'Activate';
+  toggleBtn.style.background = isActive ? 'var(--warning-bg)' : 'var(--success-bg)';
+  toggleBtn.style.color      = isActive ? 'var(--warning-text)' : 'var(--success-text)';
+  toggleBtn.onclick = () => {
+    closeModal('view-user-modal');
+    const fakeBtn = { dataset: { uid: d.uid, name: d.name, status: d.status } };
+    openToggleStatusModal(fakeBtn);
+  };
+
+  // Reset PW (super admin only)
+  const resetBtn = document.getElementById('vum-reset-pw-btn');
+  resetBtn.style.display = IS_SUPER_ADMIN ? '' : 'none';
+  if (IS_SUPER_ADMIN) {
+    resetBtn.onclick = () => {
+      closeModal('view-user-modal');
+      const fakeBtn = { dataset: { uid: d.uid, name: d.name } };
+      openResetPasswordModal(fakeBtn);
+    };
+  }
+
+  // Delete (super admin only)
+  const deleteBtn = document.getElementById('vum-delete-btn');
+  deleteBtn.style.display = IS_SUPER_ADMIN ? '' : 'none';
+  if (IS_SUPER_ADMIN) {
+    deleteBtn.onclick = () => {
+      closeModal('view-user-modal');
+      const fakeBtn = { dataset: { uid: d.uid, name: d.name } };
+      openDeleteUserModal(fakeBtn);
+    };
+  }
+
+  openModal('view-user-modal');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  EDIT STAFF USER MODAL
+//  Reads from data-* attributes on the clicked button.
+// ══════════════════════════════════════════════════════════════════
+function openEditUserModal(btn) {
+  const d = btn.dataset;
+  document.getElementById('edit-user-form').action          = `/admin/users/${d.uid}/update-info`;
+  document.getElementById('edit-user-first').value          = d.first || '';
+  document.getElementById('edit-user-mi').value             = d.mi    || '';
+  document.getElementById('edit-user-last').value           = d.last  || '';
+  document.getElementById('edit-user-role-display').value   = d.role  || '';
+  document.getElementById('edit-user-subtitle').textContent = `Editing: ${d.first || ''} ${d.last || ''} (${d.role || ''})`;
   openModal('edit-user-modal');
 }
 
 // ══════════════════════════════════════════════════════════════════
 //  EDIT CUSTOMER MODAL
+//  Accepts a plain JS object (from JSON.parse(this.dataset.customer)).
 // ══════════════════════════════════════════════════════════════════
 function openEditCustomerModal(c) {
   document.getElementById('edit-customer-form').action = `/admin/customers/${c.id}/update-info`;
-  document.getElementById('edit-cust-first').value     = c.first_name    || '';
+  document.getElementById('edit-cust-first').value     = c.first_name     || '';
   document.getElementById('edit-cust-mi').value        = c.middle_initial || '';
-  document.getElementById('edit-cust-last').value      = c.last_name     || '';
-  document.getElementById('edit-cust-contact').value   = c.contact       || '';
-  document.getElementById('edit-cust-address').value   = c.address       || '';
+  document.getElementById('edit-cust-last').value      = c.last_name      || '';
+  document.getElementById('edit-cust-contact').value   = c.contact        || '';
+  document.getElementById('edit-cust-address').value   = c.address        || '';
   openModal('edit-customer-modal');
 }
 
-// ── View Customer Info ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+//  VIEW CUSTOMER INFO MODAL
+//  Accepts a plain JS object (from JSON.parse(this.dataset.customer)).
+// ══════════════════════════════════════════════════════════════════
 function openViewCustomerModal(c) {
   document.getElementById('vcm-avatar').textContent   = c.name ? c.name[0].toUpperCase() : '?';
   document.getElementById('vcm-name').textContent     = c.name     || '—';
@@ -1096,7 +1343,6 @@ function openViewCustomerModal(c) {
   document.getElementById('vcm-points').textContent   = c.points;
   document.getElementById('vcm-created').textContent  = c.created        || '—';
 
-  // Edit button
   document.getElementById('vcm-edit-btn').onclick = () => {
     closeModal('view-customer-modal');
     openEditCustomerModal({
@@ -1104,7 +1350,7 @@ function openViewCustomerModal(c) {
       last_name: c.last_name, contact: c.contact, address: c.address
     });
   };
-  // Reset PW button — only show if customer has a login
+
   const resetBtn = document.getElementById('vcm-reset-pw-btn');
   if (c.has_login) {
     resetBtn.style.display = '';
@@ -1115,42 +1361,46 @@ function openViewCustomerModal(c) {
   } else {
     resetBtn.style.display = 'none';
   }
-  // Delete button
+
   document.getElementById('vcm-delete-btn').onclick = () => {
     closeModal('view-customer-modal');
     openDeleteCustomerModal(c.id, c.name);
   };
+
   openModal('view-customer-modal');
 }
 
 // ── Toggle status ─────────────────────────────────────────────────────
-// FIX: name and status now arrive as proper JS strings via tojson
-function openToggleStatusModal(id, name, currentStatus) {
-  const isActive = currentStatus === 'Active';
+//  Reads from data-* attributes on the clicked button.
+function openToggleStatusModal(btn) {
+  const d        = btn.dataset;
+  const isActive = d.status === 'Active';
   document.getElementById('toggle-modal-icon').style.background =
     isActive ? 'var(--danger-bg)' : 'var(--success-bg)';
   document.getElementById('toggle-modal-title').textContent =
     isActive ? 'Deactivate User?' : 'Activate User?';
   document.getElementById('toggle-modal-message').textContent =
-    `You're about to ${isActive ? 'deactivate' : 'activate'} the account for "${name}". ` +
+    `You're about to ${isActive ? 'deactivate' : 'activate'} the account for "${d.name}". ` +
     (isActive ? 'They will lose system access.' : 'They will regain system access.');
-  const btn = document.getElementById('toggle-modal-confirm-btn');
-  btn.style.background = isActive ? 'var(--danger-text)' : 'var(--success-text)';
-  btn.textContent      = isActive ? 'Yes, Deactivate' : 'Yes, Activate';
-  btn.onclick          = () => document.getElementById('toggle-form-' + id).submit();
+  const confirmBtn = document.getElementById('toggle-modal-confirm-btn');
+  confirmBtn.style.background = isActive ? 'var(--danger-text)' : 'var(--success-text)';
+  confirmBtn.textContent      = isActive ? 'Yes, Deactivate' : 'Yes, Activate';
+  confirmBtn.onclick          = () => document.getElementById('toggle-form-' + d.uid).submit();
   openModal('toggle-status-modal');
 }
 
 // ── Reset staff password ──────────────────────────────────────────────
-// FIX: name now arrives as a proper JS string via tojson
-function openResetPasswordModal(id, name) {
-  document.getElementById('reset-pw-form').action          = `/admin/users/${id}/reset-password`;
-  document.getElementById('reset-pw-subtitle').textContent = `Resetting password for ${name}`;
+//  Reads from data-* attributes on the clicked button.
+function openResetPasswordModal(btn) {
+  const d = btn.dataset;
+  document.getElementById('reset-pw-form').action          = `/admin/users/${d.uid}/reset-password`;
+  document.getElementById('reset-pw-subtitle').textContent = `Resetting password for ${d.name}`;
   document.getElementById('reset-pw-input').value          = '';
   openModal('reset-pw-modal');
 }
 
-// ── Reset customer password (new) ─────────────────────────────────────
+// ── Reset customer password ───────────────────────────────────────────
+//  Called with (id, name) — works from both table button and view modal.
 let _resetCustPwId = null;
 function openResetCustomerPwModal(id, name) {
   _resetCustPwId = id;
@@ -1168,16 +1418,18 @@ function submitResetCustomerPw() {
 }
 
 // ── Delete staff ──────────────────────────────────────────────────────
-// FIX: name now arrives as a proper JS string via tojson
-function openDeleteUserModal(id, name) {
+//  Reads from data-* attributes on the clicked button.
+function openDeleteUserModal(btn) {
+  const d = btn.dataset;
   document.getElementById('delete-user-message').textContent =
-    `You're about to permanently delete the account for "${name}". This cannot be undone.`;
+    `You're about to permanently delete the account for "${d.name}". This cannot be undone.`;
   document.getElementById('delete-user-confirm-btn').onclick =
-    () => document.getElementById('delete-user-form-' + id).submit();
+    () => document.getElementById('delete-user-form-' + d.uid).submit();
   openModal('delete-user-modal');
 }
 
 // ── Delete customer ───────────────────────────────────────────────────
+//  Called with (id, name) — works from both table button and view modal.
 function openDeleteCustomerModal(id, name) {
   document.getElementById('delete-customer-name').textContent = `"${name}"`;
   document.getElementById('delete-customer-warn').textContent = IS_SUPER_ADMIN
@@ -1187,17 +1439,6 @@ function openDeleteCustomerModal(id, name) {
     () => document.getElementById('delete-cust-form-' + id).submit();
   openModal('delete-customer-modal');
 }
-
-// ── Close all modals on backdrop click ────────────────────────────────
-[
-  'edit-user-modal','edit-customer-modal','view-customer-modal',
-  'create-user-modal','create-customer-modal','toggle-status-modal',
-  'reset-pw-modal','reset-cust-pw-modal','delete-user-modal',
-  'delete-customer-modal','logout-modal'
-].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('click', e => { if (e.target === el) closeModal(id); });
-});
 </script>
 </body>
 </html>

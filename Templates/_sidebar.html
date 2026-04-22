@@ -91,7 +91,7 @@
     <a href="{{ url_for('sales') }}" title="Sales Management"
        class="agos-sidebar-link {% if active_page == 'sales' %}active{% endif %}">
       <span class="agos-nav-icon">attach_money</span>
-      <span class="sidebar-label">Sales Management</span>
+      <span class="sidebar-label">Record Sales</span>
     </a>
 
     <a href="{{ url_for('inventory') }}" title="Inventory"
@@ -104,12 +104,6 @@
        class="agos-sidebar-link {% if active_page == 'products' %}active{% endif %}">
       <span class="agos-nav-icon">water_bottle_large</span>
       <span class="sidebar-label">Products</span>
-    </a>
-
-    <a href="{{ url_for('water_tank') }}" title="Water Tank"
-       class="agos-sidebar-link {% if active_page == 'water_tank' %}active{% endif %}">
-      <span class="agos-nav-icon">water_drop</span>
-      <span class="sidebar-label">Water Tank</span>
     </a>
 
     <a href="{{ url_for('deliveries') }}" title="Deliveries"
@@ -133,7 +127,7 @@
     <a href="{{ url_for('user_management') }}" title="User Management"
        class="agos-sidebar-link {% if active_page == 'user_management' %}active{% endif %}">
       <span class="agos-nav-icon">manage_accounts</span>
-      <span class="sidebar-label">User Management</span>
+      <span class="sidebar-label">Users</span>
     </a>
 
     <a href="{{ url_for('expenses') }}" title="Expenses"

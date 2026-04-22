@@ -40,79 +40,244 @@
 
       <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
 
-        <!-- Adjust Stock Form -->
+        <!-- ══ Adjust Stock Form ═════════════════════════════════════════════ -->
         <div class="agos-card overflow-hidden self-start">
           <div class="agos-card-header">
             <div class="agos-card-title">Adjust Stock</div>
-            <div class="agos-card-subtitle">Add or deduct units from inventory</div>
+            <div class="agos-card-subtitle">Add or deduct units from physical inventory</div>
           </div>
           <div class="p-5">
             <form id="inventory-form" action="{{ url_for('inventory') }}" method="POST" class="flex flex-col gap-4">
               <div>
                 <label class="agos-label">Product</label>
-                <input type="text" id="product-search" list="inventory-products-list" placeholder="Type to search product…" oninput="syncInventoryProduct(this.value)" class="agos-input"/>
+                <!--
+                  Only standard products are adjustable; service and linked products
+                  are excluded from this datalist and the hidden select.
+                -->
+                <input
+                  type="text"
+                  id="product-search"
+                  list="inventory-products-list"
+                  placeholder="Type to search product…"
+                  oninput="syncInventoryProduct(this.value)"
+                  class="agos-input"
+                  autocomplete="off"
+                />
                 <datalist id="inventory-products-list">
                   {% for item in inventory_items %}
-                    <option value="{{ item.product.product_name }} ({{ item.quantity }} in stock)" data-id="{{ item.product.product_id }}">{{ item.product.product_name }}</option>
+                    <option value="{{ item.product.product_name }} ({{ item.quantity }} in stock)"
+                            data-id="{{ item.product.product_id }}">
+                      {{ item.product.product_name }}
+                    </option>
                   {% endfor %}
                 </datalist>
                 <select name="product_id" id="inventory-product-select" required style="display:none">
                   <option value="">Select a product</option>
-                  {% for item in inventory_items %}<option value="{{ item.product.product_id }}">{{ item.product.product_name }}</option>{% endfor %}
+                  {% for item in inventory_items %}
+                    <option value="{{ item.product.product_id }}">{{ item.product.product_name }}</option>
+                  {% endfor %}
                 </select>
               </div>
+
               <div>
                 <label class="agos-label">Action</label>
                 <div class="flex rounded-xl overflow-hidden" style="border:1.5px solid var(--border-input)">
-                  <button type="button" id="tab-add" onclick="setAction('add')" class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all" style="background:var(--accent);color:#fff;font-family:'Outfit',sans-serif">Add Stock</button>
-                  <button type="button" id="tab-deduct" onclick="setAction('deduct')" class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all" style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">Deduct Stock</button>
+                  <button type="button" id="tab-add" onclick="setAction('add')"
+                          class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
+                          style="background:var(--accent);color:#fff;font-family:'Outfit',sans-serif">Add Stock</button>
+                  <button type="button" id="tab-deduct" onclick="setAction('deduct')"
+                          class="flex-1 py-2.5 text-center text-[0.83rem] font-medium border-none outline-none cursor-pointer transition-all"
+                          style="background:transparent;color:var(--text-muted);font-family:'Outfit',sans-serif">Deduct Stock</button>
                 </div>
                 <input type="hidden" name="action" id="action-input" value="add"/>
               </div>
+
               <div>
                 <label class="agos-label">Quantity</label>
                 <input type="number" name="quantity" id="inv-quantity" min="1" value="1" required class="agos-input"/>
               </div>
+
               <button type="button" onclick="openInventoryConfirm()" class="agos-btn-primary w-full py-3">Review Adjustment</button>
             </form>
           </div>
+
+          <!--
+            ── Info panel: service & linked products ──────────────────────────
+            Shown below the form so staff understand why certain products are absent.
+          -->
+          {% set service_products  = all_products | selectattr('product_type', 'eq', 'service')  | list %}
+          {% set linked_products   = all_products | selectattr('product_type', 'eq', 'linked')   | list %}
+
+          {% if service_products or linked_products %}
+          <div class="px-5 pb-5 flex flex-col gap-3">
+
+            {% if service_products %}
+            <div class="rounded-xl p-4" style="background:var(--info-bg);border:1px solid var(--border-input)">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--info-text);flex-shrink:0" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                <span class="text-[0.75rem] font-semibold" style="color:var(--info-text)">Service Products — no stock tracked</span>
+              </div>
+              {% for p in service_products %}
+              <div class="text-[0.72rem] py-0.5" style="color:var(--text-muted)">• {{ p.product_name }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if linked_products %}
+            <div class="rounded-xl p-4" style="background:var(--warning-bg);border:1px solid var(--border-input)">
+              <div class="flex items-center gap-2 mb-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="color:var(--warning-text);flex-shrink:0" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <span class="text-[0.75rem] font-semibold" style="color:var(--warning-text)">Linked Products — adjust their source instead</span>
+              </div>
+              {% for p in linked_products %}
+              <div class="text-[0.72rem] py-0.5" style="color:var(--text-muted)">
+                • {{ p.product_name }}
+                {% if p.linked_product %}
+                  <span style="color:var(--text-faint)">→ mirrors <strong style="color:var(--text-muted)">{{ p.linked_product.product_name }}</strong></span>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+          </div>
+          {% endif %}
         </div>
 
-        <!-- Inventory Table -->
+        <!-- ══ Stock Levels Table ════════════════════════════════════════════ -->
         <div class="agos-card overflow-hidden">
           <div class="agos-card-header">
             <div class="agos-card-title">Stock Levels</div>
-            <div class="agos-card-subtitle">{{ inventory_items | length }} product{{ 's' if inventory_items | length != 1 }}</div>
+            <div class="agos-card-subtitle">
+              {{ inventory_items | length }} physical product{{ 's' if inventory_items | length != 1 }}
+            </div>
           </div>
           <div class="overflow-x-auto">
-            <table class="agos-table w-full border-collapse" style="min-width:480px">
-              <thead><tr><th>#</th><th>Product</th><th>Price</th><th>Qty in Stock</th><th>Status</th></tr></thead>
-              <tbody>
-                {% if inventory_items %}{% for item in inventory_items %}
+            <table class="agos-table w-full border-collapse" style="min-width:520px">
+              <thead>
                 <tr>
-                  <td style="color:var(--text-muted)">{{ loop.index }}</td>
-                  <td class="font-medium" style="color:var(--text-primary)">{{ item.product.product_name }}</td>
-                  <td>₱{{ "%.2f"|format(item.product.price) }}</td>
-                  <td><span class="font-bold" style="color:var(--text-primary)">{{ item.quantity }}</span> <span style="color:var(--text-muted);font-size:0.75rem">units</span></td>
-                  <td>
-                    {% if item.quantity == 0 %}<span class="agos-badge agos-badge-danger">Out of Stock</span>
-                    {% elif item.quantity <= (item.minimum_stock or 10) %}<span class="agos-badge agos-badge-warning">Low Stock</span>
-                    {% else %}<span class="agos-badge agos-badge-info">In Stock</span>{% endif %}
-                  </td>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Qty in Stock</th>
+                  <th>Status</th>
                 </tr>
-                {% endfor %}{% else %}
-                <tr><td colspan="5" class="text-center py-10" style="color:var(--text-faint)">No inventory items found.</td></tr>
+              </thead>
+              <tbody>
+                {% if inventory_items %}
+                  {% for item in inventory_items %}
+                  <tr>
+                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                    <td style="color:var(--text-primary)">
+                      <div class="font-medium">{{ item.product.product_name }}</div>
+                      <!--
+                        Show which linked products mirror this row, so staff can
+                        see the knock-on effect of adjusting this item's stock.
+                      -->
+                      {% set dependents = item.product.dependents.all() if item.product.dependents else [] %}
+                      {% if dependents %}
+                        <div class="text-[0.67rem] mt-0.5 flex flex-wrap gap-1">
+                          {% for dep in dependents %}
+                            <span class="px-1.5 py-0.5 rounded-md"
+                                  style="background:var(--warning-bg);color:var(--warning-text)">
+                              ↳ {{ dep.product_name }}
+                            </span>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+                    </td>
+                    <td>₱{{ "%.2f"|format(item.product.price) }}</td>
+                    <td>
+                      <span class="font-bold" style="color:var(--text-primary)">{{ item.quantity }}</span>
+                      <span style="color:var(--text-muted);font-size:0.75rem"> units</span>
+                    </td>
+                    <td>
+                      {% if item.quantity == 0 %}
+                        <span class="agos-badge agos-badge-danger">Out of Stock</span>
+                      {% elif item.quantity <= (item.minimum_stock or 10) %}
+                        <span class="agos-badge agos-badge-warning">Low Stock</span>
+                      {% else %}
+                        <span class="agos-badge agos-badge-info">In Stock</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td colspan="5" class="text-center py-10" style="color:var(--text-faint)">No physical inventory items found.</td>
+                  </tr>
                 {% endif %}
               </tbody>
             </table>
           </div>
-        </div>
+
+          <!--
+            ── Read-only view of linked products ─────────────────────────────
+            Shown in a separate, clearly labelled section below the physical table
+            so staff always know the effective stock of linked products at a glance.
+          -->
+          {% set linked_products = all_products | selectattr('product_type', 'eq', 'linked') | list %}
+          {% if linked_products %}
+          <div style="border-top:1px solid var(--border-section)">
+            <div class="px-5 py-3 flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   style="color:var(--warning-text)" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              <span class="text-[0.75rem] font-semibold" style="color:var(--text-secondary)">Linked Product Stock (read-only)</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="agos-table w-full border-collapse" style="min-width:520px">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Effective Stock</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in linked_products %}
+                  {% set src_inv = p.linked_product.inventory if p.linked_product else none %}
+                  <tr>
+                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                    <td class="font-medium" style="color:var(--text-primary)">{{ p.product_name }}</td>
+                    <td>₱{{ "%.2f"|format(p.price) }}</td>
+                    <td>
+                      {% if src_inv %}
+                        <span class="font-bold" style="color:var(--text-primary)">{{ src_inv.quantity }}</span>
+                        <span style="color:var(--text-muted);font-size:0.75rem"> units</span>
+                      {% else %}
+                        <span style="color:var(--text-faint)">—</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if p.linked_product %}
+                        <span class="text-[0.72rem] px-2 py-1 rounded-lg"
+                              style="background:var(--warning-bg);color:var(--warning-text)">
+                          {{ p.linked_product.product_name }}
+                        </span>
+                      {% else %}
+                        <span style="color:var(--text-faint)">—</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {% endif %}
+
+        </div>{# end stock levels card #}
       </div>
     </main>
   </div>
 </div>
 
-<!-- INVENTORY CONFIRM MODAL -->
+<!-- ══ INVENTORY CONFIRM MODAL ══════════════════════════════════════════════ -->
 <div id="inventory-confirm-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
@@ -129,7 +294,7 @@
   </div>
 </div>
 
-<!-- LOGOUT MODAL -->
+<!-- ══ LOGOUT MODAL ══════════════════════════════════════════════════════════ -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
@@ -146,30 +311,69 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
+  /* ── theme label ─────────────────────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', function() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  });
   const _orig = window.toggleTheme;
-  window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
-  function syncInventoryProduct(val) { const sel = document.getElementById('inventory-product-select'); const name = val.split(' (')[0].trim(); const matched = Array.from(sel.options).find(o => o.text.trim() === name); sel.value = matched ? matched.value : ''; }
+  window.toggleTheme = function() {
+    _orig();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  };
+
+  /* ── product search sync ──────────────────────────────────────────────────── */
+  function syncInventoryProduct(val) {
+    const sel  = document.getElementById('inventory-product-select');
+    const name = val.split(' (')[0].trim();
+    const matched = Array.from(sel.options).find(o => o.text.trim() === name);
+    sel.value = matched ? matched.value : '';
+  }
+
+  /* ── add/deduct toggle ───────────────────────────────────────────────────── */
   function setAction(type) {
     document.getElementById('action-input').value = type;
-    const addBtn = document.getElementById('tab-add'), deductBtn = document.getElementById('tab-deduct');
-    if (type === 'add') { addBtn.style.background = 'var(--accent)'; addBtn.style.color = '#fff'; deductBtn.style.background = 'transparent'; deductBtn.style.color = 'var(--text-muted)'; }
-    else { deductBtn.style.background = 'var(--danger-text)'; deductBtn.style.color = '#fff'; addBtn.style.background = 'transparent'; addBtn.style.color = 'var(--text-muted)'; }
+    const addBtn    = document.getElementById('tab-add');
+    const deductBtn = document.getElementById('tab-deduct');
+    if (type === 'add') {
+      addBtn.style.background    = 'var(--accent)';
+      addBtn.style.color         = '#fff';
+      deductBtn.style.background = 'transparent';
+      deductBtn.style.color      = 'var(--text-muted)';
+    } else {
+      deductBtn.style.background = 'var(--danger-text)';
+      deductBtn.style.color      = '#fff';
+      addBtn.style.background    = 'transparent';
+      addBtn.style.color         = 'var(--text-muted)';
+    }
   }
+
+  /* ── confirm modal ───────────────────────────────────────────────────────── */
   function openInventoryConfirm() {
-    const sel = document.getElementById('inventory-product-select'); const qty = document.getElementById('inv-quantity').value; const action = document.getElementById('action-input').value;
+    const sel    = document.getElementById('inventory-product-select');
+    const qty    = document.getElementById('inv-quantity').value;
+    const action = document.getElementById('action-input').value;
     if (!sel.value) { alert('Please select a valid product from the list.'); return; }
     if (!qty || qty < 1) { alert('Please enter a valid quantity.'); return; }
     const productName = sel.options[sel.selectedIndex].text;
-    document.getElementById('inv-confirm-message').textContent = `You're about to ${action} ${qty} unit(s) for "${productName}". This will update the stock immediately.`;
-    const icon = document.getElementById('inv-confirm-icon'); const btn = document.getElementById('inv-confirm-btn');
+    document.getElementById('inv-confirm-message').textContent =
+      `You're about to ${action} ${qty} unit(s) for "${productName}". This will update the stock immediately.`;
+    const icon = document.getElementById('inv-confirm-icon');
+    const btn  = document.getElementById('inv-confirm-btn');
     icon.style.background = action === 'add' ? 'var(--accent-soft)' : 'var(--danger-bg)';
-    btn.style.background  = action === 'add' ? 'var(--accent)' : 'var(--danger-text)';
+    btn.style.background  = action === 'add' ? 'var(--accent)'      : 'var(--danger-text)';
     document.getElementById('inventory-confirm-modal').classList.add('open');
   }
-  function closeInventoryConfirm() { document.getElementById('inventory-confirm-modal').classList.remove('open'); }
+  function closeInventoryConfirm() {
+    document.getElementById('inventory-confirm-modal').classList.remove('open');
+  }
   function submitInventoryForm() { document.getElementById('inventory-form').submit(); }
-  document.getElementById('inventory-confirm-modal').addEventListener('click', function(e) { if (e.target === this) closeInventoryConfirm(); });
+  document.getElementById('inventory-confirm-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeInventoryConfirm();
+  });
 </script>
 </body>
 </html>

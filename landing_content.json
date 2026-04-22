@@ -2,10 +2,10 @@
   "hero_tagline": "EP-Bluelife Water Refilling Station",
   "hero_headline": "Clean Records,",
   "hero_subheadline": "Cleaner Water.",
-  "hero_desc": "Agos is the all-in-one management system for EP-Bluelife \u2014 handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.",
+  "hero_desc": "Agos is the all-in-one management system for EP-Bluelife — handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.",
   "hero_cta_text": "Get Started",
   "features_title": "Everything in One Place",
-  "features_desc": "Built specifically for EP-Bluelife \u2014 from recording a single gallon sale to running monthly financial reports.",
+  "features_desc": "Built specifically for EP-Bluelife — from recording a single gallon sale to running monthly financial reports.",
   "about_title": "About EP-Bluelife",
   "about_body": "",
   "contact_email": "",
@@ -14,34 +14,34 @@
   "footer_tagline": "Built for EP-Bluelife Water Refilling Station",
   "features": [
     {
-      "emoji": "\ud83d\udca7",
+      "emoji": "💧",
       "title": "Sales Management",
       "desc": "Record walk-in and delivery sales instantly. Auto-computes totals and deducts from inventory in real time."
     },
     {
-      "emoji": "\ud83d\udce6",
+      "emoji": "📦",
       "title": "Inventory Control",
       "desc": "Track stock levels, get low-stock alerts, and manually adjust inventory with a full audit trail."
     },
     {
-      "emoji": "\ud83d\ude9a",
+      "emoji": "🚚",
       "title": "Delivery Orders",
       "desc": "Customers can place delivery requests online. Staff confirms, routes, and marks deliveries in seconds."
     },
     {
-      "emoji": "\u2b50",
+      "emoji": "⭐",
       "title": "Loyalty Rewards",
-      "desc": "Automatically earn points on refills. Redeem for free deliveries \u2014 no manual tracking needed."
+      "desc": "Automatically earn points on refills. Redeem for free deliveries — no manual tracking needed."
     },
     {
-      "emoji": "\ud83d\udcca",
+      "emoji": "📊",
       "title": "Financial Reports",
       "desc": "Monthly revenue vs. expenses, net profit, top products, and expense category breakdowns at a glance."
     },
     {
-      "emoji": "\ud83d\udd10",
+      "emoji": "🔐",
       "title": "Role-Based Access",
-      "desc": "Super Admin, Admin, Operator, and Customer \u2014 each sees only what they need with a full activity log."
+      "desc": "Super Admin, Admin, Operator, and Customer — each sees only what they need with a full activity log."
     }
   ],
   "stats": [
@@ -57,5 +57,7 @@
       "num": "99.9%",
       "label": "Uptime"
     }
-  ]
+  ],
+  "last_saved": "2026-04-23 06:40",
+  "last_saved_by": "Admin User"
 }

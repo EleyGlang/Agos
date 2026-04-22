@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Agos — EP-Bluelife Water Refilling Station</title>
+  <title>Agos — {{ content.get('hero_tagline', 'EP-Bluelife Water Refilling Station') }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='src/output.css') }}"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -37,7 +37,7 @@
     .drop           { animation: rain linear infinite; }
     .hero-scroll-wrap { animation: bounce-hint 2s ease-in-out infinite; }
 
-    /* ── [data-theme] selectors — cannot use Tailwind dark: (different mechanism) ── */
+    /* ── [data-theme] selectors ── */
     [data-theme="light"] .hero-bg { background: linear-gradient(160deg, #0a2a40 0%, #0d3d5a 40%, #1a6a8a 100%); }
     [data-theme="dark"]  .hero-bg { background: linear-gradient(160deg, #030c14 0%, #061825 40%, #0a2a40 100%); }
     [data-theme="light"] .portals-section { background: #f8fcff; }
@@ -48,8 +48,10 @@
     [data-theme="dark"]  .portal-card-customer { background: linear-gradient(145deg, #050e18, #082030); }
     [data-theme="light"] .stats-strip { background: linear-gradient(135deg, #0a2a40, #0d3d5a); }
     [data-theme="dark"]  .stats-strip { background: linear-gradient(135deg, #030c14, #040e1a); }
+    [data-theme="light"] .about-section { background: var(--bg-page); }
+    [data-theme="dark"]  .about-section { background: #060d15; }
 
-    /* ── Pseudo-element bullet — cannot be Tailwind ── */
+    /* ── Pseudo-element bullet ── */
     .portal-perks li::before {
       content: '✓';
       width: 1.25rem; height: 1.25rem;
@@ -59,6 +61,21 @@
       font-size: 0.68rem; font-weight: 700;
       color: #5bb8e0; flex-shrink: 0;
     }
+
+    /* ── Edit bar (only shown to admins) ── */
+    .edit-bar {
+      position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 9999;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .edit-bar a {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.55rem 1rem; border-radius: 9999px;
+      font-size: 0.78rem; font-weight: 700; text-decoration: none;
+      background: #0095c8; color: #fff;
+      box-shadow: 0 6px 20px rgba(0,149,200,0.40);
+      transition: background 0.18s;
+    }
+    .edit-bar a:hover { background: #007eb0; }
   </style>
 </head>
 
@@ -71,11 +88,9 @@
 
   <!-- Animated background -->
   <div class="hero-bg absolute inset-0 overflow-hidden z-0">
-    <!-- Floating orbs -->
     <div class="hero-orb orb-1 absolute rounded-full" style="width:500px;height:500px;top:-150px;right:-100px;background:radial-gradient(circle,rgba(0,149,200,0.18) 0%,transparent 70%)"></div>
     <div class="hero-orb orb-2 absolute rounded-full" style="width:350px;height:350px;bottom:-50px;left:-80px;background:radial-gradient(circle,rgba(91,184,224,0.12) 0%,transparent 70%)"></div>
     <div class="hero-orb orb-3 absolute rounded-full" style="width:250px;height:250px;top:40%;left:40%;background:radial-gradient(circle,rgba(45,136,184,0.15) 0%,transparent 70%)"></div>
-    <!-- Rain drops injected by JS -->
     <script>
       for (let i = 0; i < 20; i++) {
         const d = document.createElement('div');
@@ -88,7 +103,6 @@
 
   <!-- ── Navbar ── -->
   <nav class="relative z-10 flex items-center justify-between px-5 sm:px-8 py-5">
-    <!-- Brand -->
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:linear-gradient(145deg,#2d88b8,#0095c8);box-shadow:0 4px 14px rgba(0,149,200,0.40)">
         <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
@@ -100,8 +114,12 @@
         <div class="text-[0.6rem] font-semibold tracking-[0.15em] uppercase" style="color:rgba(91,184,224,0.75)">EP-Bluelife System</div>
       </div>
     </div>
-    <!-- Actions -->
     <div class="flex items-center gap-3">
+      <!-- Theme toggle -->
+      <button onclick="toggleLandingTheme()" id="theme-btn"
+              class="w-9 h-9 rounded-full flex items-center justify-center text-base border-none cursor-pointer transition-all"
+              style="background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18)"
+              title="Toggle theme">🌙</button>
       <a href="{{ url_for('login') }}"
          class="px-5 py-2 rounded-full font-semibold text-sm text-white no-underline transition-[background] duration-200 hover:bg-white/[0.22]"
          style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.20)">
@@ -113,7 +131,6 @@
   <!-- ── Hero Content ── -->
   <div class="flex-1 flex flex-col items-center justify-center text-center px-6 pt-8 pb-32 relative z-[5]">
 
-    <!-- Animated drop icon -->
     <div class="flex items-center justify-center mb-6">
       <div class="hero-drop-ring w-24 h-24 rounded-full flex items-center justify-center" style="background:rgba(0,149,200,0.15);border:1px solid rgba(0,149,200,0.40)">
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
@@ -123,16 +140,27 @@
       </div>
     </div>
 
-    <p class="text-xs font-bold tracking-[0.25em] uppercase mb-4" style="color:rgba(91,184,224,0.80)">EP-Bluelife Water Refilling Station</p>
+    <p class="text-xs font-bold tracking-[0.25em] uppercase mb-4" style="color:rgba(91,184,224,0.80)">
+      {{ content.get('hero_tagline', 'EP-Bluelife Water Refilling Station') }}
+    </p>
 
     <h1 class="font-black text-white leading-[1.05] mb-3" style="font-family:'Inconsolata',monospace;font-size:clamp(2.5rem,7vw,5rem)">
-      Clean Water,
-      <span class="block" style="color:#5bb8e0">Cleaner Records.</span>
+      {{ content.get('hero_headline', 'Clean Water,') }}
+      <span class="block" style="color:#5bb8e0">{{ content.get('hero_subheadline', 'Cleaner Records.') }}</span>
     </h1>
 
     <p class="text-[1.05rem] leading-[1.75] max-w-[540px] mx-auto mb-10" style="color:rgba(204,234,247,0.65)">
-      Agos is the all-in-one management system for EP-Bluelife — handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.
+      {{ content.get('hero_desc', 'Agos is the all-in-one management system for EP-Bluelife — handling sales, inventory, deliveries, and loyalty rewards from one elegant dashboard.') }}
     </p>
+
+    <a href="{{ url_for('login') }}"
+       class="inline-flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-white text-base no-underline transition-all hover:scale-[1.04]"
+       style="background:#0095c8;box-shadow:0 6px 24px rgba(0,149,200,0.50)">
+      {{ content.get('hero_cta_text', 'Get Started') }}
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+        <path d="M5 10h10M10 5l5 5-5 5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
   </div>
 
   <!-- Scroll hint -->
@@ -149,129 +177,165 @@
 
 
 <!-- ══════════════════════════════════
-     FEATURES
+     FEATURES  — driven by content JSON
 ══════════════════════════════════ -->
-<section class="py-20 px-6" style="background:var(--bg-page);transition:background 0.3s">
+{% set default_features = [
+  {'emoji':'💧','title':'Sales Management','desc':'Record walk-in and delivery sales instantly. Auto-computes totals and deducts from inventory in real time.'},
+  {'emoji':'📦','title':'Inventory Control','desc':'Track stock levels, get low-stock alerts, and manually adjust inventory with a full audit trail.'},
+  {'emoji':'🚚','title':'Delivery Orders','desc':'Customers can place delivery requests online. Staff confirms, routes, and marks deliveries in seconds.'},
+  {'emoji':'⭐','title':'Loyalty Rewards','desc':'Automatically earn points on refills. Redeem for free deliveries — no manual tracking needed.'},
+  {'emoji':'📊','title':'Financial Reports','desc':'Monthly revenue vs. expenses, net profit, top products, and expense category breakdowns at a glance.'},
+  {'emoji':'🔐','title':'Role-Based Access','desc':'Super Admin, Admin, Operator, and Customer — each sees only what they need with a full activity log.'}
+] %}
+{% set features = content.get('features', default_features) if content.get('features') else default_features %}
 
+{% set icon_bgs = [
+  'rgba(0,149,200,0.10)',
+  'rgba(46,170,110,0.10)',
+  'rgba(212,168,67,0.10)',
+  'rgba(167,139,250,0.12)',
+  'rgba(224,82,82,0.10)',
+  'rgba(45,136,184,0.10)',
+  'rgba(0,149,200,0.08)',
+  'rgba(46,170,110,0.08)'
+] %}
+
+<section class="py-20 px-6" style="background:var(--bg-page);transition:background 0.3s">
   <div class="text-center text-[0.72rem] font-bold tracking-[0.2em] uppercase mb-3" style="color:var(--accent)">What Agos Does</div>
   <h2 class="text-center font-extrabold leading-[1.2] mb-3" style="font-family:'Inconsolata',monospace;font-size:clamp(1.75rem,4vw,2.5rem);color:var(--text-primary)">
-    Everything in One Place
+    {{ content.get('features_title', 'Everything in One Place') }}
   </h2>
   <p class="text-center text-base max-w-[520px] mx-auto mb-14 leading-[1.7]" style="color:var(--text-muted)">
-    Built specifically for EP-Bluelife — from recording a single gallon sale to running monthly financial reports.
+    {{ content.get('features_desc', 'Built specifically for EP-Bluelife — from recording a single gallon sale to running monthly financial reports.') }}
   </p>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1100px] mx-auto">
-
-    {% set features = [
-      ('💧', 'Sales Management',   'Record walk-in and delivery sales instantly. Auto-computes totals and deducts from inventory in real time.',    'rgba(0,149,200,0.10)'),
-      ('📦', 'Inventory Control',  'Track stock levels, get low-stock alerts, and manually adjust inventory with a full audit trail.',              'rgba(46,170,110,0.10)'),
-      ('🚚', 'Delivery Orders',    'Customers can place delivery requests online. Staff confirms, routes, and marks deliveries in seconds.',         'rgba(212,168,67,0.10)'),
-      ('⭐', 'Loyalty Rewards',    'Automatically earn points on refills. Redeem for free deliveries — no manual tracking needed.',                 'rgba(167,139,250,0.12)'),
-      ('📊', 'Financial Reports',  'Monthly revenue vs. expenses, net profit, top products, and expense category breakdowns at a glance.',          'rgba(224,82,82,0.10)'),
-      ('🔐', 'Role-Based Access',  'Super Admin, Admin, Operator, and Customer — each sees only what they need with a full activity log.',          'rgba(45,136,184,0.10)'),
-    ] %}
-
-    {% for emoji, title, desc, icon_bg in features %}
-    <div class="rounded-[1.25rem] p-7 transition-[transform,box-shadow,background,border-color] duration-[0.25s] hover:-translate-y-1.5 hover:[box-shadow:0_12px_32px_rgba(0,149,200,0.12)]"
+    {% for f in features %}
+    <div class="rounded-[1.25rem] p-7 transition-[transform,box-shadow] duration-[0.25s] hover:-translate-y-1.5 hover:[box-shadow:0_12px_32px_rgba(0,149,200,0.12)]"
          style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
-      <div class="w-12 h-12 rounded-[0.875rem] flex items-center justify-center text-[1.4rem] mb-4" style="background:{{ icon_bg }}">{{ emoji }}</div>
-      <div class="text-[1.05rem] font-bold mb-2" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ title }}</div>
-      <div class="text-[0.875rem] leading-[1.65]" style="color:var(--text-muted)">{{ desc }}</div>
+      <div class="w-12 h-12 rounded-[0.875rem] flex items-center justify-center text-[1.4rem] mb-4"
+           style="background:{{ icon_bgs[loop.index0 % icon_bgs|length] }}">{{ f.emoji }}</div>
+      <div class="text-[1.05rem] font-bold mb-2" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ f.title }}</div>
+      <div class="text-[0.875rem] leading-[1.65]" style="color:var(--text-muted)">{{ f.desc }}</div>
     </div>
     {% endfor %}
-
   </div>
 </section>
 
 
 <!-- ══════════════════════════════════
-     PORTALS
+     STATS STRIP — driven by content JSON
 ══════════════════════════════════ -->
-<section class="portals-section py-20 px-6 transition-[background] duration-300">
+{% set default_stats = [
+  {'num':'5,000+','label':'Gallons Delivered'},
+  {'num':'300+','label':'Regular Customers'},
+  {'num':'99.9%','label':'Uptime'}
+] %}
+{% set stats = content.get('stats', default_stats) if content.get('stats') else default_stats %}
 
-  <div class="text-center text-[0.72rem] font-bold tracking-[0.2em] uppercase mb-3" style="color:var(--accent)">Access</div>
-  <h2 class="text-center font-extrabold leading-[1.2] mb-3" style="font-family:'Inconsolata',monospace;font-size:clamp(1.75rem,4vw,2.5rem);color:var(--text-primary)">
-    Choose Your Portal
-  </h2>
-  <p class="text-center text-base max-w-[520px] mx-auto mb-14 leading-[1.7]" style="color:var(--text-muted)">
-    Staff manage the entire operation; customers track orders and rewards.
-  </p>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-[900px] mx-auto">
-
-    <!-- Staff portal -->
-    <div class="portal-card-staff rounded-[1.5rem] px-8 py-10 text-center relative overflow-hidden transition-transform duration-[0.25s] hover:-translate-y-1.5"
-         style="border:1px solid rgba(45,136,184,0.25)">
-      <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-[1.75rem] mx-auto mb-5"
-           style="background:rgba(45,136,184,0.20)">🛠️</div>
-      <div class="text-[1.35rem] font-extrabold text-white mb-2.5" style="font-family:'Inconsolata',monospace">Staff Portal</div>
-      <p class="text-[0.88rem] leading-[1.65] mb-7" style="color:rgba(184,218,240,0.60)">Full system access for operators, admins, and super admins.</p>
-      <ul class="portal-perks list-none text-left mb-8 space-y-1">
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">Sales &amp; inventory management</li>
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">Delivery scheduling &amp; tracking</li>
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">Financial reports &amp; expenses</li>
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">User &amp; customer management</li>
-      </ul>
-      <a href="{{ url_for('login') }}"
-         class="flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-full font-bold text-[0.9rem] text-white no-underline transition-[background] duration-200 hover:bg-[rgba(45,136,184,0.40)]"
-         style="background:rgba(45,136,184,0.25);border:1.5px solid rgba(91,184,224,0.35)">
-        Staff Login →
-      </a>
-    </div>
-
-    <!-- Customer portal -->
-    <div class="portal-card-customer rounded-[1.5rem] px-8 py-10 text-center relative overflow-hidden transition-transform duration-[0.25s] hover:-translate-y-1.5"
-         style="border:1px solid rgba(0,149,200,0.30)">
-      <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-[1.75rem] mx-auto mb-5"
-           style="background:rgba(0,149,200,0.20)">💧</div>
-      <div class="text-[1.35rem] font-extrabold text-white mb-2.5" style="font-family:'Inconsolata',monospace">Customer Portal</div>
-      <p class="text-[0.88rem] leading-[1.65] mb-7" style="color:rgba(184,218,240,0.60)">Order water delivery and track your loyalty rewards online.</p>
-      <ul class="portal-perks list-none text-left mb-8 space-y-1">
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">Place delivery orders online</li>
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">Track delivery in real time</li>
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">View loyalty points &amp; history</li>
-        <li class="flex items-center gap-2 text-[0.82rem]" style="color:rgba(184,218,240,0.75)">Manage your account profile</li>
-      </ul>
-      <a href="{{ url_for('login') }}"
-         class="flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-full font-bold text-[0.9rem] text-white no-underline transition-[background,box-shadow] duration-200 hover:bg-[#007eb0] hover:[box-shadow:0_8px_26px_rgba(0,149,200,0.45)]"
-         style="background:#0095c8;box-shadow:0 6px 20px rgba(0,149,200,0.35)">
-        Customer Login →
-      </a>
-    </div>
-
-  </div>
-</section>
-
-
-<!-- ══════════════════════════════════
-     STATS STRIP
-══════════════════════════════════ -->
 <section class="stats-strip py-14 px-6 transition-[background] duration-300">
-  <div class="grid grid-cols-2 sm:grid-cols-3 gap-8 max-w-[900px] mx-auto text-center">
-    <div>
-      <div class="text-[2.5rem] font-black leading-none mb-2" style="font-family:'Inconsolata',monospace;color:#5bb8e0">100%</div>
-      <div class="text-[0.78rem] font-semibold tracking-[0.05em] uppercase" style="color:rgba(184,218,240,0.55)">Filtered Water</div>
+  <div class="grid gap-8 max-w-[900px] mx-auto text-center"
+       style="grid-template-columns: repeat({{ stats|length }}, minmax(0,1fr));">
+    {% for s in stats %}
+    <div {% if loop.last and stats|length == 3 %}class="col-span-2 sm:col-span-1"{% endif %}>
+      <div class="text-[2.5rem] font-black leading-none mb-2" style="font-family:'Inconsolata',monospace;color:#5bb8e0">{{ s.num }}</div>
+      <div class="text-[0.78rem] font-semibold tracking-[0.05em] uppercase" style="color:rgba(184,218,240,0.55)">{{ s.label }}</div>
     </div>
-    <div>
-      <div class="text-[2.5rem] font-black leading-none mb-2" style="font-family:'Inconsolata',monospace;color:#5bb8e0">24/7</div>
-      <div class="text-[0.78rem] font-semibold tracking-[0.05em] uppercase" style="color:rgba(184,218,240,0.55)">System Access</div>
-    </div>
-    <div class="col-span-2 sm:col-span-1">
-      <div class="text-[2.5rem] font-black leading-none mb-2" style="font-family:'Inconsolata',monospace;color:#5bb8e0">1</div>
-      <div class="text-[0.78rem] font-semibold tracking-[0.05em] uppercase" style="color:rgba(184,218,240,0.55)">Unified Dashboard</div>
-    </div>
+    {% endfor %}
   </div>
 </section>
 
 
 <!-- ══════════════════════════════════
-     FOOTER
+     ABOUT — only rendered when about_body is set
+══════════════════════════════════ -->
+{% if content.get('about_body') %}
+<section class="about-section py-20 px-6 transition-[background] duration-300">
+  <div class="max-w-[760px] mx-auto">
+    <div class="text-center text-[0.72rem] font-bold tracking-[0.2em] uppercase mb-3" style="color:var(--accent)">Our Story</div>
+    <h2 class="text-center font-extrabold leading-[1.2] mb-8" style="font-family:'Inconsolata',monospace;font-size:clamp(1.75rem,4vw,2.5rem);color:var(--text-primary)">
+      {{ content.get('about_title', 'About EP-Bluelife') }}
+    </h2>
+    <p class="text-[1rem] leading-[1.85] text-center" style="color:var(--text-muted)">
+      {{ content.get('about_body') }}
+    </p>
+  </div>
+</section>
+{% endif %}
+
+
+<!-- ══════════════════════════════════
+     CONTACT — only rendered when any contact field is set
+══════════════════════════════════ -->
+{% if content.get('contact_email') or content.get('contact_phone') or content.get('contact_address') %}
+<section class="py-20 px-6" style="background:var(--bg-page);transition:background 0.3s">
+  <div class="max-w-[760px] mx-auto text-center">
+    <div class="text-[0.72rem] font-bold tracking-[0.2em] uppercase mb-3" style="color:var(--accent)">Get In Touch</div>
+    <h2 class="font-extrabold leading-[1.2] mb-10" style="font-family:'Inconsolata',monospace;font-size:clamp(1.75rem,4vw,2.5rem);color:var(--text-primary)">
+      Contact Us
+    </h2>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-6 flex-wrap">
+      {% if content.get('contact_email') %}
+      <a href="mailto:{{ content.get('contact_email') }}"
+         class="flex items-center gap-3 px-6 py-3.5 rounded-2xl no-underline transition-all hover:-translate-y-1"
+         style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+        <span class="text-xl">✉️</span>
+        <div class="text-left">
+          <div class="text-[0.62rem] font-bold uppercase tracking-wider mb-0.5" style="color:var(--accent)">Email</div>
+          <div class="text-sm font-semibold" style="color:var(--text-primary)">{{ content.get('contact_email') }}</div>
+        </div>
+      </a>
+      {% endif %}
+      {% if content.get('contact_phone') %}
+      <a href="tel:{{ content.get('contact_phone') }}"
+         class="flex items-center gap-3 px-6 py-3.5 rounded-2xl no-underline transition-all hover:-translate-y-1"
+         style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+        <span class="text-xl">📞</span>
+        <div class="text-left">
+          <div class="text-[0.62rem] font-bold uppercase tracking-wider mb-0.5" style="color:var(--accent)">Phone</div>
+          <div class="text-sm font-semibold" style="color:var(--text-primary)">{{ content.get('contact_phone') }}</div>
+        </div>
+      </a>
+      {% endif %}
+      {% if content.get('contact_address') %}
+      <div class="flex items-center gap-3 px-6 py-3.5 rounded-2xl"
+           style="background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-card)">
+        <span class="text-xl">📍</span>
+        <div class="text-left">
+          <div class="text-[0.62rem] font-bold uppercase tracking-wider mb-0.5" style="color:var(--accent)">Address</div>
+          <div class="text-sm font-semibold" style="color:var(--text-primary)">{{ content.get('contact_address') }}</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+<!-- ══════════════════════════════════
+     FOOTER — driven by content JSON
 ══════════════════════════════════ -->
 <footer class="py-8 px-6 text-center transition-[background,border-color] duration-300" style="border-top:1px solid var(--border-card);background:var(--bg-page)">
   <div class="font-bold text-[1.1rem] mb-1.5" style="font-family:'Inconsolata',monospace;color:var(--accent)">Agos — EP-Bluelife System</div>
-  <p class="text-[0.8rem]" style="color:var(--text-faint)">Sitio Kanto, Soledad, Sta. Rosa, Nueva Ecija &nbsp;·&nbsp; Built for EP-Bluelife Water Refilling Station</p>
+  <p class="text-[0.8rem]" style="color:var(--text-faint)">
+    {% if content.get('contact_address') %}{{ content.get('contact_address') }} &nbsp;·&nbsp; {% endif %}
+    {{ content.get('footer_tagline', 'Built for EP-Bluelife Water Refilling Station') }}
+  </p>
 </footer>
+
+
+<!-- ══ Admin floating edit button (shown only to admins) ══ -->
+{% if can_edit %}
+<div class="edit-bar">
+  <a href="{{ url_for('landing_editor') }}">
+    <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
+      <path d="M14.5 2.5l3 3L6 17H3v-3L14.5 2.5z" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Edit Page
+  </a>
+</div>
+{% endif %}
 
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
@@ -282,7 +346,8 @@
     document.documentElement.setAttribute('data-theme', next);
     document.body.setAttribute('data-theme', next);
     localStorage.setItem('agos-theme', next);
-    document.getElementById('theme-btn') && (document.getElementById('theme-btn').textContent = next === 'dark' ? '☀️' : '🌙');
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
     updateWaveColor(next);
   }
 
@@ -296,6 +361,8 @@
     const saved = localStorage.getItem('agos-theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
     document.body.setAttribute('data-theme', saved);
+    const btn = document.getElementById('theme-btn');
+    if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
     updateWaveColor(saved);
   })();
 </script>

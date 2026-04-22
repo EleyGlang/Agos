@@ -8,126 +8,497 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Toast notifications ── */
+    #toast-container {
+      position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999;
+      display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none;
+    }
+    .toast {
+      pointer-events: all; min-width: 260px; max-width: 360px;
+      padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.82rem;
+      font-weight: 500; display: flex; align-items: center; gap: 0.6rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      animation: toastIn 0.3s ease; transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .toast.hide { opacity: 0; transform: translateX(40px); }
+    .toast-success { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-text); }
+    .toast-error   { background: var(--danger-bg);  color: var(--danger-text);  border: 1px solid var(--danger-text); }
+    @keyframes toastIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+
+    /* ── Search clear btn — exact users.html pattern ── */
+    .search-wrap { position: relative; }
+    .search-wrap .clear-btn {
+      position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; padding: 0.2rem;
+      color: var(--text-muted); font-size: 0.75rem; line-height: 1;
+      display: none;
+    }
+    .search-wrap .clear-btn.visible { display: block; }
+  </style>
 </head>
 <body class="agos-body m-0 p-0">
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
 <div class="flex min-h-screen">
   {% include '_sidebar.html' %}
 
   <div class="flex flex-col flex-1 min-h-screen agos-main-wrap">
+
+    <!-- ══ TOPBAR ══ -->
     <header class="agos-topbar sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 py-3.5">
       <div class="flex items-center gap-4">
-        <button onclick="toggleSidebar()" class="block md:hidden bg-transparent border-none cursor-pointer p-1" style="color:var(--accent)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <button onclick="toggleSidebar()"
+                class="block md:hidden bg-transparent border-none cursor-pointer p-1"
+                style="color:var(--accent)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
         <div>
-          <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Expense Management</div>
+          <div class="text-lg md:text-2xl font-bold leading-tight"
+               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Expense Management</div>
           <div class="text-xs" style="color:var(--text-muted)">Track and categorize business expenses</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
-        <div class="agos-theme-row"><span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span><label class="agos-theme-toggle"><input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/><span class="agos-theme-track"></span></label></div>
+        <div class="agos-theme-row">
+          <span class="hidden sm:inline text-[0.7rem]" id="theme-label" style="color:var(--text-muted)">Dark</span>
+          <label class="agos-theme-toggle">
+            <input type="checkbox" class="agos-theme-checkbox" onchange="toggleTheme()"/>
+            <span class="agos-theme-track"></span>
+          </label>
+        </div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">{{ session['full_name'][0].upper() }}</div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
+          {{ session['full_name'][0].upper() }}
+        </div>
       </div>
     </header>
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
+
+      <!-- Flash messages rendered as toasts via JS -->
       {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}{% for category, message in messages %}
-          <div class="agos-flash {% if category == 'error' %}agos-flash-error{% else %}agos-flash-success{% endif %}">{{ message }}</div>
-        {% endfor %}{% endif %}
+        {% if messages %}
+          <script>window._flashMessages = {{ messages | tojson }};</script>
+        {% endif %}
       {% endwith %}
 
-      <div class="grid gap-6 grid-cols-1 {% if can_edit %}lg:grid-cols-[1fr_1.8fr]{% endif %}">
+      <!-- ══ SUMMARY STATS ══ -->
+      {% set total_amount = expenses | sum(attribute='amount') %}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Total Records</div>
+          <div class="text-2xl font-bold" style="color:var(--text-primary)">{{ expenses | length }}</div>
+          <div class="text-[0.7rem]" style="color:var(--text-muted)">All time</div>
+        </div>
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Total Spent</div>
+          <div class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--warning-text)">
+            &#x20B1;{{ "{:,.2f}".format(total_amount) }}
+          </div>
+          <div class="text-[0.7rem]" style="color:var(--text-muted)">Across all records</div>
+        </div>
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Average</div>
+          <div class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--info-text)">
+            {% if expenses | length > 0 %}
+              &#x20B1;{{ "{:,.2f}".format(total_amount / (expenses | length)) }}
+            {% else %}—{% endif %}
+          </div>
+          <div class="text-[0.7rem]" style="color:var(--text-muted)">Per record</div>
+        </div>
+        <div class="agos-card p-4 flex flex-col gap-1">
+          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Largest</div>
+          <div class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--danger-text)">
+            {% if expenses %}
+              &#x20B1;{{ "{:,.2f}".format(expenses | map(attribute='amount') | max) }}
+            {% else %}—{% endif %}
+          </div>
+          <div class="text-[0.7rem]" style="color:var(--text-muted)">Single expense</div>
+        </div>
+      </div>
 
+      <!-- ══ MAIN GRID ══ -->
+      <div class="grid gap-6 grid-cols-1 {% if can_edit %}lg:grid-cols-[320px_1fr]{% endif %}">
+
+        <!-- ══ LEFT: Record Expense form ══ -->
         {% if can_edit %}
-        <div class="agos-card overflow-hidden self-start">
-          <div class="agos-card-header"><div class="agos-card-title">Record Expense</div><div class="agos-card-subtitle">Log a new business expense</div></div>
-          <div class="p-5">
-            <form id="expense-form" action="{{ url_for('expenses') }}" method="POST" class="flex flex-col gap-4">
-              <div>
-                <label class="agos-label">Category <span style="color:#d32f2f">*</span></label>
-                <input type="text" name="category" id="expense-category" required list="expense-categories-list" placeholder="Select or type a category…" class="agos-input"/>
-                <datalist id="expense-categories-list"><option value="Utilities"/><option value="Supplies"/><option value="Maintenance"/><option value="Salaries"/><option value="Rent"/><option value="Transportation"/><option value="Other"/></datalist>
-              </div>
-              <div><label class="agos-label">Description <span style="color:#d32f2f">*</span></label><input type="text" name="description" id="expense-desc" required placeholder="e.g. Monthly electric bill" class="agos-input"/></div>
-              <div><label class="agos-label">Amount (₱) <span style="color:#d32f2f">*</span></label><input type="number" name="amount" id="expense-amount" min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/></div>
-              <div><label class="agos-label">Date <span style="color:#d32f2f">*</span></label><input type="date" name="expense_date" required id="expense-date-input" class="agos-input"/></div>
-              <button type="button" onclick="openExpenseConfirm()" class="agos-btn-primary w-full py-3">Review &amp; Record Expense</button>
-            </form>
+        <div class="flex flex-col gap-4">
+          <div class="agos-card overflow-hidden">
+            <div class="agos-card-header">
+              <div class="agos-card-title">Record Expense</div>
+              <div class="agos-card-subtitle">Log a new business expense</div>
+            </div>
+            <div class="p-5">
+              <form id="expense-form" action="{{ url_for('expenses') }}" method="POST" class="flex flex-col gap-3">
+                <div>
+                  <label class="agos-label">Category <span style="color:#d32f2f">*</span></label>
+                  <input type="text" name="category" id="expense-category" required
+                         list="expense-categories-list"
+                         placeholder="Select or type a category…"
+                         class="agos-input"/>
+                  <datalist id="expense-categories-list">
+                    <option value="Utilities"/>
+                    <option value="Supplies"/>
+                    <option value="Maintenance"/>
+                    <option value="Salaries"/>
+                    <option value="Rent"/>
+                    <option value="Transportation"/>
+                    <option value="Other"/>
+                  </datalist>
+                </div>
+                <div>
+                  <label class="agos-label">Description <span style="color:#d32f2f">*</span></label>
+                  <input type="text" name="description" id="expense-desc" required
+                         placeholder="e.g. Monthly electric bill" class="agos-input"/>
+                </div>
+                <div>
+                  <label class="agos-label">Amount (&#x20B1;) <span style="color:#d32f2f">*</span></label>
+                  <input type="number" name="amount" id="expense-amount"
+                         min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/>
+                </div>
+                <div>
+                  <label class="agos-label">Date <span style="color:#d32f2f">*</span></label>
+                  <input type="date" name="expense_date" required id="expense-date-input" class="agos-input"/>
+                </div>
+                <button type="button" onclick="openExpenseConfirm()"
+                        class="agos-btn-primary w-full py-2.5 mt-1">Review &amp; Record Expense</button>
+              </form>
+            </div>
           </div>
         </div>
         {% endif %}
 
-        <div class="agos-card overflow-hidden">
-          <div class="agos-card-header flex items-center justify-between">
-            <div><div class="agos-card-title">Expense History</div><div class="agos-card-subtitle">{{ expenses | length }} record{{ 's' if expenses | length != 1 }}</div></div>
-            <input type="text" id="search-expenses" placeholder="Search..." oninput="filterExpenses()" class="agos-input" style="width:9rem"/>
+        <!-- ══ RIGHT: Expense History — card structure mirrors users.html right column ══ -->
+        <div class="agos-card overflow-hidden flex flex-col">
+
+          <!-- Card header + filters — byte-for-byte structure of users.html header -->
+          <div class="agos-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="agos-card-title">Expense History</div>
+              <div class="agos-card-subtitle" id="expense-count-label">
+                {{ expenses | length }} record{{ 's' if expenses | length != 1 }}
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <!-- Category filter pills — mirrors role pills -->
+              <div class="flex items-center gap-1 flex-wrap">
+                <button onclick="filterByCategory('all')" id="pill-all"
+                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
+                        style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
+                <button onclick="filterByCategory('Utilities')" id="pill-Utilities"
+                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
+                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Utilities</button>
+                <button onclick="filterByCategory('Supplies')" id="pill-Supplies"
+                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
+                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Supplies</button>
+                <button onclick="filterByCategory('Maintenance')" id="pill-Maintenance"
+                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
+                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Maint.</button>
+                <button onclick="filterByCategory('Salaries')" id="pill-Salaries"
+                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
+                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Salaries</button>
+                <button onclick="filterByCategory('Other')" id="pill-Other"
+                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
+                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Other</button>
+              </div>
+              <!-- Search with clear button — exact search-wrap pattern -->
+              <div class="search-wrap w-full sm:w-52">
+                <input type="text" id="search-expenses" placeholder="Search description…"
+                       oninput="filterRows(); toggleClearBtn()"
+                       class="agos-input w-full" style="padding-right:2rem"/>
+                <button class="clear-btn" id="search-clear-btn"
+                        onclick="clearSearch()" title="Clear search">&#x2715;</button>
+              </div>
+            </div>
           </div>
+
+          <!-- Table — no padding wrapper, flush to card, exact users.html overflow-x-auto div -->
           <div class="overflow-x-auto">
-            <table class="agos-table w-full border-collapse" style="min-width:560px">
-              <thead><tr><th>#</th><th>Category</th><th>Description</th><th>Amount</th><th>Date</th>{% if can_edit %}<th>Action</th>{% endif %}</tr></thead>
-              <tbody>
-                {% if expenses %}{% for expense in expenses %}
-                <tr class="expense-row">
-                  <td style="color:var(--text-muted)">{{ loop.index }}</td>
-                  <td><span class="agos-badge agos-badge-info">{{ expense.category }}</span></td>
-                  <td>{{ expense.description }}</td>
-                  <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(expense.amount) }}</td>
-                  <td style="color:var(--text-muted)">{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}</td>
-                  {% if can_edit %}
-                  <td>
-                    <form id="delete-expense-form-{{ expense.expense_id }}" action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}" method="POST" style="display:none"></form>
-                    <button type="button" onclick="openDeleteExpenseModal({{ expense.expense_id }},'{{ expense.description | replace("'", "\\'") }}')" class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer" style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
-                  </td>
-                  {% endif %}
+            <p class="text-[0.65rem] text-center py-1 sm:hidden" style="color:var(--text-faint)">&#8592; Scroll to see all columns &#8594;</p>
+            <table class="agos-table w-full border-collapse" style="min-width:660px">
+              <thead>
+                <tr>
+                  <th class="w-8">#</th>
+                  <th>Expense</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                  {% if can_edit %}<th>Actions</th>{% endif %}
                 </tr>
-                {% endfor %}{% else %}
-                <tr><td colspan="6" class="text-center py-10" style="color:var(--text-faint)">No expenses recorded yet.</td></tr>
+              </thead>
+              <tbody id="expense-tbody">
+
+                {% if expenses %}
+                  {% for expense in expenses %}
+                  <tr class="expense-row"
+                      data-category="{{ expense.category }}"
+                      data-search="{{ expense.category|lower }} {{ expense.description|lower }}">
+
+                    <!-- # — exact users.html td pattern -->
+                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
+
+                    <!-- Expense cell — mirrors Account cell with avatar + name + sub-label -->
+                    <td>
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
+                             style="background:linear-gradient(135deg,
+                               {%- if expense.category == 'Utilities' -%}#0284c7,#38bdf8
+                               {%- elif expense.category == 'Supplies' -%}#059669,#34d399
+                               {%- elif expense.category == 'Maintenance' -%}#d97706,#fbbf24
+                               {%- elif expense.category == 'Salaries' -%}#7c3aed,#a855f7
+                               {%- elif expense.category == 'Rent' -%}#db2777,#f472b6
+                               {%- elif expense.category == 'Transportation' -%}#0891b2,#22d3ee
+                               {%- else -%}#475569,#94a3b8
+                               {%- endif -%})">
+                          {{ expense.category[0].upper() }}
+                        </div>
+                        <div>
+                          <div class="font-medium text-[0.82rem] leading-tight" style="color:var(--text-primary)">
+                            {{ expense.description }}
+                          </div>
+                          <div class="text-[0.68rem]" style="color:var(--text-muted)">
+                            Logged {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Category — mirrors Role cell -->
+                    <td>
+                      <span class="agos-badge
+                        {%- if expense.category == 'Utilities' %} agos-badge-info
+                        {%- elif expense.category == 'Supplies' %} agos-badge-success
+                        {%- elif expense.category == 'Maintenance' %} agos-badge-warning
+                        {%- elif expense.category == 'Salaries' %} agos-badge-warning
+                        {%- elif expense.category == 'Rent' %} agos-badge-danger
+                        {%- elif expense.category == 'Transportation' %} agos-badge-info
+                        {%- else %} agos-badge-info{%- endif %}">
+                        {{ expense.category }}
+                      </span>
+                    </td>
+
+                    <!-- Amount — mirrors Status/Info cell -->
+                    <td>
+                      <span class="agos-badge agos-badge-danger"
+                            style="font-family:'Inconsolata',monospace;font-size:0.75rem;white-space:nowrap">
+                        &#x20B1;{{ "%.2f"|format(expense.amount) }}
+                      </span>
+                    </td>
+
+                    <!-- Date -->
+                    <td>
+                      <span class="text-[0.72rem]" style="color:var(--text-muted)">
+                        {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
+                      </span>
+                    </td>
+
+                    <!-- Actions — data-* pattern, mirrors users.html actions cell exactly -->
+                    {% if can_edit %}
+                    <td>
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <!-- View -->
+                        <button type="button"
+                                data-eid="{{ expense.expense_id }}"
+                                data-category="{{ expense.category }}"
+                                data-desc="{{ expense.description }}"
+                                data-amount="{{ '%.2f'|format(expense.amount) }}"
+                                data-date="{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}"
+                                onclick="openViewExpenseModal(this)"
+                                class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                                style="background:var(--info-bg);color:var(--info-text)">View</button>
+                        <!-- Delete form (hidden) -->
+                        <form id="delete-expense-form-{{ expense.expense_id }}"
+                              action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}"
+                              method="POST" style="display:none"></form>
+                        <!-- Delete -->
+                        <button type="button"
+                                data-eid="{{ expense.expense_id }}"
+                                data-edesc="{{ expense.description }}"
+                                onclick="openDeleteExpenseModal(this.dataset.eid, this.dataset.edesc)"
+                                class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                                style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
+                      </div>
+                    </td>
+                    {% endif %}
+
+                  </tr>
+                  {% endfor %}
                 {% endif %}
+
+                <!-- No-results row — shown by JS, mirrors users.html no-results-row exactly -->
+                <tr id="no-results-row" style="display:none">
+                  <td colspan="{% if can_edit %}6{% else %}5{% endif %}" class="text-center py-10">
+                    <div class="flex flex-col items-center gap-2">
+                      <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                           style="color:var(--text-faint)" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                      </svg>
+                      <span class="text-sm" style="color:var(--text-faint)">No expenses match your search.</span>
+                      <button onclick="clearSearch()" class="text-xs underline"
+                              style="color:var(--accent);background:none;border:none;cursor:pointer">Clear search</button>
+                    </div>
+                  </td>
+                </tr>
+
+                {% if not expenses %}
+                <tr>
+                  <td colspan="{% if can_edit %}6{% else %}5{% endif %}" class="text-center py-16">
+                    <div class="flex flex-col items-center gap-3" style="color:var(--text-faint)">
+                      <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+                      </svg>
+                      <p class="text-sm">No expenses recorded yet.</p>
+                    </div>
+                  </td>
+                </tr>
+                {% endif %}
+
               </tbody>
             </table>
           </div>
+
+          <!-- Footer count bar — exact users.html footer pattern -->
+          <div class="px-5 py-3 text-[0.72rem] border-t flex items-center justify-between"
+               style="border-color:var(--border-section);color:var(--text-muted)">
+            <span id="visible-count"></span>
+            <span>Use category pills or search to filter</span>
+          </div>
+
         </div>
+        <!-- end expense history card -->
+
       </div>
     </main>
   </div>
 </div>
 
-<!-- EXPENSE CONFIRM MODAL -->
+<!-- ═══════════════════════════════ MODALS ═══════════════════════════════ -->
+
+<!-- ══ VIEW EXPENSE MODAL — mirrors view-user-modal structure exactly ══ -->
+<div id="view-expense-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box overflow-hidden">
+      <!-- Gradient header — mirrors vum header gradient -->
+      <div class="px-6 py-5 flex items-center gap-4"
+           style="background:linear-gradient(135deg,#0c2340,#0c3a6e);border-bottom:1px solid var(--border-section)">
+        <div id="vem-avatar"
+             class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
+             style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)"></div>
+        <div class="min-w-0">
+          <div class="text-white font-bold text-base truncate" id="vem-category"></div>
+          <div class="text-[0.72rem] mt-0.5" style="color:rgba(147,197,253,0.80)" id="vem-date"></div>
+          <span id="vem-amount-badge"
+                class="text-[0.72rem] px-2 py-0.5 rounded-full mt-1 inline-block font-semibold"
+                style="background:rgba(239,68,68,0.20);color:#fca5a5;font-family:'Inconsolata',monospace"></span>
+        </div>
+      </div>
+      <!-- Body — mirrors vum body rows -->
+      <div class="p-6 flex flex-col gap-3">
+        <div class="p-3 rounded-xl" style="background:var(--bg-input)">
+          <div class="text-[0.65rem] uppercase tracking-wider font-semibold mb-1.5" style="color:var(--text-muted)">Description</div>
+          <div class="text-sm font-medium" style="color:var(--text-primary)" id="vem-desc"></div>
+        </div>
+        <div class="flex items-center justify-between text-[0.78rem]"
+             style="border-top:1px solid var(--border-section);padding-top:0.75rem">
+          <span style="color:var(--text-muted)">&#127991; Category</span>
+          <span id="vem-cat-badge"></span>
+        </div>
+        <div class="flex items-center justify-between text-[0.78rem]"
+             style="border-top:1px solid var(--border-section);padding-top:0.75rem">
+          <span style="color:var(--text-muted)">&#128197; Date Recorded</span>
+          <span class="font-medium" style="color:var(--text-primary)" id="vem-date-body"></span>
+        </div>
+        <div class="flex items-center justify-between text-[0.78rem]"
+             style="border-top:1px solid var(--border-section);padding-top:0.75rem">
+          <span style="color:var(--text-muted)">&#128176; Amount</span>
+          <span class="font-bold text-base"
+                style="color:var(--warning-text);font-family:'Inconsolata',monospace"
+                id="vem-amount-body"></span>
+        </div>
+      </div>
+      <!-- Actions — mirrors vum actions row -->
+      <div class="px-6 pb-5 flex gap-2 flex-wrap">
+        <button onclick="closeModal('view-expense-modal')" class="agos-btn-ghost flex-1 py-2.5">Close</button>
+        <button id="vem-delete-btn" type="button"
+                class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
+                style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EXPENSE CONFIRM MODAL ══ -->
 <div id="expense-confirm-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Record This Expense?</h3>
-      <div id="expense-confirm-details" class="text-sm mb-5 text-left rounded-xl p-3 mt-3" style="background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-secondary)"></div>
-      <div class="flex gap-4 justify-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--accent)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Record This Expense?</h3>
+      <div id="expense-confirm-details"
+           class="text-sm mb-5 text-left rounded-xl p-3 mt-3"
+           style="background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-secondary)"></div>
+      <div class="flex gap-3 justify-center">
         <button onclick="submitExpenseForm()" class="agos-btn-primary px-7 py-2.5">Yes, Record</button>
-        <button onclick="closeExpenseConfirm()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+        <button onclick="closeModal('expense-confirm-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- DELETE EXPENSE MODAL -->
+<!-- ══ DELETE EXPENSE MODAL ══ -->
 <div id="delete-expense-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--danger-bg)"><svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--danger-text)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></div>
-      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Expense?</h3>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--danger-bg)">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--danger-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </div>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Expense?</h3>
       <p class="text-sm mb-5" id="delete-expense-message" style="color:var(--text-muted)"></p>
-      <div class="flex gap-4 justify-center">
-        <button id="delete-expense-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--danger-text)">Yes, Delete</button>
-        <button onclick="closeDeleteExpenseModal()" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      <div class="flex gap-3 justify-center">
+        <button id="delete-expense-confirm-btn"
+                class="agos-btn-primary px-7 py-2.5"
+                style="background:var(--danger-text)">Yes, Delete</button>
+        <button onclick="closeModal('delete-expense-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- LOGOUT MODAL -->
+<!-- ══ LOGOUT MODAL ══ -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></div>
-      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
       <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
       <div class="flex gap-3 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
@@ -139,22 +510,169 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('expense-date-input').value = new Date().toISOString().split('T')[0];
-    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
-  });
-  const _orig = window.toggleTheme; window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
-  function openExpenseConfirm() {
-    const cat = document.getElementById('expense-category').value.trim(); const desc = document.getElementById('expense-desc').value.trim(); const amount = document.getElementById('expense-amount').value; const date = document.getElementById('expense-date-input').value;
-    if (!cat || !desc || !amount || !date) { alert('Please fill in all required fields.'); return; }
-    document.getElementById('expense-confirm-details').innerHTML = `<div class="mb-1"><strong>Category:</strong> ${cat}</div><div class="mb-1"><strong>Description:</strong> ${desc}</div><div class="mb-1"><strong>Amount:</strong> ₱${parseFloat(amount).toFixed(2)}</div><div><strong>Date:</strong> ${date}</div>`;
-    document.getElementById('expense-confirm-modal').classList.add('open');
+  // ── Modal helpers (fallback if agos-theme.js already defines them) ────
+  if (typeof openModal === 'undefined') {
+    window.openModal  = id => document.getElementById(id)?.classList.add('open');
+    window.closeModal = id => document.getElementById(id)?.classList.remove('open');
   }
-  function closeExpenseConfirm() { document.getElementById('expense-confirm-modal').classList.remove('open'); }
-  function submitExpenseForm() { document.getElementById('expense-form').submit(); }
-  function openDeleteExpenseModal(id, desc) { document.getElementById('delete-expense-message').textContent = `You're about to delete "${desc}". This action cannot be undone.`; document.getElementById('delete-expense-confirm-btn').onclick = function() { document.getElementById('delete-expense-form-' + id).submit(); }; document.getElementById('delete-expense-modal').classList.add('open'); }
-  function closeDeleteExpenseModal() { document.getElementById('delete-expense-modal').classList.remove('open'); }
-  function filterExpenses() { const q = document.getElementById('search-expenses').value.toLowerCase(); document.querySelectorAll('.expense-row').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none'; }); }
+
+  // ── Init ──────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    const dateInput = document.getElementById('expense-date-input');
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+
+    filterRows(); // populate footer count on load
+  });
+
+  const _orig = window.toggleTheme;
+  window.toggleTheme = function () {
+    _orig();
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+  };
+
+  // ── Active category state ─────────────────────────────────────────────
+  let activeCategory = 'all';
+
+  // ── Category filter pills — exact filterByRole() pattern ─────────────
+  function filterByCategory(cat) {
+    activeCategory = cat;
+    document.querySelectorAll('.cat-pill').forEach(p => {
+      p.style.background  = 'transparent';
+      p.style.color       = 'var(--text-muted)';
+      p.style.borderColor = 'var(--border-section)';
+    });
+    const active = document.getElementById('pill-' + cat);
+    if (active) {
+      active.style.background  = 'var(--accent)';
+      active.style.color       = '#fff';
+      active.style.borderColor = 'var(--accent)';
+    }
+    filterRows();
+  }
+
+  // ── Combined filter — exact filterRows() pattern from users.html ──────
+  function filterRows() {
+    const q    = (document.getElementById('search-expenses').value || '').toLowerCase();
+    const rows = document.querySelectorAll('.expense-row');
+    let vis    = 0;
+    rows.forEach(r => {
+      const catMatch    = activeCategory === 'all' || r.dataset.category === activeCategory;
+      const searchMatch = !q || r.dataset.search.includes(q);
+      const show        = catMatch && searchMatch;
+      r.style.display   = show ? '' : 'none';
+      if (show) vis++;
+    });
+    // Footer count — exact users.html pattern
+    const label = document.getElementById('visible-count');
+    if (label) label.textContent = `Showing ${vis} record${vis !== 1 ? 's' : ''}`;
+    // Header subtitle
+    const countLabel = document.getElementById('expense-count-label');
+    if (countLabel) countLabel.textContent = `${vis} record${vis !== 1 ? 's' : ''}`;
+    // No-results row — exact users.html logic
+    const noResults = document.getElementById('no-results-row');
+    if (noResults) noResults.style.display = (vis === 0 && (q || activeCategory !== 'all')) ? '' : 'none';
+  }
+
+  // ── Search clear button — exact users.html pattern ────────────────────
+  function toggleClearBtn() {
+    const val = document.getElementById('search-expenses').value;
+    const btn = document.getElementById('search-clear-btn');
+    if (btn) btn.classList.toggle('visible', val.length > 0);
+  }
+  function clearSearch() {
+    document.getElementById('search-expenses').value = '';
+    toggleClearBtn();
+    filterRows();
+  }
+
+  // ── View expense modal ────────────────────────────────────────────────
+  function openViewExpenseModal(btn) {
+    const d = btn.dataset;
+
+    document.getElementById('vem-avatar').textContent      = (d.category || '?')[0].toUpperCase();
+    document.getElementById('vem-category').textContent    = d.category  || '—';
+    document.getElementById('vem-date').textContent        = d.date      || '—';
+    document.getElementById('vem-amount-badge').textContent = '&#x20B1;' + (d.amount || '0.00');
+    document.getElementById('vem-desc').textContent        = d.desc      || '—';
+    document.getElementById('vem-date-body').textContent   = d.date      || '—';
+    document.getElementById('vem-amount-body').textContent = '&#x20B1;' + (d.amount || '0.00');
+
+    // Category badge
+    const catBadge = document.getElementById('vem-cat-badge');
+    catBadge.textContent = d.category || '—';
+    catBadge.className = 'agos-badge ' + ({
+      'Utilities':   'agos-badge-info',
+      'Supplies':    'agos-badge-success',
+      'Maintenance': 'agos-badge-warning',
+      'Salaries':    'agos-badge-warning',
+      'Rent':        'agos-badge-danger',
+      'Transportation': 'agos-badge-info'
+    }[d.category] || 'agos-badge-info');
+
+    // Wire delete button — mirrors vum-delete-btn pattern
+    document.getElementById('vem-delete-btn').onclick = () => {
+      closeModal('view-expense-modal');
+      openDeleteExpenseModal(d.eid, d.desc);
+    };
+
+    openModal('view-expense-modal');
+  }
+
+  // ── Record expense confirm modal ──────────────────────────────────────
+  function openExpenseConfirm() {
+    const cat    = document.getElementById('expense-category').value.trim();
+    const desc   = document.getElementById('expense-desc').value.trim();
+    const amount = document.getElementById('expense-amount').value;
+    const date   = document.getElementById('expense-date-input').value;
+    if (!cat || !desc || !amount || !date) {
+      showToast('Please fill in all required fields.', 'error'); return;
+    }
+    document.getElementById('expense-confirm-details').innerHTML =
+      `<div class="mb-1"><strong>Category:</strong> ${cat}</div>` +
+      `<div class="mb-1"><strong>Description:</strong> ${desc}</div>` +
+      `<div class="mb-1"><strong>Amount:</strong> &#x20B1;${parseFloat(amount).toFixed(2)}</div>` +
+      `<div><strong>Date:</strong> ${date}</div>`;
+    openModal('expense-confirm-modal');
+  }
+  function submitExpenseForm() {
+    document.getElementById('expense-form').submit();
+  }
+
+  // ── Delete expense modal ──────────────────────────────────────────────
+  function openDeleteExpenseModal(id, desc) {
+    document.getElementById('delete-expense-message').textContent =
+      `You're about to delete "${desc}". This action cannot be undone.`;
+    document.getElementById('delete-expense-confirm-btn').onclick = function () {
+      document.getElementById('delete-expense-form-' + id).submit();
+    };
+    openModal('delete-expense-modal');
+  }
+
+  // ── Toast helper — exact users.html showToast ─────────────────────────
+  function showToast(msg, type = 'success') {
+    const tc = document.getElementById('toast-container');
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.innerHTML = (type === 'success'
+      ? '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
+      : '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
+    ) + `<span>${msg}</span>`;
+    tc.appendChild(el);
+    setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 400); }, 3500);
+  }
+
+  // ── Flash messages as toasts ──────────────────────────────────────────
+  if (window._flashMessages) {
+    window._flashMessages.forEach(([cat, msg]) =>
+      showToast(msg, cat === 'error' ? 'error' : 'success')
+    );
+  }
 </script>
 </body>
 </html>

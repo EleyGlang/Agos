@@ -40,67 +40,204 @@
 
       <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
 
-        <!-- Add Product Form -->
+        <!-- ══ Add Product Form ══════════════════════════════════════════════ -->
         <div class="agos-card overflow-hidden self-start">
           <div class="agos-card-header">
             <div class="agos-card-title">Add New Product</div>
             <div class="agos-card-subtitle">Products added here appear in Sales &amp; Deliveries</div>
           </div>
           <div class="p-5">
-            <form action="{{ url_for('new_product') }}" method="POST" class="flex flex-col gap-4">
+            <!--
+              NOTE: The form no longer submits directly.
+              onsubmit calls openAddConfirmModal() which previews values
+              and lets the user confirm before the real POST happens.
+            -->
+            <form action="{{ url_for('new_product') }}" method="POST"
+                  class="flex flex-col gap-4"
+                  id="add-product-form"
+                  onsubmit="return openAddConfirmModal(event)">
+
               <div>
                 <label class="agos-label">Product Name <span style="color:#d32f2f">*</span></label>
-                <input type="text" name="product_name" required placeholder="e.g. 5-Gallon Refill" class="agos-input"/>
+                <input type="text" name="product_name" id="add-name"
+                       required placeholder="e.g. 5-Gallon Refill" class="agos-input"/>
               </div>
+
               <div class="grid grid-cols-2 gap-3">
-                <div><label class="agos-label">Price (₱) <span style="color:#d32f2f">*</span></label><input type="number" name="price" min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/></div>
-                <div><label class="agos-label">Unit</label><input type="text" name="unit" placeholder="e.g. gallon" class="agos-input"/></div>
+                <div>
+                  <label class="agos-label">Price (₱) <span style="color:#d32f2f">*</span></label>
+                  <input type="number" name="price" id="add-price"
+                         min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/>
+                </div>
+                <div>
+                  <label class="agos-label">Unit</label>
+                  <input type="text" name="unit" id="add-unit" placeholder="e.g. gallon" class="agos-input"/>
+                </div>
               </div>
+
+              <!-- Product Type -->
               <div>
-                <label class="agos-label">Low-Stock Threshold <span class="ml-1 text-[0.65rem] font-normal px-1.5 py-0.5 rounded-md" style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">optional</span></label>
-                <input type="number" name="minimum_stock" min="1" placeholder="Default: 10" class="agos-input"/>
-                <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">Dashboard flags stock below this count. Leave blank to use the default of 10.</p>
+                <label class="agos-label">Product Type <span style="color:#d32f2f">*</span></label>
+                <select name="product_type" id="add-product-type" onchange="onAddTypeChange()" class="agos-input" required>
+                  <option value="standard">Standard — physical stock tracked</option>
+                  <option value="service">Service — no stock (e.g. Gallon Refill)</option>
+                  <option value="linked">Linked — mirrors another product's stock</option>
+                </select>
+                <div id="add-type-hint" class="mt-2 text-[0.7rem] px-3 py-2 rounded-lg hidden"
+                     style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">
+                  <span id="add-type-hint-text"></span>
+                </div>
               </div>
-              <button type="submit" class="agos-btn-primary w-full py-3">Add Product</button>
+
+              <!-- Linked product selector (shown only when type=linked) -->
+              <div id="add-linked-row" class="hidden">
+                <label class="agos-label">Source Product <span style="color:#d32f2f">*</span></label>
+                <select name="linked_product_id" id="add-linked-select" class="agos-input">
+                  <option value="">— select physical product —</option>
+                  {% for p in products %}
+                    {% if p.product_type == 'standard' %}
+                      <option value="{{ p.product_id }}">{{ p.product_name }}</option>
+                    {% endif %}
+                  {% endfor %}
+                </select>
+                <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">
+                  This product's available stock will always equal the source product's stock.
+                </p>
+              </div>
+
+              <!-- Min stock threshold (hidden for service/linked) -->
+              <div id="add-min-stock-row">
+                <label class="agos-label">
+                  Low-Stock Threshold
+                  <span class="ml-1 text-[0.65rem] font-normal px-1.5 py-0.5 rounded-md"
+                        style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">optional</span>
+                </label>
+                <input type="number" name="minimum_stock" id="add-min-stock" min="1"
+                       placeholder="Default: 10" class="agos-input"/>
+                <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">
+                  Dashboard flags stock below this count. Leave blank to use the default of 10.
+                </p>
+              </div>
+
+              <button type="submit" class="agos-btn-primary w-full py-3">
+                <!-- icon -->
+                <svg class="inline-block mr-1.5 -mt-0.5" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Product
+              </button>
             </form>
           </div>
         </div>
 
-        <!-- Product Table -->
+        <!-- ══ Product Table ═════════════════════════════════════════════════ -->
         <div class="agos-card overflow-hidden">
           <div class="agos-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="agos-card-title">Product Catalog</div>
               <div class="agos-card-subtitle">{{ products|length }} product{{ 's' if products|length != 1 }}</div>
             </div>
-            <input type="text" id="search-products" oninput="filterProducts()" placeholder="Search..." class="agos-input w-full sm:w-40"/>
+            <input type="text" id="search-products" oninput="filterProducts()"
+                   placeholder="Search..." class="agos-input w-full sm:w-40"/>
           </div>
           <div class="overflow-x-auto">
-            <table class="agos-table w-full border-collapse" style="min-width:600px">
-              <thead><tr><th class="w-8">#</th><th>Product</th><th>Price</th><th>Unit</th><th>Min Stock</th><th>Status</th><th>Actions</th></tr></thead>
+            <table class="agos-table w-full border-collapse" style="min-width:640px">
+              <thead>
+                <tr>
+                  <th class="w-8">#</th>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Unit</th>
+                  <th>Type</th>
+                  <th>Min Stock</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
               <tbody>
                 {% if products %}{% for product in products %}
                 <tr class="product-row">
                   <td style="color:var(--text-muted)">{{ loop.index }}</td>
-                  <td class="font-medium product-name" style="color:var(--text-primary)">{{ product.product_name }}</td>
+                  <td class="font-medium product-name" style="color:var(--text-primary)">
+                    {{ product.product_name }}
+                    {% if product.product_type == 'linked' and product.linked_product %}
+                      <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">
+                        ↳ stock from: {{ product.linked_product.product_name }}
+                      </div>
+                    {% endif %}
+                  </td>
                   <td class="font-semibold" style="color:var(--text-primary)">₱{{ "%.2f"|format(product.price) }}</td>
                   <td style="color:var(--text-secondary)">{{ product.unit or '—' }}</td>
-                  <td style="color:var(--text-muted)">{{ product.inventory.minimum_stock if product.inventory else '10' }}</td>
-                  <td>{% if product.is_active %}<span class="agos-badge agos-badge-success">Active</span>{% else %}<span class="agos-badge agos-badge-danger">Inactive</span>{% endif %}</td>
+                  <td>
+                    {% if product.product_type == 'service' %}
+                      <span class="agos-badge" style="background:var(--info-bg);color:var(--info-text)">Service</span>
+                    {% elif product.product_type == 'linked' %}
+                      <span class="agos-badge" style="background:var(--warning-bg);color:var(--warning-text)">Linked</span>
+                    {% else %}
+                      <span class="agos-badge" style="background:var(--bg-input);color:var(--text-muted)">Standard</span>
+                    {% endif %}
+                  </td>
+                  <td style="color:var(--text-muted)">
+                    {% if product.product_type in ('service', 'linked') %}
+                      <span style="color:var(--text-faint)">—</span>
+                    {% else %}
+                      {{ product.inventory.minimum_stock if product.inventory else '10' }}
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if product.is_active %}
+                      <span class="agos-badge agos-badge-success">Active</span>
+                    {% else %}
+                      <span class="agos-badge agos-badge-danger">Inactive</span>
+                    {% endif %}
+                  </td>
                   <td>
                     <div class="flex items-center gap-1.5 flex-wrap">
-                      <button onclick="openEditModal({{ product.product_id }},'{{ product.product_name|replace("'","\\'") }}',{{ product.price }},'{{ product.unit or '' }}',{{ product.inventory.minimum_stock if product.inventory else 10 }})"
+                      <!-- Edit -->
+                      <button onclick="openEditModal(
+                                  {{ product.product_id }},
+                                  '{{ product.product_name|replace("'","\\'") }}',
+                                  {{ product.price }},
+                                  '{{ product.unit or '' }}',
+                                  {{ product.inventory.minimum_stock if product.inventory else 10 }},
+                                  '{{ product.product_type }}',
+                                  {{ product.linked_product_id or 'null' }}
+                                )"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--info-bg);color:var(--info-text)">Edit</button>
-                      <form action="{{ url_for('toggle_product', product_id=product.product_id) }}" method="POST" style="display:inline">
-                        <button type="submit" class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                style="{% if product.is_active %}background:var(--warning-bg);color:var(--warning-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
-                          {{ 'Deactivate' if product.is_active else 'Activate' }}
-                        </button>
-                      </form>
+
+                      <!--
+                        Toggle (Activate / Deactivate):
+                        Instead of a direct form submit we call openToggleModal(),
+                        which shows a confirmation modal. The hidden form is only
+                        submitted if the user clicks "Confirm" inside the modal.
+                      -->
+                      <form id="toggle-form-{{ product.product_id }}"
+                            action="{{ url_for('toggle_product', product_id=product.product_id) }}"
+                            method="POST" style="display:none"></form>
+
+                      <button type="button"
+                              onclick="openToggleModal(
+                                {{ product.product_id }},
+                                '{{ product.product_name|replace("'","\\'") }}',
+                                {{ 'true' if product.is_active else 'false' }}
+                              )"
+                              class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                              style="{% if product.is_active %}background:var(--warning-bg);color:var(--warning-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
+                        {{ 'Deactivate' if product.is_active else 'Activate' }}
+                      </button>
+
                       {% if session.get('role') in ['Admin', 'Super Admin'] %}
-                      <form id="delete-product-form-{{ product.product_id }}" action="{{ url_for('delete_product', product_id=product.product_id) }}" method="POST" style="display:none"></form>
-                      <button type="button" onclick="openDeleteProductModal({{ product.product_id }},'{{ product.product_name|replace("'","\\'") }}')"
+                      <form id="delete-product-form-{{ product.product_id }}"
+                            action="{{ url_for('delete_product', product_id=product.product_id) }}"
+                            method="POST" style="display:none"></form>
+                      {% set ph = product_history.get(product.product_id, (0,0)) %}
+                      <button type="button"
+                              onclick="openDeleteProductModal(
+                                {{ product.product_id }},
+                                '{{ product.product_name|replace("'","\\'") }}',
+                                {{ ph[0] }},{{ ph[1] }}
+                              )"
                               class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                               style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
                       {% endif %}
@@ -108,7 +245,11 @@
                   </td>
                 </tr>
                 {% endfor %}{% else %}
-                <tr><td colspan="7" class="text-center py-10" style="color:var(--text-faint)">No products yet. Add one using the form.</td></tr>
+                <tr>
+                  <td colspan="8" class="text-center py-10" style="color:var(--text-faint)">
+                    No products yet. Add one using the form.
+                  </td>
+                </tr>
                 {% endif %}
               </tbody>
             </table>
@@ -119,21 +260,158 @@
   </div>
 </div>
 
-<!-- EDIT PRODUCT MODAL -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     ADD PRODUCT — CONFIRMATION MODAL
+     Shows a summary of the new product before the form is submitted.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="add-confirm-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+
+      <!-- icon -->
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--accent)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+      </div>
+
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">
+        Confirm New Product
+      </h3>
+      <p class="text-sm mb-5" style="color:var(--text-muted)">
+        Please review the details below before saving.
+      </p>
+
+      <!-- Summary grid -->
+      <div class="text-left rounded-xl overflow-hidden mb-5"
+           style="border:1px solid var(--border-section)">
+        <div class="grid grid-cols-2 text-sm divide-y" style="border-color:var(--border-section)">
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Name</div>
+          <div class="px-4 py-2.5 font-semibold" id="confirm-name" style="color:var(--text-primary)"></div>
+
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Price</div>
+          <div class="px-4 py-2.5 font-semibold" id="confirm-price" style="color:var(--text-primary)"></div>
+
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Unit</div>
+          <div class="px-4 py-2.5" id="confirm-unit" style="color:var(--text-secondary)"></div>
+
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Type</div>
+          <div class="px-4 py-2.5" id="confirm-type" style="color:var(--text-secondary)"></div>
+
+          <div class="px-4 py-2.5 font-medium" id="confirm-extra-label"
+               style="color:var(--text-muted);background:var(--bg-input)"></div>
+          <div class="px-4 py-2.5" id="confirm-extra-value" style="color:var(--text-secondary)"></div>
+        </div>
+      </div>
+
+      <div class="flex gap-3 justify-center">
+        <button id="add-confirm-btn" class="agos-btn-primary px-7 py-2.5">
+          Yes, Add Product
+        </button>
+        <button onclick="closeModal('add-confirm-modal')" class="agos-btn-ghost px-7 py-2.5">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     TOGGLE (ACTIVATE / DEACTIVATE) — CONFIRMATION MODAL
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div id="toggle-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+
+      <!-- icon — swapped by JS to green (activate) or amber (deactivate) -->
+      <div id="toggle-icon-wrap"
+           class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5">
+        <!-- SVG injected by JS -->
+      </div>
+
+      <h3 id="toggle-modal-title" class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)"></h3>
+      <p class="text-sm mb-1" id="toggle-modal-product"
+         style="color:var(--text-primary);font-weight:600"></p>
+      <p class="text-sm mb-6" id="toggle-modal-desc" style="color:var(--text-muted)"></p>
+
+      <div class="flex gap-3 justify-center">
+        <button id="toggle-confirm-btn" class="agos-btn-primary px-7 py-2.5">Confirm</button>
+        <button onclick="closeModal('toggle-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EDIT PRODUCT MODAL ════════════════════════════════════════════════════ -->
 <div id="edit-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box">
-      <div class="px-6 py-4" style="border-bottom:1px solid var(--border-section)"><div class="agos-card-title">Edit Product</div></div>
+      <div class="px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div class="agos-card-title">Edit Product</div>
+      </div>
       <form id="edit-form" method="POST" class="p-6 flex flex-col gap-4">
-        <div><label class="agos-label">Product Name</label><input type="text" id="edit-name" name="product_name" required class="agos-input"/></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="agos-label">Price (₱)</label><input type="number" id="edit-price" name="price" min="0.01" step="0.01" required class="agos-input"/></div>
-          <div><label class="agos-label">Unit</label><input type="text" id="edit-unit" name="unit" class="agos-input"/></div>
-        </div>
+
         <div>
-          <label class="agos-label">Low-Stock Threshold <span class="ml-1 text-[0.65rem] font-normal px-1.5 py-0.5 rounded-md" style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">optional</span></label>
-          <input type="number" id="edit-min-stock" name="minimum_stock" min="1" placeholder="Default: 10" class="agos-input"/>
+          <label class="agos-label">Product Name</label>
+          <input type="text" id="edit-name" name="product_name" required class="agos-input"/>
         </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="agos-label">Price (₱)</label>
+            <input type="number" id="edit-price" name="price" min="0.01" step="0.01" required class="agos-input"/>
+          </div>
+          <div>
+            <label class="agos-label">Unit</label>
+            <input type="text" id="edit-unit" name="unit" class="agos-input"/>
+          </div>
+        </div>
+
+        <!-- Product Type -->
+        <div>
+          <label class="agos-label">Product Type</label>
+          <select name="product_type" id="edit-product-type" onchange="onEditTypeChange()" class="agos-input">
+            <option value="standard">Standard — physical stock tracked</option>
+            <option value="service">Service — no stock (e.g. Gallon Refill)</option>
+            <option value="linked">Linked — mirrors another product's stock</option>
+          </select>
+          <div id="edit-type-hint" class="mt-2 text-[0.7rem] px-3 py-2 rounded-lg hidden"
+               style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">
+            <span id="edit-type-hint-text"></span>
+          </div>
+        </div>
+
+        <!-- Linked product selector -->
+        <div id="edit-linked-row" class="hidden">
+          <label class="agos-label">Source Product</label>
+          <select name="linked_product_id" id="edit-linked-select" class="agos-input">
+            <option value="">— select physical product —</option>
+            {% for p in products %}
+              {% if p.product_type == 'standard' %}
+                <option value="{{ p.product_id }}">{{ p.product_name }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">
+            Stock will always mirror the selected product.
+          </p>
+        </div>
+
+        <!-- Min stock threshold -->
+        <div id="edit-min-stock-row">
+          <label class="agos-label">
+            Low-Stock Threshold
+            <span class="ml-1 text-[0.65rem] font-normal px-1.5 py-0.5 rounded-md"
+                  style="background:var(--bg-input);color:var(--text-muted);border:1px solid var(--border-input)">optional</span>
+          </label>
+          <input type="number" id="edit-min-stock" name="minimum_stock" min="1"
+                 placeholder="Default: 10" class="agos-input"/>
+        </div>
+
         <div class="flex gap-3 pt-1">
           <button type="submit" class="agos-btn-primary flex-1 py-2.5">Save Changes</button>
           <button type="button" onclick="closeEditModal()" class="agos-btn-ghost flex-1 py-2.5">Cancel</button>
@@ -143,30 +421,56 @@
   </div>
 </div>
 
-<!-- DELETE PRODUCT MODAL -->
+<!-- ══ DELETE PRODUCT MODAL ══════════════════════════════════════════════════ -->
 <div id="delete-product-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--danger-bg)">
-        <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--danger-text)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--danger-bg)">
+        <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--danger-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0
+                   01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0
+                   00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
       </div>
-      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Product?</h3>
-      <p class="text-sm mb-2 font-semibold" id="delete-product-name" style="color:var(--text-primary)"></p>
+      <h3 class="mb-1 text-xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Product?</h3>
+      <p class="text-sm mb-2 font-semibold" id="delete-product-name"
+         style="color:var(--text-primary)"></p>
+      <!-- history badges — injected by JS when product has records -->
+      <div id="delete-product-history-badge" class="hidden mb-3 flex flex-wrap justify-center gap-2">
+        <span id="delete-sale-badge" class="text-[0.7rem] px-2.5 py-1 rounded-full font-medium"
+              style="background:var(--warning-bg);color:var(--warning-text)"></span>
+        <span id="delete-delivery-badge" class="text-[0.7rem] px-2.5 py-1 rounded-full font-medium"
+              style="background:var(--info-bg);color:var(--info-text)"></span>
+      </div>
       <p class="text-sm mb-5" id="delete-product-warn" style="color:var(--text-muted)"></p>
       <div class="flex gap-3 justify-center">
-        <button id="delete-product-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--danger-text)">Yes, Delete</button>
+        <button id="delete-product-confirm-btn" class="agos-btn-primary px-7 py-2.5"
+                style="background:var(--danger-text)">Yes, Delete</button>
         <button onclick="closeModal('delete-product-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- LOGOUT MODAL -->
+<!-- ══ LOGOUT MODAL ══════════════════════════════════════════════════════════ -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
-      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)"><svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></div>
-      <h3 class="mb-2 text-2xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+           style="background:var(--accent-soft)">
+        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+             style="color:var(--accent)">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3
+                   0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </div>
+      <h3 class="mb-2 text-2xl font-bold"
+          style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm Logout</h3>
       <p class="mb-6 text-sm" style="color:var(--text-muted)">Are you sure you want to log out?</p>
       <div class="flex gap-3 justify-center">
         <button onclick="confirmLogout()" class="agos-btn-primary px-7 py-2.5">Yes, Logout</button>
@@ -176,23 +480,239 @@
   </div>
 </div>
 
+<a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() { const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; });
-  const _orig = window.toggleTheme; window.toggleTheme = function() { _orig(); const isDark = document.documentElement.getAttribute('data-theme') === 'dark'; const lbl = document.getElementById('theme-label'); if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark'; };
-  function filterProducts() { const q = document.getElementById('search-products').value.toLowerCase(); document.querySelectorAll('.product-row').forEach(r => { r.style.display = r.querySelector('.product-name').textContent.toLowerCase().includes(q) ? '' : 'none'; }); }
-  function openEditModal(id, name, price, unit, minStock) { document.getElementById('edit-form').action = `/products/${id}/edit`; document.getElementById('edit-name').value = name; document.getElementById('edit-price').value = price; document.getElementById('edit-unit').value = unit; document.getElementById('edit-min-stock').value = minStock || ''; document.getElementById('edit-modal').classList.add('open'); }
-  function closeEditModal() { document.getElementById('edit-modal').classList.remove('open'); }
-  document.getElementById('edit-modal').addEventListener('click', function(e) { if (e.target === this) closeEditModal(); });
-  const userRole = "{{ session.get('role') }}";
-  function openDeleteProductModal(id, name) {
-    document.getElementById('delete-product-name').textContent = `"${name}"`;
-    document.getElementById('delete-product-warn').textContent = userRole === 'Super Admin' ? 'You are force-deleting this product as Super Admin. This is permanent and cannot be undone, even if the product has transaction history.' : 'This action is permanent. If this product has transaction history, the server will reject the deletion.';
-    document.getElementById('delete-product-confirm-btn').onclick = () => document.getElementById('delete-product-form-' + id).submit();
-    openModal('delete-product-modal');
+/* ── theme label ─────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+});
+const _orig = window.toggleTheme;
+window.toggleTheme = function () {
+  _orig();
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lbl = document.getElementById('theme-label');
+  if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
+};
+
+/* ── search ──────────────────────────────────────────────────────────────── */
+function filterProducts() {
+  const q = document.getElementById('search-products').value.toLowerCase();
+  document.querySelectorAll('.product-row').forEach(r => {
+    r.style.display =
+      r.querySelector('.product-name').textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+/* ── product-type UI helpers ─────────────────────────────────────────────── */
+const TYPE_HINTS = {
+  standard: 'Physical item — stock is tracked in Inventory and deducted on each sale.',
+  service:  'Service product (e.g. Gallon Refill) — no stock is tracked or deducted.',
+  linked:   'Stock mirrors a physical product (e.g. New Gallon with Water mirrors Empty Gallon).',
+};
+
+function applyTypeUI(typeSelectId, linkedRowId, minStockRowId, hintId, hintTextId) {
+  const type     = document.getElementById(typeSelectId).value;
+  const linked   = document.getElementById(linkedRowId);
+  const minStock = document.getElementById(minStockRowId);
+  const hint     = document.getElementById(hintId);
+  const hintText = document.getElementById(hintTextId);
+
+  linked.classList.toggle('hidden', type !== 'linked');
+  minStock.classList.toggle('hidden', type === 'service' || type === 'linked');
+
+  if (TYPE_HINTS[type]) {
+    hintText.textContent = TYPE_HINTS[type];
+    hint.classList.remove('hidden');
+  } else {
+    hint.classList.add('hidden');
   }
-  if (typeof openModal === 'undefined') { window.openModal = (id) => document.getElementById(id).classList.add('open'); window.closeModal = (id) => document.getElementById(id).classList.remove('open'); }
-  document.getElementById('delete-product-modal').addEventListener('click', function(e) { if (e.target === this) closeModal('delete-product-modal'); });
+
+  const linkedSel = linked.querySelector('select');
+  if (linkedSel) linkedSel.required = (type === 'linked');
+}
+
+function onAddTypeChange() {
+  applyTypeUI('add-product-type', 'add-linked-row', 'add-min-stock-row',
+              'add-type-hint', 'add-type-hint-text');
+}
+function onEditTypeChange() {
+  applyTypeUI('edit-product-type', 'edit-linked-row', 'edit-min-stock-row',
+              'edit-type-hint', 'edit-type-hint-text');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ADD PRODUCT — CONFIRMATION MODAL
+   Called by the form's onsubmit handler.  Returns false to prevent the
+   native submit; the user must click "Yes, Add Product" in the modal.
+   ══════════════════════════════════════════════════════════════════════════ */
+function openAddConfirmModal(event) {
+  event.preventDefault();
+
+  const form  = document.getElementById('add-product-form');
+  const name  = document.getElementById('add-name').value.trim();
+  const price = parseFloat(document.getElementById('add-price').value);
+  const unit  = document.getElementById('add-unit').value.trim();
+  const type  = document.getElementById('add-product-type').value;
+
+  // Price validation guard (HTML5 should already handle this, but just in case)
+  if (!name || isNaN(price) || price <= 0) return false;
+
+  // Populate the summary grid
+  document.getElementById('confirm-name').textContent  = name;
+  document.getElementById('confirm-price').textContent = '₱' + price.toFixed(2);
+  document.getElementById('confirm-unit').textContent  = unit || '—';
+  document.getElementById('confirm-type').textContent  =
+    type === 'service' ? 'Service' : type === 'linked' ? 'Linked' : 'Standard';
+
+  const extraLabel = document.getElementById('confirm-extra-label');
+  const extraValue = document.getElementById('confirm-extra-value');
+
+  if (type === 'standard') {
+    const minStock = document.getElementById('add-min-stock').value;
+    extraLabel.textContent = 'Low-Stock';
+    extraValue.textContent = minStock ? minStock + ' units' : 'Default (10)';
+    extraLabel.parentElement.style.display = '';
+    extraValue.parentElement.style.display = '';
+  } else if (type === 'linked') {
+    const linkedSel = document.getElementById('add-linked-select');
+    const linkedText = linkedSel.options[linkedSel.selectedIndex]?.text || '—';
+    extraLabel.textContent = 'Source';
+    extraValue.textContent = linkedText;
+    extraLabel.parentElement.style.display = '';
+    extraValue.parentElement.style.display = '';
+  } else {
+    // service — hide the extra row
+    extraLabel.textContent = '';
+    extraValue.textContent = '';
+  }
+
+  // Wire up the confirm button to submit the real form
+  document.getElementById('add-confirm-btn').onclick = function () {
+    closeModal('add-confirm-modal');
+    form.submit();
+  };
+
+  openModal('add-confirm-modal');
+  return false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TOGGLE (ACTIVATE / DEACTIVATE) — CONFIRMATION MODAL
+   ══════════════════════════════════════════════════════════════════════════ */
+const TOGGLE_ICONS = {
+  activate: `
+    <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+         style="color:var(--success-text)" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>`,
+  deactivate: `
+    <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+         style="color:var(--warning-text)" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9
+               9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+    </svg>`,
+};
+
+function openToggleModal(productId, productName, isActive) {
+  const action = isActive ? 'deactivate' : 'activate';
+
+  // Icon + colours
+  const iconWrap = document.getElementById('toggle-icon-wrap');
+  iconWrap.innerHTML = TOGGLE_ICONS[action];
+  iconWrap.style.background =
+    action === 'activate' ? 'var(--success-bg)' : 'var(--warning-bg)';
+
+  // Text
+  document.getElementById('toggle-modal-title').textContent =
+    action === 'activate' ? 'Activate Product?' : 'Deactivate Product?';
+  document.getElementById('toggle-modal-product').textContent = `"${productName}"`;
+  document.getElementById('toggle-modal-desc').textContent =
+    action === 'activate'
+      ? 'This product will become available in Sales and Deliveries.'
+      : 'This product will be hidden from Sales and Deliveries until reactivated.';
+
+  // Confirm button style
+  const confirmBtn = document.getElementById('toggle-confirm-btn');
+  confirmBtn.style.background =
+    action === 'activate' ? 'var(--success-text)' : '';   // warning keeps default
+  confirmBtn.textContent =
+    action === 'activate' ? 'Yes, Activate' : 'Yes, Deactivate';
+
+  // Wire up submit
+  confirmBtn.onclick = function () {
+    closeModal('toggle-modal');
+    document.getElementById('toggle-form-' + productId).submit();
+  };
+
+  openModal('toggle-modal');
+}
+
+/* ── edit modal ──────────────────────────────────────────────────────────── */
+function openEditModal(id, name, price, unit, minStock, productType, linkedProductId) {
+  document.getElementById('edit-form').action = `/products/${id}/edit`;
+  document.getElementById('edit-name').value      = name;
+  document.getElementById('edit-price').value     = price;
+  document.getElementById('edit-unit').value      = unit;
+  document.getElementById('edit-min-stock').value = minStock || '';
+
+  const typeSel = document.getElementById('edit-product-type');
+  typeSel.value = productType || 'standard';
+
+  if (linkedProductId) {
+    document.getElementById('edit-linked-select').value = linkedProductId;
+  }
+
+  onEditTypeChange();
+  openModal('edit-modal');
+}
+function closeEditModal() { closeModal('edit-modal'); }
+document.getElementById('edit-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeEditModal();
+});
+
+/* ── delete modal ────────────────────────────────────────────────────────── */
+function openDeleteProductModal(id, name, saleCount, deliveryCount) {
+  document.getElementById('delete-product-name').textContent = `"${name}"`;
+
+  const hasHistory = (saleCount + deliveryCount) > 0;
+  const badge      = document.getElementById('delete-product-history-badge');
+  const saleBadge  = document.getElementById('delete-sale-badge');
+  const delBadge   = document.getElementById('delete-delivery-badge');
+
+  if (hasHistory) {
+    saleBadge.textContent  = `${saleCount} sale record${saleCount !== 1 ? 's' : ''}`;
+    delBadge.textContent   = `${deliveryCount} delivery record${deliveryCount !== 1 ? 's' : ''}`;
+    badge.classList.remove('hidden');
+    document.getElementById('delete-product-warn').textContent =
+      'This product has transaction history (shown above). Deleting it is permanent — '
+      + 'historical records will retain their data, but the product itself will be removed from the catalog.';
+  } else {
+    badge.classList.add('hidden');
+    document.getElementById('delete-product-warn').textContent =
+      'This product has no transaction history. Deleting it is permanent and cannot be undone.';
+  }
+
+  document.getElementById('delete-product-confirm-btn').onclick =
+    () => document.getElementById('delete-product-form-' + id).submit();
+  openModal('delete-product-modal');
+}
+document.getElementById('delete-product-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeModal('delete-product-modal');
+});
+
+/* ── add-confirm modal backdrop close ───────────────────────────────────── */
+document.getElementById('add-confirm-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeModal('add-confirm-modal');
+});
+document.getElementById('toggle-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeModal('toggle-modal');
+});
 </script>
 </body>
 </html>

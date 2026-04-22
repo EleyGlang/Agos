@@ -221,6 +221,30 @@ def seed_super_admin():
     db.session.commit()
     print('Done. username=superadmin  password=superadmin123  — change it immediately!')
 
+    def _resolve_inventory(product):
+        """
+        Return the Inventory row that should be debited when this product is sold,
+        and the number of units that actually represent physical stock.
+    
+        Returns (inv_row_or_None, deduct_flag)
+        • service   → (None, False)   — no deduction at all
+        • linked    → (linked_inv, True) — deduct from the linked product's inv
+        • standard  → (own_inv, True)
+        """
+    if product.product_type == 'service':
+        return None, False
+    if product.product_type == 'linked':
+        if product.linked_product_id:
+            inv = Inventory.query.filter_by(
+                product_id=product.linked_product_id
+            ).first()
+            return inv, True
+        return None, False
+    # standard
+    inv = Inventory.query.filter_by(product_id=product.product_id).first()
+    return inv, True
+
+
 
 # ══════════════════════════════════════════════════════
 #  AUTH
@@ -241,7 +265,7 @@ def _load_landing_content():
     path = _landing_content_path()
     if os.path.exists(path):
         import json
-        with open(path) as f:
+        with open(path, encoding='utf-8') as f:
             return json.load(f)
     return {}
 
@@ -260,6 +284,7 @@ def landing():
 @admin_required
 def landing_save():
     import json
+    feature_count = int(request.form.get('feature_count', 0))
     fields = {
         'hero_tagline':    request.form.get('hero_tagline', '').strip(),
         'hero_headline':   request.form.get('hero_headline', '').strip(),
@@ -275,35 +300,39 @@ def landing_save():
         'contact_address': request.form.get('contact_address', '').strip(),
         'footer_tagline':  request.form.get('footer_tagline', '').strip(),
         'features': [
-            {'emoji': request.form.get(f'feature_emoji_{i}','').strip(),
-             'title': request.form.get(f'feature_title_{i}','').strip(),
-             'desc':  request.form.get(f'feature_desc_{i}','').strip()}
-            for i in range(int(request.form.get('feature_count', 0)))
-            if request.form.get(f'feature_title_{i}','').strip()
+            {'emoji': request.form.get(f'feature_emoji_{i}', '').strip(),
+             'title': request.form.get(f'feature_title_{i}', '').strip(),
+             'desc':  request.form.get(f'feature_desc_{i}',  '').strip()}
+            for i in range(feature_count)
+            if request.form.get(f'feature_title_{i}', '').strip()
         ],
         'stats': [
-            {'num':   request.form.get(f'stat_num_{i}','').strip(),
-             'label': request.form.get(f'stat_label_{i}','').strip()}
+            {'num':   request.form.get(f'stat_num_{i}',   '').strip(),
+             'label': request.form.get(f'stat_label_{i}', '').strip()}
             for i in range(3)
         ],
+        # Audit trail — stored in JSON, shown in the editor UI
+        'last_saved':     datetime.now().strftime('%Y-%m-%d %H:%M'),
+        'last_saved_by':  session.get('full_name', 'Unknown'),
     }
     path = _landing_content_path()
-    with open(path, 'w') as f:
-        json.dump(fields, f, indent=2)
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(fields, f, indent=2, ensure_ascii=False)
     log_activity('EDIT_LANDING', 'Landing', 'Landing page content updated')
     try:
         db.session.commit()
     except Exception:
         db.session.rollback()
     flash('Landing page updated successfully!', 'success')
-    return redirect(url_for('landing'))
+    # Redirect back to editor (not landing) so the admin stays in editing mode
+    return redirect(url_for('landing_editor'))
 
 @app.route('/landing/editor')
 @login_required
 @admin_required
 def landing_editor():
     content = _load_landing_content()
-    return render_template('landing_editor.html', content=content)
+    return render_template('landing_editor.html', content=content, active_page='landing_editor')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -487,28 +516,75 @@ def api_dashboard_stats():
 @app.route('/products')
 @login_required
 def products():
+    all_products = Product.query.order_by(Product.product_name).all()
+    # Build a dict of product_id -> (sale_count, delivery_count) for delete modal UI
+    product_history = {}
+    for p in all_products:
+        s = SaleItem.query.filter_by(product_id=p.product_id).count()
+        d = DeliveryItem.query.filter_by(product_id=p.product_id).count()
+        product_history[p.product_id] = (s, d)
     return render_template('products.html',
-        products=Product.query.order_by(Product.product_name).all(),
+        products=all_products,
+        product_history=product_history,
         active_page='products')
 
 @app.route('/products/new', methods=['POST'])
 @login_required
 @admin_required
 def new_product():
-    name = request.form.get('product_name', '').strip()
-    unit = request.form.get('unit', '').strip()
+    name         = request.form.get('product_name', '').strip()
+    unit         = request.form.get('unit', '').strip()
+    product_type = request.form.get('product_type', 'standard').strip()  # ←── CHANGED
+    linked_id_raw = request.form.get('linked_product_id', '').strip()    # ←── CHANGED
+ 
     try:
         price     = float(request.form.get('price', 0))
-        min_stock = int(request.form.get('minimum_stock', 10))
+        min_stock = int(request.form.get('minimum_stock') or 10)
         assert price > 0
     except (ValueError, AssertionError):
         flash('Valid product name and positive price are required.', 'error')
         return redirect(url_for('products'))
-    product = Product(product_name=name, price=price, unit=unit, is_active=True)
+ 
+    if not name:
+        flash('Product name is required.', 'error')
+        return redirect(url_for('products'))
+ 
+    # ←── CHANGED: validate linked_product_id when type == 'linked'
+    linked_product_id = None
+    if product_type == 'linked':
+        if not linked_id_raw:
+            flash('Please select the source product for a linked product.', 'error')
+            return redirect(url_for('products'))
+        linked_product_id = int(linked_id_raw)
+        source = Product.query.get(linked_product_id)
+        if not source or source.product_type not in ('standard',):
+            flash('Linked source must be a standard (physical) product.', 'error')
+            return redirect(url_for('products'))
+ 
+    product = Product(
+        product_name=name,
+        price=price,
+        unit=unit,
+        is_active=True,
+        product_type=product_type,           # ←── CHANGED
+        linked_product_id=linked_product_id, # ←── CHANGED
+    )
     db.session.add(product)
     db.session.flush()
-    db.session.add(Inventory(product_id=product.product_id, quantity=0, minimum_stock=min_stock))
-    log_activity('CREATE_PRODUCT', 'Products', f'"{name}" created at ₱{price:.2f}', 'Product', product.product_id)
+ 
+    # ←── CHANGED: only create an Inventory row for physical (standard) products
+    if product_type == 'standard':
+        db.session.add(Inventory(
+            product_id=product.product_id,
+            quantity=0,
+            minimum_stock=min_stock,
+        ))
+ 
+    log_activity(
+        'CREATE_PRODUCT', 'Products',
+        f'"{name}" created at ₱{price:.2f} (type: {product_type})',
+        'Product', product.product_id,
+    )
     try:
         db.session.commit()
         flash(f'Product "{name}" added!', 'success')
@@ -517,6 +593,7 @@ def new_product():
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('products'))
 
+
 @app.route('/products/<int:product_id>/edit', methods=['POST'])
 @login_required
 @admin_required
@@ -524,17 +601,65 @@ def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
     product.product_name = request.form.get('product_name', product.product_name).strip()
     product.unit         = request.form.get('unit', product.unit or '').strip()
+ 
+    # ←── CHANGED: accept product_type and linked_product_id
+    new_type      = request.form.get('product_type', product.product_type).strip()
+    linked_id_raw = request.form.get('linked_product_id', '').strip()
+ 
     try:
         new_price = float(request.form.get('price', product.price))
         assert new_price > 0
         product.price = new_price
-        inv = Inventory.query.filter_by(product_id=product_id).first()
-        if inv:
-            inv.minimum_stock = int(request.form.get('minimum_stock', inv.minimum_stock))
     except (ValueError, AssertionError):
         flash('Price must be a positive number.', 'error')
         return redirect(url_for('products'))
-    log_activity('EDIT_PRODUCT', 'Products', f'"{product.product_name}" updated', 'Product', product_id)
+ 
+    # ←── CHANGED: validate and update linked_product_id
+    if new_type == 'linked':
+        if not linked_id_raw:
+            flash('Please select the source product for a linked product.', 'error')
+            return redirect(url_for('products'))
+        linked_product_id = int(linked_id_raw)
+        if linked_product_id == product_id:
+            flash('A product cannot be linked to itself.', 'error')
+            return redirect(url_for('products'))
+        source = Product.query.get(linked_product_id)
+        if not source or source.product_type not in ('standard',):
+            flash('Linked source must be a standard (physical) product.', 'error')
+            return redirect(url_for('products'))
+        product.linked_product_id = linked_product_id
+    else:
+        product.linked_product_id = None
+ 
+    # ←── CHANGED: handle type transitions
+    old_type = product.product_type
+    product.product_type = new_type
+ 
+    inv = Inventory.query.filter_by(product_id=product_id).first()
+ 
+    if new_type == 'standard':
+        # Ensure an inventory row exists
+        if not inv:
+            db.session.add(Inventory(product_id=product_id, quantity=0, minimum_stock=10))
+        else:
+            try:
+                inv.minimum_stock = int(request.form.get('minimum_stock', inv.minimum_stock))
+            except (ValueError, TypeError):
+                pass
+    else:
+        # service / linked — remove inventory row if it exists (optional: keep for history)
+        # We leave quantity-0 rows in place to avoid FK issues; just zero them out.
+        if inv:
+            try:
+                inv.minimum_stock = int(request.form.get('minimum_stock', inv.minimum_stock))
+            except (ValueError, TypeError):
+                pass
+ 
+    log_activity(
+        'EDIT_PRODUCT', 'Products',
+        f'"{product.product_name}" updated (type: {old_type}→{new_type})',
+        'Product', product_id,
+    )
     try:
         db.session.commit()
         flash('Product updated!', 'success')
@@ -568,24 +693,39 @@ def delete_product(product_id):
 
     sale_uses     = SaleItem.query.filter_by(product_id=product_id).count()
     delivery_uses = DeliveryItem.query.filter_by(product_id=product_id).count()
-    has_history   = (sale_uses + delivery_uses) > 0
-
-    if has_history and not is_super_admin():
-        flash(
-            f'"{name}" has existing transaction records. '
-            f'Admins can only deactivate it. Ask a Super Admin to force-delete.',
-            'error'
-        )
-        return redirect(url_for('products'))
 
     log_activity('DELETE_PRODUCT', 'Products',
-                 f'"{name}" permanently deleted (sale refs: {sale_uses}, delivery refs: {delivery_uses})',
+                 f'"{name}" permanently deleted by {session.get("role")} '
+                 f'(sale refs: {sale_uses}, delivery refs: {delivery_uses})',
                  'Product', product_id)
     try:
-        inv = Inventory.query.filter_by(product_id=product_id).first()
-        if inv:
-            db.session.delete(inv)
+        # ── 1. Nullify/delete child rows in dependency order to satisfy FK constraints ──
+
+        # ReturnItems referencing this product
+        ReturnItem.query.filter_by(product_id=product_id).delete(synchronize_session=False)
+
+        # DeliveryItems referencing this product
+        DeliveryItem.query.filter_by(product_id=product_id).delete(synchronize_session=False)
+
+        # SaleItems referencing this product
+        SaleItem.query.filter_by(product_id=product_id).delete(synchronize_session=False)
+
+        # WaterTankLog rows that reference this product (if any via reference_id)
+        # These reference by reference_id (int), not a direct FK — safe to leave,
+        # but we flush the above deletions before touching the product itself.
+
+        # Inventory row
+        Inventory.query.filter_by(product_id=product_id).delete(synchronize_session=False)
+
+        # Any other products that are linked TO this product — unlink them
+        Product.query.filter_by(linked_product_id=product_id).update(
+            {'linked_product_id': None, 'product_type': 'standard'},
+            synchronize_session=False
+        )
+
         db.session.flush()
+
+        # ── 2. Now it is safe to delete the product row itself ──
         db.session.delete(product)
         db.session.commit()
         flash(f'Product "{name}" permanently deleted.', 'success')
@@ -611,19 +751,20 @@ def sales():
 @app.route('/sales/new', methods=['POST'])
 @login_required
 def new_sale():
-    # ── Apply the daily tank top-up before deducting (silently) ──
     try:
         apply_daily_tank_refill()
     except Exception:
         pass
-
+ 
     customer_id = request.form.get('customer_id') or None
     sale_type   = request.form.get('sale_type', 'Walk-in')
     if sale_type == 'Delivery' and not customer_id:
         flash('Delivery sales require a customer.', 'error')
         return redirect(url_for('sales'))
+ 
     product_ids = request.form.getlist('product_id[]')
     quantities  = request.form.getlist('quantity[]')
+ 
     if customer_id == 'new':
         new_name    = request.form.get('new_customer_name', '').strip()
         new_number  = request.form.get('new_customer_number', '').strip()
@@ -638,6 +779,7 @@ def new_sale():
         db.session.add(nc)
         db.session.flush()
         customer_id = nc.customer_id
+ 
     total_amount        = 0.0
     items_with_products = []
     for pid, qty_str in zip(product_ids, quantities):
@@ -648,13 +790,19 @@ def new_sale():
         subtotal = float(product.price) * quantity
         total_amount += subtotal
         items_with_products.append((
-            SaleItem(product_id=int(pid), quantity=quantity, price=product.price, subtotal=subtotal),
-            product
+            SaleItem(product_id=int(pid), quantity=quantity,
+                     price=product.price, subtotal=subtotal),
+            product,
         ))
+ 
+    # Loyalty points (unchanged logic)
     if customer_id:
         customer = Customer.query.get(customer_id)
         if customer:
-            total_refills = sum(i.quantity for i, p in items_with_products if 'refill' in p.product_name.lower())
+            total_refills = sum(
+                i.quantity for i, p in items_with_products
+                if 'refill' in p.product_name.lower()
+            )
             if customer.loyalty_points > 0 and total_refills > 0:
                 refill_total      = sum(i.subtotal for i, p in items_with_products if 'refill' in p.product_name.lower())
                 free_used         = min(customer.loyalty_points, total_refills)
@@ -667,18 +815,23 @@ def new_sale():
                 new_pts = remaining_refills // 10
                 if new_pts > 0:
                     customer.loyalty_points += new_pts
-    sale = Sale(user_id=session['user_id'], customer_id=customer_id,
-                sale_type=sale_type, total_amount=total_amount, sale_date=datetime.now())
+ 
+    sale = Sale(
+        user_id=session['user_id'], customer_id=customer_id,
+        sale_type=sale_type, total_amount=total_amount, sale_date=datetime.now(),
+    )
     db.session.add(sale)
     db.session.flush()
+ 
     for sale_item, product in items_with_products:
         sale_item.sale_id = sale.sale_id
         db.session.add(sale_item)
-        inv = Inventory.query.filter_by(product_id=product.product_id).first()
-        if inv:
+ 
+        # ←── CHANGED: use _resolve_inventory instead of direct lookup
+        inv, should_deduct = _resolve_inventory(product)
+        if should_deduct and inv:
             inv.quantity = max(0, inv.quantity - sale_item.quantity)
-
-    # ── Deduct total units sold from the water tank ──────────────
+ 
     total_units = sum(si.quantity for si, _ in items_with_products)
     if total_units > 0:
         _deduct_tank(
@@ -687,7 +840,7 @@ def new_sale():
             reference_id=sale.sale_id,
             note=f'{sale_type} sale #{sale.sale_id} — {total_units} gal',
         )
-
+ 
     log_activity('CREATE_SALE', 'Sales', f'{sale_type} sale — ₱{total_amount:.2f}', 'Sale', sale.sale_id)
     try:
         db.session.commit()
@@ -696,6 +849,7 @@ def new_sale():
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('sales'))
+
 
 
 # ══════════════════════════════════════════════════════
@@ -800,9 +954,11 @@ def toggle_user_status(user_id):
 def reset_user_password(user_id):
     user         = User.query.get_or_404(user_id)
     new_password = request.form.get('new_password', '').strip()
+    referrer     = request.referrer or ''
+    back         = url_for('user_management') if 'user_management' in referrer else url_for('profile')
     if len(new_password) < 8:
         flash('Password must be at least 8 characters.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     user.password = generate_password_hash(new_password)
     log_activity('RESET_PASSWORD', 'Users', f'Password reset for @{user.username}', 'User', user_id)
     try:
@@ -811,10 +967,7 @@ def reset_user_password(user_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
-    referrer = request.referrer or ''
-    if 'profile' in referrer:
-        return redirect(url_for('profile'))
-    return redirect(url_for('user_management'))
+    return redirect(back)
 
 @app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
 @login_required
@@ -983,17 +1136,19 @@ def profile_update():
 @admin_required
 def admin_update_user_info(user_id):
     import re
-    target = User.query.get_or_404(user_id)
+    target   = User.query.get_or_404(user_id)
+    referrer = request.referrer or ''
+    back     = url_for('user_management') if 'user_management' in referrer else url_for('profile')
 
     if target.role == 'Super Admin':
         flash('Super Admin accounts cannot be modified.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     if target.role == 'Admin' and not is_super_admin():
         flash('Only Super Admin can modify Admin accounts.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     if target.user_id == session['user_id']:
         flash('Use the profile form to update your own information.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
 
     first_name     = request.form.get('first_name', '').strip()
     middle_initial = request.form.get('middle_initial', '').strip()
@@ -1001,13 +1156,13 @@ def admin_update_user_info(user_id):
 
     if not first_name or not re.match(r'^[A-Za-z\s]+$', first_name):
         flash('First name is required (letters only).', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     if not last_name or not re.match(r'^[A-Za-z\s]+$', last_name):
         flash('Last name is required (letters only).', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     if middle_initial and not re.match(r'^[A-Za-z]\.?$', middle_initial):
         flash('Middle initial must be a single letter.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
 
     parts = [first_name]
     if middle_initial:
@@ -1033,10 +1188,7 @@ def admin_update_user_info(user_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
 
-    referrer = request.referrer or ''
-    if 'user_management' in referrer:
-        return redirect(url_for('user_management'))
-    return redirect(url_for('profile'))
+    return redirect(back)
 
 
 @app.route('/admin/customers/<int:customer_id>/update-info', methods=['POST'])
@@ -1045,6 +1197,8 @@ def admin_update_user_info(user_id):
 def admin_update_customer_info(customer_id):
     import re
     customer = Customer.query.get_or_404(customer_id)
+    referrer = request.referrer or ''
+    back     = url_for('user_management') if 'user_management' in referrer else url_for('profile')
 
     first_name     = request.form.get('first_name', '').strip()
     middle_initial = request.form.get('middle_initial', '').strip()
@@ -1054,13 +1208,13 @@ def admin_update_customer_info(customer_id):
 
     if not first_name:
         flash('First name is required.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     if not last_name:
         flash('Last name is required.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     if contact and (not contact.isdigit() or len(contact) != 11):
         flash('Phone number must be exactly 11 digits.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
 
     parts = [first_name]
     if middle_initial:
@@ -1087,10 +1241,7 @@ def admin_update_customer_info(customer_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
 
-    referrer = request.referrer or ''
-    if 'user_management' in referrer:
-        return redirect(url_for('user_management'))
-    return redirect(url_for('profile'))
+    return redirect(back)
 
 
 @app.route('/admin/customers/<int:customer_id>/reset-password', methods=['POST'])
@@ -1099,13 +1250,15 @@ def admin_update_customer_info(customer_id):
 def admin_reset_customer_password(customer_id):
     customer     = Customer.query.get_or_404(customer_id)
     new_password = request.form.get('new_password', '').strip()
+    referrer     = request.referrer or ''
+    back         = url_for('user_management') if 'user_management' in referrer else url_for('profile')
 
     if not customer.username:
         flash('This customer does not have a portal account.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
     if len(new_password) < 8:
         flash('Password must be at least 8 characters.', 'error')
-        return redirect(url_for('profile'))
+        return redirect(back)
 
     customer.password = generate_password_hash(new_password)
     log_activity('RESET_CUSTOMER_PASSWORD', 'Profile',
@@ -1118,10 +1271,7 @@ def admin_reset_customer_password(customer_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
 
-    referrer = request.referrer or ''
-    if 'user_management' in referrer:
-        return redirect(url_for('user_management'))
-    return redirect(url_for('profile'))
+    return redirect(back)
 
 
 # ══════════════════════════════════════════════════════
@@ -1374,6 +1524,9 @@ def create_customer():
         flash('Contact number must be exactly 11 digits.', 'error')
         return redirect(url_for('user_management'))
     nc = Customer(
+        first_name=first_name,
+        middle_initial=middle_initial.rstrip('.') if middle_initial else None,
+        last_name=last_name,
         full_name=full_name, username=username,
         password=generate_password_hash(password),
         contact_number=contact, address=address
@@ -1402,31 +1555,66 @@ def inventory():
         product_id = int(request.form.get('product_id'))
         action     = request.form.get('action')
         qty_change = int(request.form.get('quantity'))
-        item       = Inventory.query.filter_by(product_id=product_id).first()
+ 
+        # ←── CHANGED: only standard products have their own Inventory row
+        product = Product.query.get_or_404(product_id)
+        if product.product_type == 'service':
+            flash('Service products do not have physical stock to adjust.', 'error')
+            return redirect(url_for('inventory'))
+        if product.product_type == 'linked':
+            flash(
+                f'"{product.product_name}" mirrors the stock of '
+                f'"{product.linked_product.product_name}". '
+                f'Adjust that product\'s stock instead.',
+                'error',
+            )
+            return redirect(url_for('inventory'))
+ 
+        item = Inventory.query.filter_by(product_id=product_id).first()
         if not item:
             flash('Inventory item not found.', 'error')
             return redirect(url_for('inventory'))
+ 
         if action == 'add':
             item.quantity += qty_change
-            log_activity('INVENTORY_ADD', 'Inventory', f'Added {qty_change} units to "{item.product.product_name}"', 'Inventory', item.inventory_id)
+            log_activity(
+                'INVENTORY_ADD', 'Inventory',
+                f'Added {qty_change} units to "{item.product.product_name}"',
+                'Inventory', item.inventory_id,
+            )
             flash(f'Added {qty_change} units to {item.product.product_name}.', 'success')
         elif action == 'deduct':
             if item.quantity < qty_change:
                 flash('Not enough stock!', 'error')
                 return redirect(url_for('inventory'))
             item.quantity -= qty_change
-            log_activity('INVENTORY_DEDUCT', 'Inventory', f'Deducted {qty_change} units from "{item.product.product_name}"', 'Inventory', item.inventory_id)
+            log_activity(
+                'INVENTORY_DEDUCT', 'Inventory',
+                f'Deducted {qty_change} units from "{item.product.product_name}"',
+                'Inventory', item.inventory_id,
+            )
             flash(f'Deducted {qty_change} from {item.product.product_name}.', 'success')
+ 
         try:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('inventory'))
-    return render_template('inventory.html',
-        inventory_items=Inventory.query.all(),
-        products=Product.query.all(),
-        active_page='inventory')
+ 
+    # ←── CHANGED: split inventory items into categories for the template
+    all_products = Product.query.order_by(Product.product_name).all()
+    inventory_items = Inventory.query.join(Product).filter(
+        Product.product_type == 'standard'       # ←── only physical rows
+    ).all()
+ 
+    return render_template(
+        'inventory.html',
+        inventory_items=inventory_items,
+        all_products=all_products,               # ←── passed for the form datalist
+        active_page='inventory',
+    )
+
 
 
 # ══════════════════════════════════════════════════════
@@ -1442,6 +1630,19 @@ def deliveries():
         notes         = request.form.get('notes', '').strip()
         product_ids   = request.form.getlist('product_id[]')
         quantities    = request.form.getlist('quantity[]')
+        # Reject past delivery dates
+        if delivery_date:
+            try:
+                parsed_date = datetime.strptime(delivery_date, '%Y-%m-%d').date()
+                if parsed_date < datetime.now().date():
+                    flash('Delivery date cannot be in the past.', 'error')
+                    return redirect(url_for('deliveries'))
+            except ValueError:
+                flash('Invalid delivery date format.', 'error')
+                return redirect(url_for('deliveries'))
+        else:
+            flash('Please select a delivery date.', 'error')
+            return redirect(url_for('deliveries'))
         delivery = DeliveryOrder(customer_id=customer_id, delivery_date=delivery_date,
                                  notes=notes, status='Pending')
         db.session.add(delivery)
@@ -1476,14 +1677,14 @@ def deliveries():
 @app.route('/deliveries/<int:delivery_id>/status', methods=['POST'])
 @login_required
 def update_delivery_status(delivery_id):
-    # ── Apply daily tank top-up before any deduction ──────────────
     try:
         apply_daily_tank_refill()
     except Exception:
         pass
-
+ 
     delivery   = DeliveryOrder.query.get_or_404(delivery_id)
     new_status = request.form.get('status')
+ 
     if new_status == 'Cancelled':
         flash('Use the cancel endpoint to cancel a delivery.', 'error')
         return redirect(url_for('deliveries'))
@@ -1493,19 +1694,28 @@ def update_delivery_status(delivery_id):
     if new_status == 'Delivered' and delivery.status not in ('Pending', 'Confirmed'):
         flash('Only Pending or Confirmed deliveries can be marked as delivered.', 'error')
         return redirect(url_for('deliveries'))
+ 
     if new_status == 'Delivered' and delivery.status != 'Delivered':
-        sale = Sale(user_id=session['user_id'], customer_id=delivery.customer_id,
-                    sale_type='Delivery', total_amount=delivery.total_amount, sale_date=datetime.now())
+        sale = Sale(
+            user_id=session['user_id'], customer_id=delivery.customer_id,
+            sale_type='Delivery', total_amount=delivery.total_amount,
+            sale_date=datetime.now(),
+        )
         db.session.add(sale)
         db.session.flush()
+ 
         for di in delivery.delivery_items:
-            db.session.add(SaleItem(sale_id=sale.sale_id, product_id=di.product_id,
-                                    quantity=di.quantity, price=di.price, subtotal=di.subtotal))
-            inv = Inventory.query.filter_by(product_id=di.product_id).first()
-            if inv:
-                inv.quantity = max(0, inv.quantity - di.quantity)
-
-        # ── Deduct from water tank when delivery is actually fulfilled ──
+            db.session.add(SaleItem(
+                sale_id=sale.sale_id, product_id=di.product_id,
+                quantity=di.quantity, price=di.price, subtotal=di.subtotal,
+            ))
+            # ←── CHANGED: use _resolve_inventory
+            product = Product.query.get(di.product_id)
+            if product:
+                inv, should_deduct = _resolve_inventory(product)
+                if should_deduct and inv:
+                    inv.quantity = max(0, inv.quantity - di.quantity)
+ 
         total_units = sum(di.quantity for di in delivery.delivery_items)
         if total_units > 0:
             _deduct_tank(
@@ -1514,9 +1724,13 @@ def update_delivery_status(delivery_id):
                 reference_id=delivery_id,
                 note=f'Delivery #{delivery_id} fulfilled — {total_units} gal',
             )
-
+ 
     delivery.status = new_status
-    log_activity('UPDATE_DELIVERY', 'Deliveries', f'Delivery #{delivery_id} → {new_status}', 'DeliveryOrder', delivery_id)
+    log_activity(
+        'UPDATE_DELIVERY', 'Deliveries',
+        f'Delivery #{delivery_id} → {new_status}',
+        'DeliveryOrder', delivery_id,
+    )
     try:
         db.session.commit()
         flash(f'Delivery #{delivery_id} updated to {new_status}.', 'success')
@@ -1524,6 +1738,7 @@ def update_delivery_status(delivery_id):
         db.session.rollback()
         flash(f'Error: {str(e)}', 'error')
     return redirect(url_for('deliveries'))
+
 
 
 @app.route('/deliveries/<int:delivery_id>/cancel', methods=['POST'])
@@ -1931,6 +2146,14 @@ def customer_order():
         quantities    = request.form.getlist('quantity[]')
         if not delivery_date:
             flash('Please select a delivery date.', 'error')
+            return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
+        try:
+            parsed_date = datetime.strptime(delivery_date, '%Y-%m-%d').date()
+            if parsed_date < datetime.now().date():
+                flash('Delivery date cannot be in the past.', 'error')
+                return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
+        except ValueError:
+            flash('Invalid delivery date format.', 'error')
             return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
         delivery = DeliveryOrder(customer_id=customer.customer_id,
                                  delivery_date=delivery_date, notes=notes, status='Pending')
