@@ -8,13 +8,25 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='agos-theme.css') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* Modal overlay — JS-toggled ancestor class, cannot be Tailwind */
+    .agos-modal-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(3px);
+      align-items: center; justify-content: center;
+    }
+    .agos-modal-overlay.is-open { display: flex; }
+  </style>
 </head>
 <body class="agos-body m-0 p-0">
 <a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
 
 <div class="flex min-h-screen">
 
- {% include '_sidebar.html' %}
+  {% include '_sidebar.html' %}
 
   <!-- ══ PAGE WRAPPER ══ -->
   <div class="flex flex-col flex-1 min-h-screen ml-0 md:ml-[260px]">
@@ -36,7 +48,6 @@
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
-        <!-- View Live button -->
         <a href="{{ url_for('landing') }}" target="_blank"
            class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline transition-all"
            style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-border)">
@@ -88,7 +99,6 @@
               <div class="agos-card-subtitle">Updates instantly as you type below</div>
             </div>
             <div class="flex items-center gap-2">
-              <!-- Preview tab switcher -->
               <div class="flex items-center rounded-lg overflow-hidden text-xs font-semibold"
                    style="border:1px solid var(--border-input)">
                 <button type="button" onclick="switchPreviewTab('hero')" id="pvtab-hero"
@@ -123,12 +133,10 @@
           <div id="pv-hero" class="preview-section-panel block">
             <div class="relative overflow-hidden rounded-b-xl"
                  style="background:linear-gradient(160deg,#061926 0%,#0a2c44 45%,#0d3d5a 100%);min-height:260px;padding:2.5rem 2rem 2rem">
-              <!-- Decorative circles -->
               <div class="absolute top-0 right-0 w-64 h-64 rounded-full opacity-5"
                    style="background:radial-gradient(circle,#5bb8e0,transparent);transform:translate(30%,-30%)"></div>
               <div class="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-5"
                    style="background:radial-gradient(circle,#0095c8,transparent);transform:translate(-20%,20%)"></div>
-
               <div class="relative z-10 max-w-xl">
                 <div class="text-[0.65rem] font-bold tracking-[0.22em] uppercase mb-2"
                      style="color:rgba(91,184,224,0.75)" id="pv-tagline">
@@ -259,8 +267,8 @@
               </div>
               <!-- Unsaved indicator -->
               <div class="flex items-center gap-2 text-xs" style="color:var(--text-muted)">
-                <div class="w-2 h-2 rounded-full bg-yellow-400 transition-all" id="dirty-dot"></div>
-                <span id="dirty-text">No changes</span>
+                <div class="w-2 h-2 rounded-full transition-all" id="dirty-dot" style="background:#22c55e"></div>
+                <span id="dirty-text">All changes saved</span>
               </div>
             </div>
             <!-- Tabs -->
@@ -362,7 +370,8 @@
                      style="border:1px solid var(--border-card);background:var(--bg-card)">
                   <input type="text" class="agos-input w-12 flex-shrink-0 text-center text-lg"
                          name="feature_emoji_{{ loop.index0 }}"
-                         value="{{ f.emoji }}" maxlength="4" title="Emoji"/>
+                         value="{{ f.emoji }}" maxlength="4" title="Emoji"
+                         oninput="refreshFeaturePreview(); markDirty()"/>
                   <div class="flex flex-col gap-2 flex-1 min-w-0">
                     <input type="text" class="agos-input"
                            name="feature_title_{{ loop.index0 }}"
@@ -479,8 +488,8 @@
           <div class="sticky bottom-0 z-10 flex items-center justify-between gap-3 px-5 md:px-6 py-3.5 flex-wrap"
                style="background:var(--bg-card);border-top:1px solid var(--border-card)">
             <div class="flex items-center gap-2 text-xs" style="color:var(--text-muted)">
-              <div class="w-2 h-2 rounded-full bg-yellow-400 transition-all" id="dirty-dot-2"></div>
-              <span id="dirty-text-2">No changes</span>
+              <div class="w-2 h-2 rounded-full transition-all" id="dirty-dot-2" style="background:#22c55e"></div>
+              <span id="dirty-text-2">All changes saved</span>
             </div>
             <div class="flex items-center gap-2">
               <a href="{{ url_for('landing') }}" target="_blank"
@@ -491,7 +500,6 @@
                 </svg>
                 View Live
               </a>
-              <!-- This triggers the confirmation modal, NOT a direct submit -->
               <button type="button" onclick="openSaveConfirmModal()"
                       class="agos-btn-primary px-5 py-2 text-sm flex items-center gap-2">
                 <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
@@ -560,7 +568,7 @@
           </svg>
           Yes, Publish Changes
         </button>
-        <button type="button" onclick="closeModal('save-confirm-modal')"
+        <button type="button" onclick="closeSaveModal()"
                 class="agos-btn-ghost flex-1 py-3">Cancel</button>
       </div>
     </div>
@@ -613,11 +621,41 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 const _origToggle = window.toggleTheme;
 window.toggleTheme = function () {
-  _origToggle();
+  if (typeof _origToggle === 'function') _origToggle();
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const lbl = document.getElementById('theme-label');
   if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
 };
+
+/* ─────────────────────────────────────────────
+   MODAL HELPERS
+   Defined locally so we never depend on agos-theme.js
+   for critical save functionality.
+───────────────────────────────────────────── */
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('is-open');
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('is-open');
+}
+
+// Close modal when clicking the dark overlay background
+document.addEventListener('click', function (e) {
+  if (e.target.classList.contains('agos-modal-overlay')) {
+    e.target.classList.remove('is-open');
+  }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.agos-modal-overlay.is-open').forEach(function (m) {
+      m.classList.remove('is-open');
+    });
+  }
+});
 
 /* ─────────────────────────────────────────────
    PREVIEW TAB SWITCHER (top panel)
@@ -654,7 +692,7 @@ function switchEditorTab(name) {
     btn.style.color      = n === name ? '#fff' : 'var(--text-muted)';
   });
 
-  // Sync preview tab too (without recursing)
+  // Sync preview tab (without recursing)
   ['hero','features','stats','about','contact'].forEach(n => {
     const pvBtn = document.getElementById('pvtab-' + n);
     if (!pvBtn) return;
@@ -676,6 +714,7 @@ function liveText(id, val) {
 
 function refreshFeaturePreview() {
   const grid = document.getElementById('pv-feature-grid');
+  if (!grid) return;
   const rows = document.querySelectorAll('#feature-list .feature-row');
   grid.innerHTML = '';
   rows.forEach(row => {
@@ -711,12 +750,12 @@ function refreshContactPreview() {
   const cont    = document.getElementById('pv-contact-rows');
   if (!cont) return;
   cont.innerHTML = '';
-  if (email)   cont.innerHTML += row('Email', email);
-  if (phone)   cont.innerHTML += row('Phone', phone);
-  if (address) cont.innerHTML += row('Addr',  address);
+  if (email)   cont.innerHTML += contactRow('Email', email);
+  if (phone)   cont.innerHTML += contactRow('Phone', phone);
+  if (address) cont.innerHTML += contactRow('Addr',  address);
 }
 
-function row(label, val) {
+function contactRow(label, val) {
   return `<div class="flex items-center gap-3 text-sm" style="color:var(--text-secondary)">
     <span class="text-xs font-bold uppercase tracking-wider w-14 flex-shrink-0" style="color:var(--accent)">${label}</span>
     ${escHtml(val)}
@@ -724,7 +763,11 @@ function row(label, val) {
 }
 
 function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
 
 /* ─────────────────────────────────────────────
@@ -740,7 +783,8 @@ function addFeature() {
   row.style.cssText = 'border:1px solid var(--border-card);background:var(--bg-card)';
   row.innerHTML = `
     <input type="text" class="agos-input w-12 flex-shrink-0 text-center text-lg"
-           name="feature_emoji_${idx}" value="✨" maxlength="4" title="Emoji"/>
+           name="feature_emoji_${idx}" value="✨" maxlength="4" title="Emoji"
+           oninput="refreshFeaturePreview(); markDirty()"/>
     <div class="flex flex-col gap-2 flex-1 min-w-0">
       <input type="text" class="agos-input"
              name="feature_title_${idx}" value="" placeholder="Feature title" maxlength="40"
@@ -778,21 +822,22 @@ function reindexFeatures() {
 }
 
 function updateFeatureCount() {
-  document.getElementById('feature-count').value =
-    document.querySelectorAll('#feature-list .feature-row').length;
+  const input = document.getElementById('feature-count');
+  if (input) input.value = document.querySelectorAll('#feature-list .feature-row').length;
 }
 
 /* ─────────────────────────────────────────────
    DIRTY STATE
+   FIX: removed the early-return guard so the dot
+   always re-updates correctly after markSaved().
 ───────────────────────────────────────────── */
 let _dirty = false;
 
 function markDirty() {
-  if (_dirty) return;
   _dirty = true;
   ['dirty-dot','dirty-dot-2'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) { el.style.background = '#f59e0b'; }
+    if (el) el.style.background = '#f59e0b';
   });
   ['dirty-text','dirty-text-2'].forEach(id => {
     const el = document.getElementById(id);
@@ -804,7 +849,7 @@ function markSaved() {
   _dirty = false;
   ['dirty-dot','dirty-dot-2'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) { el.style.background = '#22c55e'; }
+    if (el) el.style.background = '#22c55e';
   });
   ['dirty-text','dirty-text-2'].forEach(id => {
     const el = document.getElementById(id);
@@ -812,49 +857,52 @@ function markSaved() {
   });
 }
 
-// Listen to all form inputs
-document.getElementById('editor-form').addEventListener('input', markDirty);
-
 /* ─────────────────────────────────────────────
    SAVE CONFIRMATION MODAL
 ───────────────────────────────────────────── */
 function openSaveConfirmModal() {
   // Build a quick summary of sections that have content
   const summary = document.getElementById('save-summary');
-  summary.innerHTML = '';
-
-  const checks = [
-    { label: 'Hero Section', check: () => document.querySelector('[name="hero_headline"]')?.value?.trim() },
-    { label: 'Features',     check: () => document.querySelectorAll('#feature-list .feature-row').length + ' cards' },
-    { label: 'Stats Strip',  check: () => document.querySelector('[name="stat_num_0"]')?.value?.trim() },
-    { label: 'About Section',check: () => document.querySelector('[name="about_title"]')?.value?.trim() },
-    { label: 'Contact Info', check: () => {
-        const email = document.querySelector('[name="contact_email"]')?.value?.trim();
-        const phone = document.querySelector('[name="contact_phone"]')?.value?.trim();
-        return (email || phone) ? (email || phone) : null;
-      }
-    },
-  ];
-
-  checks.forEach(c => {
-    const val = c.check();
-    const div = document.createElement('div');
-    div.className = 'flex items-center gap-2.5 text-sm';
-    div.innerHTML = `
-      <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-        <path d="M4 10l4 4 8-8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span style="color:var(--text-secondary)"><span style="color:var(--text-primary);font-weight:600">${c.label}</span>${val ? ' — ' + escHtml(String(val).substring(0, 40)) + (String(val).length > 40 ? '…' : '') : ''}</span>`;
-    summary.appendChild(div);
-  });
-
+  if (summary) {
+    summary.innerHTML = '';
+    const checks = [
+      { label: 'Hero Section',  check: () => document.querySelector('[name="hero_headline"]')?.value?.trim() },
+      { label: 'Features',      check: () => document.querySelectorAll('#feature-list .feature-row').length + ' card(s)' },
+      { label: 'Stats Strip',   check: () => document.querySelector('[name="stat_num_0"]')?.value?.trim() },
+      { label: 'About Section', check: () => document.querySelector('[name="about_title"]')?.value?.trim() },
+      { label: 'Contact Info',  check: () => {
+          const email = document.querySelector('[name="contact_email"]')?.value?.trim();
+          const phone = document.querySelector('[name="contact_phone"]')?.value?.trim();
+          return (email || phone) ? (email || phone) : null;
+        }
+      },
+    ];
+    checks.forEach(c => {
+      const val = c.check();
+      const div = document.createElement('div');
+      div.className = 'flex items-center gap-2.5 text-sm';
+      div.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path d="M4 10l4 4 8-8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span style="color:var(--text-secondary)">
+          <span style="color:var(--text-primary);font-weight:600">${c.label}</span>
+          ${val ? ' — ' + escHtml(String(val).substring(0, 45)) + (String(val).length > 45 ? '…' : '') : ''}
+        </span>`;
+      summary.appendChild(div);
+    });
+  }
   openModal('save-confirm-modal');
+}
+
+function closeSaveModal() {
+  closeModal('save-confirm-modal');
 }
 
 function confirmSave() {
   closeModal('save-confirm-modal');
-  markSaved();
-  showToast();
+  // Submit the form — markSaved() and toast fire on page reload via the
+  // flash-message listener below, so we don't double-fire them here.
   document.getElementById('editor-form').submit();
 }
 
@@ -863,22 +911,43 @@ function confirmSave() {
 ───────────────────────────────────────────── */
 function showToast() {
   const t = document.getElementById('toast');
-  t.style.opacity = '1';
+  if (!t) return;
+  t.style.opacity   = '1';
   t.style.transform = 'translateY(0)';
   setTimeout(() => {
-    t.style.opacity = '0';
+    t.style.opacity   = '0';
     t.style.transform = 'translateY(12px)';
   }, 3200);
 }
 
-// Auto-show toast on page load if redirected after save (flash message present)
-window.addEventListener('load', () => {
+/* ─────────────────────────────────────────────
+   KEYBOARD SHORTCUT  Ctrl/Cmd + S
+───────────────────────────────────────────── */
+document.addEventListener('keydown', function (e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    openSaveConfirmModal();
+  }
+});
+
+/* ─────────────────────────────────────────────
+   ON PAGE LOAD
+───────────────────────────────────────────── */
+window.addEventListener('load', function () {
+  // Show toast + mark saved if Flask flashed a success message
   const flashSuccess = document.querySelector('.agos-flash-success');
   if (flashSuccess) {
     showToast();
-    markSaved();
-  } else {
-    markSaved(); // start in "saved" state since nothing is changed yet
+  }
+  // Always start in "saved" state (nothing changed yet)
+  markSaved();
+});
+
+// Warn if navigating away with unsaved changes
+window.addEventListener('beforeunload', function (e) {
+  if (_dirty) {
+    e.preventDefault();
+    e.returnValue = '';
   }
 });
 </script>

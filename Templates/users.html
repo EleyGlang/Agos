@@ -286,9 +286,12 @@
                 <button onclick="filterByRole('all')" id="pill-all"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
+                            {% if session.get('role') == 'Super Admin' %}
                 <button onclick="filterByRole('Super Admin')" id="pill-Super Admin"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Super Admin</button>
+                            {% endif %}
+
                 <button onclick="filterByRole('Admin')" id="pill-Admin"
                         class="role-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Admin</button>
