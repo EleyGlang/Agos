@@ -22,6 +22,18 @@
     .product-card.selected .product-qty-divider {
       border-top-color: var(--border-section);
     }
+    /* ── .service-card.selected — same pattern as product cards ── */
+    .service-card.selected {
+      border-color: var(--accent) !important;
+      background: var(--accent-softer) !important;
+    }
+    .service-card.selected .service-check {
+      background: var(--accent) !important;
+      border-color: var(--accent) !important;
+    }
+    .service-card.selected .service-qty-divider {
+      border-top-color: var(--border-section);
+    }
   </style>
 </head>
 <body class="agos-body m-0 p-0">
@@ -40,7 +52,7 @@
         </button>
         <div>
           <div class="text-lg md:text-2xl font-bold leading-tight" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Place a Delivery Order</div>
-          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Select products, set a date, and we'll handle the rest</div>
+          <div class="text-[0.65rem] md:text-xs" style="color:var(--text-muted)">Select products or services, set a date, and we'll handle the rest</div>
         </div>
       </div>
       <div class="flex items-center gap-2 md:gap-3">
@@ -172,6 +184,79 @@
               </div>
             </div>
 
+            <!-- Services -->
+            <div class="agos-card overflow-hidden">
+              <div class="agos-card-header">
+                <div class="agos-card-title">Select Services</div>
+                <div class="agos-card-subtitle">Tap a service to add it to your order</div>
+              </div>
+              <div class="p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4" id="services-grid">
+                  {% for svc in services %}
+
+                  <div class="service-card border-[1.5px] border-[var(--border-card)] bg-[var(--bg-card)] rounded-xl p-4 cursor-pointer transition-[border-color,background,transform] duration-[0.18s] select-none hover:-translate-y-px"
+                       id="svc-card-{{ svc.service_id }}"
+                       onclick="toggleService({{ svc.service_id }}, '{{ svc.service_name | replace("'", "\\'") }}', {{ svc.price }})">
+
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                          <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--accent-soft)">
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)" stroke-width="2.2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </div>
+                          <div class="text-[0.85rem] font-semibold" style="color:var(--text-primary)">{{ svc.service_name }}</div>
+                        </div>
+                        {% if svc.price == 0 %}
+                          <div class="text-[0.80rem] font-bold" style="color:var(--success-text)">Free</div>
+                        {% else %}
+                          <div class="text-[0.80rem] font-bold" style="color:var(--accent)">₱{{ "%.2f"|format(svc.price) }}</div>
+                        {% endif %}
+                        {% if svc.unit %}
+                        <div class="text-[0.68rem] mt-0.5" style="color:var(--text-muted)">per {{ svc.unit }}</div>
+                        {% endif %}
+                        {% if svc.description %}
+                        <div class="text-[0.68rem] mt-1 leading-snug" style="color:var(--text-muted)">{{ svc.description }}</div>
+                        {% endif %}
+                      </div>
+                      <!-- service check circle -->
+                      <div class="service-check w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border-[1.5px] border-[var(--border-input)]"
+                           style="background:var(--bg-input)"
+                           id="svc-check-{{ svc.service_id }}">
+                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" class="opacity-0" id="svc-checkmark-{{ svc.service_id }}">
+                          <path d="M2 6l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    <!-- Quantity controls — hidden until selected -->
+                    <div id="svc-qty-ctrl-{{ svc.service_id }}" class="service-qty-divider hidden mt-3 pt-3 border-t border-[var(--border-section)]">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[0.72rem] font-medium" style="color:var(--text-muted)">Quantity</span>
+                        <div class="flex items-center gap-2">
+                          <button type="button" onclick="event.stopPropagation();changeSvcQty({{ svc.service_id }}, -1)"
+                                  class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-base cursor-pointer border-none"
+                                  style="background:var(--bg-input);color:var(--accent)">−</button>
+                          <span class="text-[0.85rem] font-bold w-5 text-center" id="svc-qty-display-{{ svc.service_id }}" style="color:var(--text-primary)">1</span>
+                          <button type="button" onclick="event.stopPropagation();changeSvcQty({{ svc.service_id }}, 1)"
+                                  class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-base cursor-pointer border-none text-white"
+                                  style="background:var(--accent)">+</button>
+                        </div>
+                      </div>
+                      <input type="hidden" name="service_id[]" value="{{ svc.service_id }}" id="hidden-sid-{{ svc.service_id }}" disabled/>
+                      <input type="hidden" name="service_qty[]" value="1" id="hidden-sqty-{{ svc.service_id }}" disabled/>
+                    </div>
+
+                  </div>
+                  {% endfor %}
+                </div>
+                {% if not services %}
+                <div class="text-center py-8 text-[0.82rem]" style="color:var(--text-faint)">No services available at the moment.</div>
+                {% endif %}
+              </div>
+            </div>
+
           </div>
 
           <!-- Right: Order Summary (sticky) -->
@@ -296,7 +381,9 @@
   });
 
   const productState = {};
+  const serviceState = {};
 
+  /* ══ PRODUCTS ══════════════════════════════════════════════════════════════ */
   function toggleProduct(id, name, price) {
     if (!productState[id]) productState[id] = { name, price, qty: 1, selected: false };
     const state = productState[id];
@@ -325,14 +412,49 @@
     updateSummary();
   }
 
+  /* ══ SERVICES ══════════════════════════════════════════════════════════════ */
+  function toggleService(id, name, price) {
+    if (!serviceState[id]) serviceState[id] = { name, price, qty: 1, selected: false };
+    const state  = serviceState[id];
+    state.selected = !state.selected;
+    const card   = document.getElementById('svc-card-' + id);
+    const mark   = document.getElementById('svc-checkmark-' + id);
+    const ctrl   = document.getElementById('svc-qty-ctrl-' + id);
+    const hidSid = document.getElementById('hidden-sid-' + id);
+    const hidQty = document.getElementById('hidden-sqty-' + id);
+    if (state.selected) {
+      card.classList.add('selected'); mark.classList.remove('opacity-0');
+      ctrl.classList.remove('hidden'); hidSid.disabled = false; hidQty.disabled = false;
+    } else {
+      card.classList.remove('selected'); mark.classList.add('opacity-0');
+      ctrl.classList.add('hidden'); hidSid.disabled = true; hidQty.disabled = true;
+    }
+    updateSummary();
+  }
+
+  function changeSvcQty(id, delta) {
+    const state = serviceState[id];
+    if (!state) return;
+    state.qty = Math.max(1, state.qty + delta);
+    document.getElementById('svc-qty-display-' + id).textContent = state.qty;
+    document.getElementById('hidden-sqty-' + id).value = state.qty;
+    updateSummary();
+  }
+
+  /* ══ ORDER SUMMARY (products + services combined) ══════════════════════════ */
   function updateSummary() {
     const summaryItems = document.getElementById('summary-items');
     const summaryEmpty = document.getElementById('summary-empty');
     const summaryCount = document.getElementById('summary-count');
     const orderTotal   = document.getElementById('order-total');
-    const selected = Object.entries(productState).filter(([,s]) => s.selected);
+
+    const selProducts = Object.entries(productState).filter(([,s]) => s.selected);
+    const selServices = Object.entries(serviceState).filter(([,s]) => s.selected);
+    const totalItems  = selProducts.length + selServices.length;
+
     summaryItems.querySelectorAll('.summary-item-row').forEach(el => el.remove());
-    if (selected.length === 0) {
+
+    if (totalItems === 0) {
       summaryEmpty.style.display = 'flex';
       summaryCount.textContent = 'No items selected yet';
       orderTotal.textContent = '₱0.00';
@@ -340,7 +462,8 @@
     }
     summaryEmpty.style.display = 'none';
     let total = 0;
-    selected.forEach(([id, s]) => {
+
+    const renderRow = (s, icon) => {
       const subtotal = s.price * s.qty;
       total += subtotal;
       const row = document.createElement('div');
@@ -349,36 +472,48 @@
       row.innerHTML = `
         <div class="flex items-center gap-2">
           <span style="background:var(--accent);color:white;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:600">${s.qty}×</span>
-          <span style="color:var(--text-secondary)">${s.name}</span>
+          <span style="color:var(--text-secondary)">${icon} ${s.name}</span>
         </div>
-        <span style="font-weight:600;color:var(--text-primary)">₱${subtotal.toFixed(2)}</span>`;
+        <span style="font-weight:600;color:var(--text-primary)">${s.price === 0 ? 'Free' : '₱' + subtotal.toFixed(2)}</span>`;
       summaryItems.insertBefore(row, summaryEmpty);
-    });
-    summaryCount.textContent = `${selected.length} item${selected.length !== 1 ? 's' : ''} selected`;
+    };
+
+    selProducts.forEach(([, s]) => renderRow(s, '💧'));
+    selServices.forEach(([, s]) => renderRow(s, '⚙️'));
+
+    summaryCount.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''} selected`;
     orderTotal.textContent = '₱' + total.toFixed(2);
   }
 
+  /* ══ ORDER CONFIRM MODAL ═══════════════════════════════════════════════════ */
   function openOrderConfirm() {
-    const selected = Object.entries(productState).filter(([,s]) => s.selected);
-    if (selected.length === 0) { alert('Please select at least one product.'); return; }
+    const selProducts = Object.entries(productState).filter(([,s]) => s.selected);
+    const selServices = Object.entries(serviceState).filter(([,s]) => s.selected);
+    if (selProducts.length === 0 && selServices.length === 0) {
+      alert('Please select at least one product or service.'); return;
+    }
     const dateVal = document.getElementById('delivery-date').value;
     if (!dateVal) { alert('Please select a delivery date.'); return; }
     const addressVal = document.getElementById('delivery-address').value.trim();
     if (!addressVal) { alert('Please enter a delivery address.'); return; }
+
     const dateObj = new Date(dateVal + 'T00:00:00');
     document.getElementById('modal-date').textContent = dateObj.toLocaleDateString('en-PH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
     const timeEl = document.querySelector('[name=preferred_time]');
     document.getElementById('modal-time').textContent = timeEl ? timeEl.value : '—';
     document.getElementById('modal-address').textContent = addressVal;
     document.getElementById('modal-datetime').textContent = 'Order placed: ' + new Date().toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
     const notesVal = document.querySelector('[name=notes]').value.trim();
     const notesWrapper = document.getElementById('modal-notes-wrapper');
     if (notesVal) { notesWrapper.classList.remove('hidden'); document.getElementById('modal-notes').textContent = notesVal; }
     else { notesWrapper.classList.add('hidden'); }
+
     const itemsContainer = document.getElementById('modal-items');
     itemsContainer.innerHTML = '';
     let total = 0;
-    selected.forEach(([id, s]) => {
+
+    const appendModalRow = (s, icon) => {
       const subtotal = s.price * s.qty;
       total += subtotal;
       const row = document.createElement('div');
@@ -386,14 +521,18 @@
       row.innerHTML = `
         <div style="display:flex;gap:8px;align-items:center">
           <span style="background:var(--accent);color:white;padding:2px 9px;border-radius:6px;font-size:12px;font-weight:600">${s.qty}×</span>
-          <span style="font-weight:500;color:var(--text-primary);font-size:13px">${s.name}</span>
+          <span style="font-weight:500;color:var(--text-primary);font-size:13px">${icon} ${s.name}</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:11px;color:var(--text-muted)">₱${s.price.toFixed(2)} ea</div>
-          <div style="font-weight:700;color:var(--text-primary);font-size:13px">₱${subtotal.toFixed(2)}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${s.price === 0 ? 'Free' : '₱' + s.price.toFixed(2) + ' ea'}</div>
+          <div style="font-weight:700;color:var(--text-primary);font-size:13px">${s.price === 0 ? 'Free' : '₱' + subtotal.toFixed(2)}</div>
         </div>`;
       itemsContainer.appendChild(row);
-    });
+    };
+
+    selProducts.forEach(([, s]) => appendModalRow(s, '💧'));
+    selServices.forEach(([, s]) => appendModalRow(s, '⚙️'));
+
     document.getElementById('modal-total').textContent = '₱' + total.toFixed(2);
     document.getElementById('order-confirm-modal').classList.add('open');
   }

@@ -12,7 +12,7 @@ from models import (
          Sale, SaleItem, DeliveryOrder, DeliveryItem,
          Expense, LoyaltyTransaction, ActivityLog,
          Return_Model as Return, ReturnItem,
-         WaterTank, WaterTankLog  
+         WaterTank, WaterTankLog, Service
      )
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -208,29 +208,16 @@ def super_admin_required(f):
 #  CLI SEED
 # ══════════════════════════════════════════════════════
 
-@app.cli.command('seed-super-admin')
-def seed_super_admin():
-    if User.query.filter_by(role='Super Admin').first():
-        print('Super Admin already exists.')
-        return
-    db.session.add(User(
-        first_name='Super', last_name='Administrator', username='superadmin',
-        password=generate_password_hash('superadmin123'),
-        role='Super Admin', status='Active',
-    ))
-    db.session.commit()
-    print('Done. username=superadmin  password=superadmin123  — change it immediately!')
+def _resolve_inventory(product):
+    """
+    Return the Inventory row that should be debited when this product is sold,
+    and the number of units that actually represent physical stock.
 
-    def _resolve_inventory(product):
-        """
-        Return the Inventory row that should be debited when this product is sold,
-        and the number of units that actually represent physical stock.
-    
-        Returns (inv_row_or_None, deduct_flag)
-        • service   → (None, False)   — no deduction at all
-        • linked    → (linked_inv, True) — deduct from the linked product's inv
-        • standard  → (own_inv, True)
-        """
+    Returns (inv_row_or_None, deduct_flag)
+    • service   → (None, False)   — no deduction at all
+    • linked    → (linked_inv, True) — deduct from the linked product's inv
+    • standard  → (own_inv, True)
+    """
     if product.product_type == 'service':
         return None, False
     if product.product_type == 'linked':
@@ -526,6 +513,7 @@ def products():
     return render_template('products.html',
         products=all_products,
         product_history=product_history,
+        services=Service.query.order_by(Service.service_name).all(),
         active_page='products')
 
 @app.route('/products/new', methods=['POST'])
@@ -736,6 +724,103 @@ def delete_product(product_id):
 
 
 # ══════════════════════════════════════════════════════
+#  SERVICE MANAGEMENT
+# ══════════════════════════════════════════════════════
+
+@app.route('/services/new', methods=['POST'])
+@login_required
+@admin_required
+def new_service():
+    name  = request.form.get('service_name', '').strip()
+    unit  = request.form.get('unit', '').strip()
+    desc  = request.form.get('description', '').strip()
+    try:
+        price = float(request.form.get('price', 0))
+        assert price >= 0
+    except (ValueError, AssertionError):
+        flash('Valid service name and non-negative price are required.', 'error')
+        return redirect(url_for('products'))
+    if not name:
+        flash('Service name is required.', 'error')
+        return redirect(url_for('products'))
+    svc = Service(service_name=name, price=price, unit=unit or None,
+                  description=desc or None, is_active=True)
+    db.session.add(svc)
+    log_activity('CREATE_SERVICE', 'Products',
+                 f'Service "{name}" created at ₱{price:.2f}', 'Service', None)
+    try:
+        db.session.commit()
+        flash(f'Service "{name}" added!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    return redirect(url_for('products'))
+
+@app.route('/services/<int:service_id>/edit', methods=['POST'])
+@login_required
+@admin_required
+def edit_service(service_id):
+    svc  = Service.query.get_or_404(service_id)
+    name = request.form.get('service_name', '').strip()
+    unit = request.form.get('unit', '').strip()
+    desc = request.form.get('description', '').strip()
+    try:
+        price = float(request.form.get('price', svc.price))
+        assert price >= 0
+        svc.price = price
+    except (ValueError, AssertionError):
+        flash('Price must be a non-negative number.', 'error')
+        return redirect(url_for('products'))
+    if name:
+        svc.service_name = name
+    svc.unit        = unit or None
+    svc.description = desc or None
+    log_activity('EDIT_SERVICE', 'Products',
+                 f'Service "{svc.service_name}" updated', 'Service', service_id)
+    try:
+        db.session.commit()
+        flash('Service updated!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    return redirect(url_for('products'))
+
+@app.route('/services/<int:service_id>/toggle', methods=['POST'])
+@login_required
+@admin_required
+def toggle_service(service_id):
+    svc           = Service.query.get_or_404(service_id)
+    svc.is_active = not svc.is_active
+    label         = 'activated' if svc.is_active else 'deactivated'
+    log_activity('TOGGLE_SERVICE', 'Products',
+                 f'Service "{svc.service_name}" {label}', 'Service', service_id)
+    try:
+        db.session.commit()
+        flash(f'"{svc.service_name}" {label}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error: {str(e)}', 'error')
+    return redirect(url_for('products'))
+
+@app.route('/services/<int:service_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_service(service_id):
+    svc  = Service.query.get_or_404(service_id)
+    name = svc.service_name
+    log_activity('DELETE_SERVICE', 'Products',
+                 f'Service "{name}" permanently deleted', 'Service', service_id)
+    try:
+        db.session.delete(svc)
+        db.session.commit()
+        flash(f'Service "{name}" deleted.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting service: {str(e)}', 'error')
+    return redirect(url_for('products'))
+
+
+# ══════════════════════════════════════════════════════
 #  SALES
 # ══════════════════════════════════════════════════════
 
@@ -746,6 +831,7 @@ def sales():
         sales=Sale.query.order_by(Sale.sale_date.desc()).all(),
         customers=Customer.query.order_by(Customer.full_name).all(),
         products=Product.query.filter_by(is_active=True).order_by(Product.product_name).all(),
+        services=Service.query.filter_by(is_active=True).order_by(Service.service_name).all(),
         active_page='sales')
 
 @app.route('/sales/new', methods=['POST'])
@@ -762,8 +848,10 @@ def new_sale():
         flash('Delivery sales require a customer.', 'error')
         return redirect(url_for('sales'))
  
-    product_ids = request.form.getlist('product_id[]')
-    quantities  = request.form.getlist('quantity[]')
+    product_ids  = request.form.getlist('product_id[]')
+    quantities   = request.form.getlist('quantity[]')
+    service_ids  = request.form.getlist('service_id[]')
+    service_qtys = request.form.getlist('service_qty[]')
  
     if customer_id == 'new':
         new_name    = request.form.get('new_customer_name', '').strip()
@@ -783,8 +871,15 @@ def new_sale():
     total_amount        = 0.0
     items_with_products = []
     for pid, qty_str in zip(product_ids, quantities):
-        product  = Product.query.get(int(pid))
-        quantity = int(qty_str)
+        if not pid or not qty_str:
+            continue
+
+        try:
+            product  = Product.query.get(int(pid))
+            quantity = int(qty_str)
+        except ValueError:
+            continue
+
         if not product:
             continue
         subtotal = float(product.price) * quantity
@@ -795,27 +890,57 @@ def new_sale():
             product,
         ))
  
-    # Loyalty points (unchanged logic)
+    # ── Resolve services included in this sale ───────────────────────────────
+    items_with_services = []   # list of (Service, qty)
+    for sid_str, sqty_str in zip(service_ids, service_qtys):
+        if not sid_str:
+            continue
+        svc  = Service.query.get(int(sid_str))
+        sqty = max(1, int(sqty_str)) if sqty_str else 1
+        if svc and svc.is_active:
+            total_amount += float(svc.price) * sqty
+            items_with_services.append((svc, sqty))
+
+    # ── Loyalty — 1 point earned per 10 Gallon Refill service units ────────────
+    # points_earned in LoyaltyTransaction stores raw refill UNITS (not points).
+    # Lifetime points awarded = floor(total lifetime refill units / 10).
+    # customer.loyalty_points = awarded points − redeemed points (redeemable balance).
+    loyalty_refills_this_txn = 0   # raw refill units in this transaction
+    loyalty_service          = None
     if customer_id:
         customer = Customer.query.get(customer_id)
         if customer:
-            total_refills = sum(
-                i.quantity for i, p in items_with_products
-                if 'refill' in p.product_name.lower()
-            )
-            if customer.loyalty_points > 0 and total_refills > 0:
-                refill_total      = sum(i.subtotal for i, p in items_with_products if 'refill' in p.product_name.lower())
-                free_used         = min(customer.loyalty_points, total_refills)
-                total_amount     -= (refill_total / total_refills) * free_used
-                customer.loyalty_points -= free_used
-                remaining_refills = total_refills - free_used
-            else:
-                remaining_refills = total_refills
-            if remaining_refills > 0:
-                new_pts = remaining_refills // 10
-                if new_pts > 0:
-                    customer.loyalty_points += new_pts
- 
+            for svc, sqty in items_with_services:
+                if 'refill' in svc.service_name.lower():
+                    loyalty_refills_this_txn += sqty
+                    loyalty_service           = svc
+
+            if loyalty_refills_this_txn > 0:
+                # How many refill units has this customer accumulated so far?
+                from sqlalchemy import func as _func
+                lifetime_refills = db.session.query(
+                    _func.coalesce(_func.sum(LoyaltyTransaction.points_earned), 0)
+                ).filter(
+                    LoyaltyTransaction.customer_id == customer.customer_id,
+                    LoyaltyTransaction.points_earned > 0,
+                ).scalar() or 0
+
+                prev_points_awarded = lifetime_refills // 10
+                new_points_awarded  = (lifetime_refills + loyalty_refills_this_txn) // 10
+                points_earned_now   = new_points_awarded - prev_points_awarded  # 0 or more
+
+                # Redemption: each redeemed point = 1 free refill at the service's unit price
+                refill_unit_price = float(loyalty_service.price) if loyalty_service else 0.0
+                points_redeemed   = 0
+                if customer.loyalty_points > 0 and loyalty_refills_this_txn > 0:
+                    points_redeemed     = min(customer.loyalty_points, loyalty_refills_this_txn)
+                    total_amount       -= refill_unit_price * points_redeemed
+                    customer.loyalty_points -= points_redeemed
+
+                # Award newly earned points to balance
+                if points_earned_now > 0:
+                    customer.loyalty_points += points_earned_now
+
     sale = Sale(
         user_id=session['user_id'], customer_id=customer_id,
         sale_type=sale_type, total_amount=total_amount, sale_date=datetime.now(),
@@ -841,6 +966,15 @@ def new_sale():
             note=f'{sale_type} sale #{sale.sale_id} — {total_units} gal',
         )
  
+    # Record loyalty transaction — points_earned stores RAW REFILL UNITS for tally
+    if customer_id and loyalty_refills_this_txn > 0:
+        db.session.add(LoyaltyTransaction(
+            customer_id=customer_id,
+            sale_id=sale.sale_id,
+            service_id=loyalty_service.service_id if loyalty_service else None,
+            points_earned=loyalty_refills_this_txn,
+        ))
+
     log_activity('CREATE_SALE', 'Sales', f'{sale_type} sale — ₱{total_amount:.2f}', 'Sale', sale.sale_id)
     try:
         db.session.commit()
@@ -1648,6 +1782,12 @@ def deliveries():
         db.session.add(delivery)
         db.session.flush()
         total_amount = 0.0
+        has_product = any(pid for pid in product_ids if pid)
+        has_service = any(sid for sid in service_ids if sid)
+
+        if not has_product and not has_service:
+            flash('Please add at least one product or service.', 'error')
+            return redirect(url_for('sales'))
         for pid, qty_str in zip(product_ids, quantities):
             product  = Product.query.get(int(pid))
             if not product: continue
@@ -1695,6 +1835,8 @@ def update_delivery_status(delivery_id):
         flash('Only Pending or Confirmed deliveries can be marked as delivered.', 'error')
         return redirect(url_for('deliveries'))
  
+    delivery.status = new_status
+
     if new_status == 'Delivered' and delivery.status != 'Delivered':
         sale = Sale(
             user_id=session['user_id'], customer_id=delivery.customer_id,
@@ -1724,8 +1866,64 @@ def update_delivery_status(delivery_id):
                 reference_id=delivery_id,
                 note=f'Delivery #{delivery_id} fulfilled — {total_units} gal',
             )
- 
-    delivery.status = new_status
+
+        # ── Loyalty — 1 point per 10 Gallon Refill service units ─────────────
+        # Parse refill units from [REFILL:N:SVC:X] token written at order creation,
+        # or fall back to scanning "N× <name with refill>" in notes.
+        import re as _re
+        notes_text            = delivery.notes or ''
+        loyalty_refills_delivery = 0
+        loyalty_service          = None
+
+        meta_match = _re.search(r'\[REFILL:(\d+):SVC:(\d+)\]', notes_text)
+        if meta_match:
+            loyalty_refills_delivery = int(meta_match.group(1))
+            loyalty_service          = Service.query.get(int(meta_match.group(2)))
+        else:
+            for m in _re.finditer(r'(\d+)×\s*([^\n,]+)', notes_text):
+                qty_s, svc_name = int(m.group(1)), m.group(2).strip()
+                if 'refill' in svc_name.lower():
+                    loyalty_refills_delivery += qty_s
+                    if not loyalty_service:
+                        loyalty_service = Service.query.filter(
+                            Service.service_name.ilike(f'%{svc_name}%')
+                        ).first()
+
+        if delivery.customer_id and loyalty_refills_delivery > 0:
+            customer = Customer.query.get(delivery.customer_id)
+            if customer:
+                from sqlalchemy import func as _func
+                lifetime_refills = db.session.query(
+                    _func.coalesce(_func.sum(LoyaltyTransaction.points_earned), 0)
+                ).filter(
+                    LoyaltyTransaction.customer_id == customer.customer_id,
+                    LoyaltyTransaction.points_earned > 0,
+                ).scalar() or 0
+
+                prev_points_awarded = lifetime_refills // 10
+                new_points_awarded  = (lifetime_refills + loyalty_refills_delivery) // 10
+                points_earned_now   = new_points_awarded - prev_points_awarded
+
+                refill_unit_price = float(loyalty_service.price) if loyalty_service else 0.0
+                points_redeemed   = 0
+                if customer.loyalty_points > 0 and loyalty_refills_delivery > 0:
+                    points_redeemed          = min(customer.loyalty_points, loyalty_refills_delivery)
+                    delivery.total_amount   -= refill_unit_price * points_redeemed
+                    sale.total_amount       -= refill_unit_price * points_redeemed
+                    customer.loyalty_points -= points_redeemed
+
+                if points_earned_now > 0:
+                    customer.loyalty_points += points_earned_now
+
+                if loyalty_refills_delivery > 0:
+                    db.session.add(LoyaltyTransaction(
+                        customer_id=delivery.customer_id,
+                        sale_id=sale.sale_id,
+                        service_id=loyalty_service.service_id if loyalty_service else None,
+                        points_earned=loyalty_refills_delivery,
+                    ))
+
+
     log_activity(
         'UPDATE_DELIVERY', 'Deliveries',
         f'Delivery #{delivery_id} → {new_status}',
@@ -2111,6 +2309,15 @@ def customer_dashboard():
         DeliveryOrder.status.in_(['Pending', 'Confirmed'])
     ).order_by(DeliveryOrder.created_at.desc()).first()
 
+    # Lifetime refill units (raw) from all LoyaltyTransactions with positive points_earned
+    lifetime_refills = db.session.query(
+        func.coalesce(func.sum(LoyaltyTransaction.points_earned), 0)
+    ).filter(
+        LoyaltyTransaction.customer_id == cid,
+        LoyaltyTransaction.points_earned > 0,
+    ).scalar() or 0
+    refills_this_cycle = int(lifetime_refills) % 10   # progress toward next point
+
     order_history_labels, order_history_values, spend_labels, spend_values = [], [], [], []
     for i in range(5, -1, -1):
         ref   = (datetime.now().replace(day=1) - timedelta(days=i * 28)).replace(day=1)
@@ -2129,6 +2336,8 @@ def customer_dashboard():
         customer=customer, total_orders=total_orders, pending_orders=pending_orders,
         delivered_orders=delivered_orders, cancelled_orders=cancelled_orders,
         recent_orders=recent_orders, active_delivery=active_delivery,
+        lifetime_refills=int(lifetime_refills),
+        refills_this_cycle=refills_this_cycle,
         order_history_labels=order_history_labels,
         order_history_values=order_history_values, spend_labels=spend_labels,
         spend_values=spend_values, active_page='customer_dashboard')
@@ -2139,42 +2348,74 @@ def customer_order():
         return redirect(url_for('customer_login'))
     customer = Customer.query.get_or_404(session['customer_id'])
     products = Product.query.filter_by(is_active=True).order_by(Product.product_name).all()
+    services = Service.query.filter_by(is_active=True).order_by(Service.service_name).all()
     if request.method == 'POST':
-        delivery_date = request.form.get('delivery_date', '').strip()
-        notes         = request.form.get('notes', '').strip()
-        product_ids   = request.form.getlist('product_id[]')
-        quantities    = request.form.getlist('quantity[]')
+        delivery_date   = request.form.get('delivery_date', '').strip()
+        notes           = request.form.get('notes', '').strip()
+        product_ids     = request.form.getlist('product_id[]')
+        quantities      = request.form.getlist('quantity[]')
+        service_ids     = request.form.getlist('service_id[]')
+        service_qtys    = request.form.getlist('service_qty[]')
         if not delivery_date:
             flash('Please select a delivery date.', 'error')
-            return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
+            return render_template('customer_order.html', customer=customer, products=products, services=services, active_page='customer_order')
         try:
             parsed_date = datetime.strptime(delivery_date, '%Y-%m-%d').date()
             if parsed_date < datetime.now().date():
                 flash('Delivery date cannot be in the past.', 'error')
-                return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
+                return render_template('customer_order.html', customer=customer, products=products, services=services, active_page='customer_order')
         except ValueError:
             flash('Invalid delivery date format.', 'error')
-            return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
+            return render_template('customer_order.html', customer=customer, products=products, services=services, active_page='customer_order')
+
+        # Resolve selected services so we can validate before writing anything
+        selected_services = []
+        for sid_str, sqty_str in zip(service_ids, service_qtys):
+            if not sid_str:
+                continue
+            svc  = Service.query.get(int(sid_str))
+            sqty = int(sqty_str) if sqty_str else 1
+            if svc:
+                selected_services.append((svc, sqty))
+
+        # Require at least one product OR one service
+        if not product_ids and not selected_services:
+            flash('Please select at least one product or service.', 'error')
+            return render_template('customer_order.html', customer=customer, products=products, services=services, active_page='customer_order')
+
+        # Append service summary to notes so staff can see them clearly
+        service_note_parts = [f'{sqty}× {svc.service_name}' for svc, sqty in selected_services]
+        combined_notes = notes
+        if service_note_parts:
+            service_note_line = 'Services: ' + ', '.join(service_note_parts)
+            combined_notes = (notes + '\n' + service_note_line).strip() if notes else service_note_line
+
         delivery = DeliveryOrder(customer_id=customer.customer_id,
-                                 delivery_date=delivery_date, notes=notes, status='Pending')
+                                 delivery_date=delivery_date, notes=combined_notes, status='Pending')
         db.session.add(delivery)
         db.session.flush()
+
         total_amount = 0.0
-        items_added  = 0
+
+        # Add product items
         for pid_str, qty_str in zip(product_ids, quantities):
-            if not pid_str: continue
+            if not pid_str:
+                continue
             product  = Product.query.get(int(pid_str))
             qty      = int(qty_str) if qty_str else 1
-            if not product: continue
+            if not product:
+                continue
             subtotal      = float(product.price) * qty
             total_amount += subtotal
-            items_added  += 1
             db.session.add(DeliveryItem(delivery_id=delivery.delivery_id,
                 product_id=product.product_id, quantity=qty, price=product.price, subtotal=subtotal))
-        if items_added == 0:
-            db.session.rollback()
-            flash('Please select at least one product.', 'error')
-            return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
+
+        # Add service costs to the order total
+        # NOTE: When a DeliveryService join model is added to models.py, replace this
+        # block with proper DeliveryService rows (mirroring DeliveryItem above).
+        for svc, sqty in selected_services:
+            total_amount += float(svc.price) * sqty
+
         delivery.total_amount = total_amount
         try:
             db.session.commit()
@@ -2183,7 +2424,7 @@ def customer_order():
             db.session.rollback()
             flash(f'Error: {str(e)}', 'error')
         return redirect(url_for('customer_deliveries'))
-    return render_template('customer_order.html', customer=customer, products=products, active_page='customer_order')
+    return render_template('customer_order.html', customer=customer, products=products, services=services, active_page='customer_order')
 
 @app.route('/customer/deliveries')
 def customer_deliveries():

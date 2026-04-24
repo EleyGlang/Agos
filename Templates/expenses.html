@@ -26,7 +26,7 @@
     .toast-error   { background: var(--danger-bg);  color: var(--danger-text);  border: 1px solid var(--danger-text); }
     @keyframes toastIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
 
-    /* ── Search clear btn — exact users.html pattern ── */
+    /* ── Search clear btn ── */
     .search-wrap { position: relative; }
     .search-wrap .clear-btn {
       position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
@@ -35,6 +35,21 @@
       display: none;
     }
     .search-wrap .clear-btn.visible { display: block; }
+
+    /* ── Table: all cells vertically centred ── */
+    .agos-table td { vertical-align: middle; }
+    /* agos-theme.css already sets: th { text-align:left; padding:0.75rem 1.25rem }
+       td { padding:0.75rem 1.25rem } — no further overrides needed */
+
+    /* ── Expense description: clamp to 2 lines max ── */
+    .expense-desc-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      max-width: 220px;
+      word-break: break-word;
+    }
   </style>
 </head>
 <body class="agos-body m-0 p-0">
@@ -174,10 +189,10 @@
         </div>
         {% endif %}
 
-        <!-- ══ RIGHT: Expense History — card structure mirrors users.html right column ══ -->
+        <!-- ══ RIGHT: Expense History ══ -->
         <div class="agos-card overflow-hidden flex flex-col">
 
-          <!-- Card header + filters — byte-for-byte structure of users.html header -->
+          <!-- Card header + filters -->
           <div class="agos-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="agos-card-title">Expense History</div>
@@ -186,7 +201,7 @@
               </div>
             </div>
             <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-              <!-- Category filter pills — mirrors role pills -->
+              <!-- Category filter pills -->
               <div class="flex items-center gap-1 flex-wrap">
                 <button onclick="filterByCategory('all')" id="pill-all"
                         class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
@@ -207,7 +222,7 @@
                         class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
                         style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Other</button>
               </div>
-              <!-- Search with clear button — exact search-wrap pattern -->
+              <!-- Search -->
               <div class="search-wrap w-full sm:w-52">
                 <input type="text" id="search-expenses" placeholder="Search description…"
                        oninput="filterRows(); toggleClearBtn()"
@@ -218,18 +233,41 @@
             </div>
           </div>
 
-          <!-- Table — no padding wrapper, flush to card, exact users.html overflow-x-auto div -->
+          <!-- ── TABLE ───────────────────────────────────────────────────── -->
           <div class="overflow-x-auto">
             <p class="text-[0.65rem] text-center py-1 sm:hidden" style="color:var(--text-faint)">&#8592; Scroll to see all columns &#8594;</p>
-            <table class="agos-table w-full border-collapse" style="min-width:660px">
+
+            <!--
+              Percentage-based widths keep every header aligned over its data
+              column regardless of how wide the container is.
+              With actions:    # 5% | Expense 28% | Category 17% | Amount 18% | Date 15% | Actions 17%
+              Without actions: # 6% | Expense 35% | Category 20% | Amount 22% | Date 17%
+            -->
+            <table class="agos-table w-full border-collapse table-fixed" style="min-width:{% if can_edit %}760px{% else %}580px{% endif %}">
+              <colgroup>
+                {% if can_edit %}
+                <col style="width:5%"/>   <!-- # -->
+                <col style="width:28%"/>  <!-- Expense -->
+                <col style="width:17%"/>  <!-- Category -->
+                <col style="width:18%"/>  <!-- Amount -->
+                <col style="width:15%"/>  <!-- Date -->
+                <col style="width:17%"/>  <!-- Actions -->
+                {% else %}
+                <col style="width:6%"/>
+                <col style="width:35%"/>
+                <col style="width:20%"/>
+                <col style="width:22%"/>
+                <col style="width:17%"/>
+                {% endif %}
+              </colgroup>
               <thead>
-                <tr>
-                  <th class="w-8">#</th>
-                  <th>Expense</th>
-                  <th>Category</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  {% if can_edit %}<th>Actions</th>{% endif %}
+                <tr class="expense-header-row">
+                  <td class="expense-th">#</td>
+                  <td class="expense-th">Expense</td>
+                  <td class="expense-th">Category</td>
+                  <td class="expense-th">Amount</td>
+                  <td class="expense-th">Date</td>
+                  {% if can_edit %}<td class="expense-th">Actions</td>{% endif %}
                 </tr>
               </thead>
               <tbody id="expense-tbody">
@@ -240,12 +278,13 @@
                       data-category="{{ expense.category }}"
                       data-search="{{ expense.category|lower }} {{ expense.description|lower }}">
 
-                    <!-- # — exact users.html td pattern -->
-                    <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                    <!-- # -->
+                    <td class="text-[0.78rem]" style="color:var(--text-muted)">{{ loop.index }}</td>
 
-                    <!-- Expense cell — mirrors Account cell with avatar + name + sub-label -->
+                    <!-- Expense: avatar + truncated description + logged-date sub-label -->
                     <td>
-                      <div class="flex items-center gap-2.5">
+                      <div class="flex items-center gap-2.5 min-w-0">
+                        <!-- Avatar circle -->
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
                              style="background:linear-gradient(135deg,
                                {%- if expense.category == 'Utilities' -%}#0284c7,#38bdf8
@@ -258,19 +297,22 @@
                                {%- endif -%})">
                           {{ expense.category[0].upper() }}
                         </div>
-                        <div>
-                          <div class="font-medium text-[0.82rem] leading-tight" style="color:var(--text-primary)">
+                        <!-- Text — min-w-0 on parent + overflow-hidden here prevents blowout -->
+                        <div class="min-w-0 flex-1">
+                          <div class="expense-desc-text font-medium text-[0.82rem] leading-snug"
+                               style="color:var(--text-primary)"
+                               title="{{ expense.description }}">
                             {{ expense.description }}
                           </div>
-                          <div class="text-[0.68rem]" style="color:var(--text-muted)">
+                          <div class="text-[0.68rem] whitespace-nowrap" style="color:var(--text-muted)">
                             Logged {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
                           </div>
                         </div>
                       </div>
                     </td>
 
-                    <!-- Category — mirrors Role cell -->
-                    <td>
+                    <!-- Category badge -->
+                    <td class="whitespace-nowrap">
                       <span class="agos-badge
                         {%- if expense.category == 'Utilities' %} agos-badge-info
                         {%- elif expense.category == 'Supplies' %} agos-badge-success
@@ -283,30 +325,30 @@
                       </span>
                     </td>
 
-                    <!-- Amount — mirrors Status/Info cell -->
-                    <td>
+                    <!-- Amount -->
+                    <td class="whitespace-nowrap">
                       <span class="agos-badge agos-badge-danger"
-                            style="font-family:'Inconsolata',monospace;font-size:0.75rem;white-space:nowrap">
-                        &#x20B1;{{ "%.2f"|format(expense.amount) }}
+                            style="font-family:'Inconsolata',monospace;font-size:0.75rem">
+                        &#x20B1;{{ "{:,.2f}".format(expense.amount) }}
                       </span>
                     </td>
 
                     <!-- Date -->
-                    <td>
+                    <td class="whitespace-nowrap">
                       <span class="text-[0.72rem]" style="color:var(--text-muted)">
                         {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
                       </span>
                     </td>
 
-                    <!-- Actions — data-* pattern, mirrors users.html actions cell exactly -->
+                    <!-- Actions -->
                     {% if can_edit %}
-                    <td>
-                      <div class="flex items-center gap-1.5 flex-wrap">
+                    <td class="whitespace-nowrap">
+                      <div class="flex items-center gap-1.5">
                         <!-- View -->
                         <button type="button"
                                 data-eid="{{ expense.expense_id }}"
                                 data-category="{{ expense.category }}"
-                                data-desc="{{ expense.description }}"
+                                data-desc="{{ expense.description | tojson }}"
                                 data-amount="{{ '%.2f'|format(expense.amount) }}"
                                 data-date="{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}"
                                 onclick="openViewExpenseModal(this)"
@@ -319,7 +361,7 @@
                         <!-- Delete -->
                         <button type="button"
                                 data-eid="{{ expense.expense_id }}"
-                                data-edesc="{{ expense.description }}"
+                                data-edesc="{{ expense.description | tojson }}"
                                 onclick="openDeleteExpenseModal(this.dataset.eid, this.dataset.edesc)"
                                 class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
                                 style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
@@ -331,7 +373,7 @@
                   {% endfor %}
                 {% endif %}
 
-                <!-- No-results row — shown by JS, mirrors users.html no-results-row exactly -->
+                <!-- No-results row -->
                 <tr id="no-results-row" style="display:none">
                   <td colspan="{% if can_edit %}6{% else %}5{% endif %}" class="text-center py-10">
                     <div class="flex flex-col items-center gap-2">
@@ -364,8 +406,9 @@
               </tbody>
             </table>
           </div>
+          <!-- ── END TABLE ── -->
 
-          <!-- Footer count bar — exact users.html footer pattern -->
+          <!-- Footer count bar -->
           <div class="px-5 py-3 text-[0.72rem] border-t flex items-center justify-between"
                style="border-color:var(--border-section);color:var(--text-muted)">
             <span id="visible-count"></span>
@@ -382,11 +425,11 @@
 
 <!-- ═══════════════════════════════ MODALS ═══════════════════════════════ -->
 
-<!-- ══ VIEW EXPENSE MODAL — mirrors view-user-modal structure exactly ══ -->
+<!-- ══ VIEW EXPENSE MODAL ══ -->
 <div id="view-expense-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box overflow-hidden">
-      <!-- Gradient header — mirrors vum header gradient -->
+      <!-- Gradient header -->
       <div class="px-6 py-5 flex items-center gap-4"
            style="background:linear-gradient(135deg,#0c2340,#0c3a6e);border-bottom:1px solid var(--border-section)">
         <div id="vem-avatar"
@@ -400,7 +443,7 @@
                 style="background:rgba(239,68,68,0.20);color:#fca5a5;font-family:'Inconsolata',monospace"></span>
         </div>
       </div>
-      <!-- Body — mirrors vum body rows -->
+      <!-- Body -->
       <div class="p-6 flex flex-col gap-3">
         <div class="p-3 rounded-xl" style="background:var(--bg-input)">
           <div class="text-[0.65rem] uppercase tracking-wider font-semibold mb-1.5" style="color:var(--text-muted)">Description</div>
@@ -424,7 +467,7 @@
                 id="vem-amount-body"></span>
         </div>
       </div>
-      <!-- Actions — mirrors vum actions row -->
+      <!-- Actions -->
       <div class="px-6 pb-5 flex gap-2 flex-wrap">
         <button onclick="closeModal('view-expense-modal')" class="agos-btn-ghost flex-1 py-2.5">Close</button>
         <button id="vem-delete-btn" type="button"
@@ -510,7 +553,7 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  // ── Modal helpers (fallback if agos-theme.js already defines them) ────
+  // ── Modal helpers (fallback) ───────────────────────────────────────────
   if (typeof openModal === 'undefined') {
     window.openModal  = id => document.getElementById(id)?.classList.add('open');
     window.closeModal = id => document.getElementById(id)?.classList.remove('open');
@@ -525,7 +568,7 @@
     const lbl = document.getElementById('theme-label');
     if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
 
-    filterRows(); // populate footer count on load
+    filterRows();
   });
 
   const _orig = window.toggleTheme;
@@ -539,7 +582,7 @@
   // ── Active category state ─────────────────────────────────────────────
   let activeCategory = 'all';
 
-  // ── Category filter pills — exact filterByRole() pattern ─────────────
+  // ── Category filter pills ─────────────────────────────────────────────
   function filterByCategory(cat) {
     activeCategory = cat;
     document.querySelectorAll('.cat-pill').forEach(p => {
@@ -556,7 +599,7 @@
     filterRows();
   }
 
-  // ── Combined filter — exact filterRows() pattern from users.html ──────
+  // ── Combined filter ───────────────────────────────────────────────────
   function filterRows() {
     const q    = (document.getElementById('search-expenses').value || '').toLowerCase();
     const rows = document.querySelectorAll('.expense-row');
@@ -568,18 +611,15 @@
       r.style.display   = show ? '' : 'none';
       if (show) vis++;
     });
-    // Footer count — exact users.html pattern
     const label = document.getElementById('visible-count');
     if (label) label.textContent = `Showing ${vis} record${vis !== 1 ? 's' : ''}`;
-    // Header subtitle
     const countLabel = document.getElementById('expense-count-label');
     if (countLabel) countLabel.textContent = `${vis} record${vis !== 1 ? 's' : ''}`;
-    // No-results row — exact users.html logic
     const noResults = document.getElementById('no-results-row');
     if (noResults) noResults.style.display = (vis === 0 && (q || activeCategory !== 'all')) ? '' : 'none';
   }
 
-  // ── Search clear button — exact users.html pattern ────────────────────
+  // ── Search clear button ───────────────────────────────────────────────
   function toggleClearBtn() {
     const val = document.getElementById('search-expenses').value;
     const btn = document.getElementById('search-clear-btn');
@@ -598,24 +638,22 @@
     document.getElementById('vem-avatar').textContent      = (d.category || '?')[0].toUpperCase();
     document.getElementById('vem-category').textContent    = d.category  || '—';
     document.getElementById('vem-date').textContent        = d.date      || '—';
-    document.getElementById('vem-amount-badge').textContent = '&#x20B1;' + (d.amount || '0.00');
+    document.getElementById('vem-amount-badge').textContent = '₱' + (d.amount || '0.00');
     document.getElementById('vem-desc').textContent        = d.desc      || '—';
     document.getElementById('vem-date-body').textContent   = d.date      || '—';
-    document.getElementById('vem-amount-body').textContent = '&#x20B1;' + (d.amount || '0.00');
+    document.getElementById('vem-amount-body').textContent = '₱' + (d.amount || '0.00');
 
-    // Category badge
     const catBadge = document.getElementById('vem-cat-badge');
     catBadge.textContent = d.category || '—';
     catBadge.className = 'agos-badge ' + ({
-      'Utilities':   'agos-badge-info',
-      'Supplies':    'agos-badge-success',
-      'Maintenance': 'agos-badge-warning',
-      'Salaries':    'agos-badge-warning',
-      'Rent':        'agos-badge-danger',
+      'Utilities':      'agos-badge-info',
+      'Supplies':       'agos-badge-success',
+      'Maintenance':    'agos-badge-warning',
+      'Salaries':       'agos-badge-warning',
+      'Rent':           'agos-badge-danger',
       'Transportation': 'agos-badge-info'
     }[d.category] || 'agos-badge-info');
 
-    // Wire delete button — mirrors vum-delete-btn pattern
     document.getElementById('vem-delete-btn').onclick = () => {
       closeModal('view-expense-modal');
       openDeleteExpenseModal(d.eid, d.desc);
@@ -654,7 +692,7 @@
     openModal('delete-expense-modal');
   }
 
-  // ── Toast helper — exact users.html showToast ─────────────────────────
+  // ── Toast helper ──────────────────────────────────────────────────────
   function showToast(msg, type = 'success') {
     const tc = document.getElementById('toast-container');
     const el = document.createElement('div');

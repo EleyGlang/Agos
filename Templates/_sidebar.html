@@ -66,16 +66,17 @@
   </div>
 
   <!-- ── User Card ── -->
+  {% set _display_name = session.get('full_name') or session.get('customer_name') or '?' %}
   <div class="agos-sidebar-user-wrap flex items-center gap-2.5 mx-3 my-3 flex-shrink-0 rounded-xl p-3">
     <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
          style="background:{% if session.get('role') == 'Super Admin' %}linear-gradient(135deg,#7c3aed,#a855f7){% elif session.get('role') == 'Admin' %}linear-gradient(135deg,#2d88b8,#5bb8e0){% else %}linear-gradient(135deg,#0095c8,#38bdf8){% endif %}">
-      {{ session['full_name'][0].upper() }}
+      {{ _display_name[0].upper() }}
     </div>
     <div class="min-w-0 sidebar-user-info">
       <div class="text-[0.82rem] font-medium leading-tight truncate" style="color:rgba(204,234,247,0.90)">
-        {{ session['full_name'] }}
+        {{ _display_name }}
       </div>
-      <span class="agos-sidebar-role-badge">{{ session['role'] }}</span>
+      <span class="agos-sidebar-role-badge">{{ session.get('role') or 'Customer' }}</span>
     </div>
   </div>
 
@@ -103,7 +104,7 @@
     <a href="{{ url_for('products') }}" title="Products"
        class="agos-sidebar-link {% if active_page == 'products' %}active{% endif %}">
       <span class="agos-nav-icon">water_bottle_large</span>
-      <span class="sidebar-label">Products</span>
+      <span class="sidebar-label">Products and Services</span>
     </a>
 
     <a href="{{ url_for('deliveries') }}" title="Deliveries"

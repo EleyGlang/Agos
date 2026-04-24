@@ -124,6 +124,17 @@
                 <button type="button" onclick="addItem()" class="mt-2 text-xs font-medium border-none bg-transparent cursor-pointer p-0 hover:underline" style="color:var(--accent)">+ Add another product</button>
               </div>
 
+              <!-- Services -->
+              {% if services %}
+              <div>
+                <label class="agos-label">Services</label>
+                <div id="services-container" class="flex flex-col gap-2">
+                  <!-- service rows injected by JS -->
+                </div>
+                <button type="button" onclick="addServiceRow()" class="mt-2 text-xs font-medium border-none bg-transparent cursor-pointer p-0 hover:underline" style="color:var(--accent)">+ Add service</button>
+              </div>
+              {% endif %}
+
               <!-- Total -->
               <div class="rounded-xl p-3 flex items-center justify-between" style="background:var(--accent-softer);border:1px solid var(--accent-border)">
                 <span class="text-[0.82rem] font-semibold" style="color:var(--accent)">Total Amount</span>
@@ -255,12 +266,57 @@
   function addItem() { const container = document.getElementById('items-container'); const clone = container.querySelector('.item-row').cloneNode(true); clone.querySelector('.product-search').value = ''; clone.querySelector('.product-select').value = ''; clone.querySelector('input[type=number]').value = 1; container.appendChild(clone); }
   function removeItem(btn) { const rows = document.querySelectorAll('.item-row'); if (rows.length > 1) { btn.closest('.item-row').remove(); computeTotal(); } }
   function updateSubtotal() { computeTotal(); }
+  // ── Services ─────────────────────────────────────────────────────────────
+  const SERVICES = [
+    {% for svc in services %}
+    { id: {{ svc.service_id }}, name: {{ svc.service_name|tojson }}, price: {{ svc.price }} }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  function addServiceRow(selectedId, qty) {
+    const container = document.getElementById('services-container');
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'service-row flex items-center gap-2';
+    const opts = SERVICES.map(s =>
+      `<option value="${s.id}" data-price="${s.price}" ${selectedId == s.id ? 'selected' : ''}>${s.name} — ₱${parseFloat(s.price).toFixed(2)}</option>`
+    ).join('');
+    row.innerHTML = `
+      <select name="service_id[]" class="service-select agos-input flex-1" onchange="computeTotal()" style="width:auto">
+        <option value="">Select service…</option>${opts}
+      </select>
+      <input type="number" name="service_qty[]" value="${qty || 1}" min="1" onchange="computeTotal()"
+             class="w-16 px-2 py-2 rounded-xl text-[0.82rem] text-center outline-none"
+             style="background:var(--bg-input);border:1.5px solid var(--border-input);color:var(--text-primary)"/>
+      <button type="button" onclick="removeServiceRow(this)" class="w-7 h-7 rounded-full flex items-center justify-center text-sm border-none cursor-pointer flex-shrink-0" style="background:var(--danger-bg);color:var(--danger-text)">✕</button>
+    `;
+    container.appendChild(row);
+    computeTotal();
+  }
+
+  function removeServiceRow(btn) {
+    btn.closest('.service-row').remove();
+    computeTotal();
+  }
+
   function computeTotal() {
     let total = 0;
-    document.querySelectorAll('.item-row').forEach(row => { const sel = row.querySelector('.product-select'); const qty = parseFloat(row.querySelector('input[type=number]').value) || 0; const opt = sel.options[sel.selectedIndex]; total += (opt ? parseFloat(opt.dataset.price || 0) : 0) * qty; });
+    document.querySelectorAll('.item-row').forEach(row => {
+      const sel = row.querySelector('.product-select');
+      const qty = parseFloat(row.querySelector('input[type=number]').value) || 0;
+      const opt = sel.options[sel.selectedIndex];
+      total += (opt ? parseFloat(opt.dataset.price || 0) : 0) * qty;
+    });
+    document.querySelectorAll('.service-row').forEach(row => {
+      const sel = row.querySelector('.service-select');
+      const qty = parseFloat(row.querySelector('input[type=number]').value) || 0;
+      const opt = sel.options[sel.selectedIndex];
+      total += (opt ? parseFloat(opt.dataset.price || 0) : 0) * qty;
+    });
     document.getElementById('total-display').textContent = '₱' + total.toFixed(2);
     document.getElementById('total-input').value = total.toFixed(2);
   }
+
   function getActiveMode() {
     if (document.getElementById('new-customer-fields').style.display !== 'none') return 'new';
     if (document.getElementById('existing-customer-block').style.display !== 'none') return 'existing';
@@ -270,10 +326,15 @@
     const mode = getActiveMode();
     if (mode === 'existing' && !document.getElementById('customer_id').value) { alert('Please select an existing customer.'); return false; }
     if (mode === 'new') { const name = document.getElementById('new_customer_name').value.trim(); const phone = document.getElementById('new_customer_number').value.trim(); if (!name || !/^[A-Za-z ]+$/.test(name)) { alert('Customer name must contain only letters and spaces.'); return false; } if (phone && !/^\d{11}$/.test(phone)) { alert('Contact Number must be exactly 11 digits.'); return false; } }
-    for (const row of document.querySelectorAll('.item-row')) { if (!row.querySelector('.product-select').value) { alert('Please select a product for each line item.'); return false; } }
+    const hasProduct = Array.from(document.querySelectorAll('.item-row')).some(r => r.querySelector('.product-select').value);
+    const hasService = Array.from(document.querySelectorAll('.service-row')).some(r => r.querySelector('.service-select').value);
+    for (const row of document.querySelectorAll('.item-row')) { if (!row.querySelector('.product-select').value && document.querySelectorAll('.item-row').length > 1) { alert('Please select a product for each line item, or remove the empty row.'); return false; } }
+    for (const row of document.querySelectorAll('.service-row')) { if (!row.querySelector('.service-select').value) { alert('Please select a service for each service line, or remove the empty row.'); return false; } }
+    if (!hasProduct && !hasService) { alert('Please add at least one product or service.'); return false; }
     if (parseFloat(document.getElementById('total-input').value) <= 0) { alert('Total amount must be greater than zero.'); return false; }
     return true;
   }
+
   function openSaleConfirmModal() {
     if (!validateForm()) return;
     document.getElementById('receipt-sale-type').textContent = document.getElementById('sale-type-input').value;
@@ -284,6 +345,7 @@
     document.getElementById('receipt-customer').textContent = customerLabel;
     const itemsContainer = document.getElementById('receipt-items'); itemsContainer.innerHTML = '';
     let total = 0;
+
     document.querySelectorAll('.item-row').forEach(row => {
       const sel = row.querySelector('.product-select'); const qty = parseInt(row.querySelector('input[type=number]').value) || 0; const opt = sel.options[sel.selectedIndex];
       if (!opt || !opt.value) return;
@@ -293,10 +355,22 @@
       item.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><span style="background:var(--accent);color:white;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600">${qty}×</span><span style="font-weight:500;color:var(--text-primary)">${name}</span></div><div style="text-align:right"><div style="font-size:12px;color:var(--text-muted)">₱${price.toFixed(2)}</div><div style="font-weight:700;color:var(--text-primary)">₱${subtotal.toFixed(2)}</div></div>`;
       itemsContainer.appendChild(item);
     });
+
+    document.querySelectorAll('.service-row').forEach(row => {
+      const sel = row.querySelector('.service-select'); const qty = parseInt(row.querySelector('input[type=number]').value) || 0; const opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return;
+      const name = opt.text.split(' — ')[0]; const price = parseFloat(opt.dataset.price || 0); const subtotal = price * qty; total += subtotal;
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:14px;border:1px solid var(--border-card);background:var(--bg-input)';
+      item.innerHTML = `<div style="display:flex;gap:10px;align-items:center"><span style="background:var(--accent-soft);color:var(--accent);padding:3px 10px;border-radius:6px;font-size:12px;font-weight:600">${qty}×</span><span style="font-weight:500;color:var(--text-primary)">${name}</span><span style="font-size:11px;color:var(--text-muted)">(service)</span></div><div style="text-align:right"><div style="font-size:12px;color:var(--text-muted)">₱${price.toFixed(2)}</div><div style="font-weight:700;color:var(--text-primary)">₱${subtotal.toFixed(2)}</div></div>`;
+      itemsContainer.appendChild(item);
+    });
+
     document.getElementById('receipt-total').textContent = '₱' + total.toFixed(2);
     document.getElementById('receipt-datetime').textContent = new Date().toLocaleString('en-PH', { weekday:'short', year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
     document.getElementById('sale-confirm-modal').style.display = 'flex';
   }
+
   function closeSaleConfirmModal() { document.getElementById('sale-confirm-modal').style.display = 'none'; }
   function submitSaleForm() { document.getElementById('sale-form').submit(); }
   document.getElementById('sale-confirm-modal').addEventListener('click', function(e) { if (e.target === this) closeSaleConfirmModal(); });

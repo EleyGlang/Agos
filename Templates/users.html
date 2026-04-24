@@ -279,9 +279,30 @@
                     <input type="text" name="contact_number" id="cust-contact"
                            placeholder="11-digit number" maxlength="11" class="agos-input"/>
                   </div>
+
+                  <!-- Address -->
                   <div>
                     <label class="agos-label">Address</label>
-                    <input type="text" name="address" placeholder="Optional" class="agos-input"/>
+                    <div class="flex flex-col gap-2 rounded-xl p-3" style="background:var(--bg-input);border:1px solid var(--border-input)">
+                      <div class="grid grid-cols-2 gap-2">
+                        <div>
+                          <label class="text-[0.65rem] font-semibold uppercase tracking-wide mb-0.5 block" style="color:var(--text-muted)">House / Unit No.</label>
+                          <input type="text" name="addr_house" id="cust-addr-house"
+                                 placeholder="e.g. Blk 5 Lot 12" class="agos-input text-[0.82rem]"/>
+                        </div>
+                        <div>
+                          <label class="text-[0.65rem] font-semibold uppercase tracking-wide mb-0.5 block" style="color:var(--text-muted)">Street</label>
+                          <input type="text" name="addr_street" id="cust-addr-street"
+                                 placeholder="e.g. Sampaguita St." class="agos-input text-[0.82rem]"/>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="text-[0.65rem] font-semibold uppercase tracking-wide mb-0.5 block" style="color:var(--text-muted)">Barangay</label>
+                        <input type="text" name="addr_barangay" id="cust-addr-barangay"
+                               placeholder="e.g. Brgy. San Jose" class="agos-input text-[0.82rem]"/>
+                      </div>
+                      <input type="hidden" name="address" id="cust-addr-combined"/>
+                    </div>
                   </div>
                   <button type="button" onclick="openCreateCustomerConfirm()"
                           class="agos-btn-primary w-full py-2.5 mt-1">Create Customer Account</button>
@@ -1220,6 +1241,14 @@ function openCreateCustomerConfirm() {
   if (!pw || pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
   if (pw !== pwConf)        { showToast('Passwords do not match.', 'error'); return; }
   if (contact && !/^\d{11}$/.test(contact)) { showToast('Contact must be exactly 11 digits.', 'error'); return; }
+
+  // Assemble structured address parts into the hidden combined field
+  const house    = document.getElementById('cust-addr-house').value.trim();
+  const street   = document.getElementById('cust-addr-street').value.trim();
+  const barangay = document.getElementById('cust-addr-barangay').value.trim();
+  const combined = [house, street, barangay].filter(Boolean).join(', ');
+  document.getElementById('cust-addr-combined').value = combined;
+
   document.getElementById('create-customer-summary').textContent =
     `Create a customer portal account for "${first} ${last}" with username "@${username}"?`;
   openModal('create-customer-modal');

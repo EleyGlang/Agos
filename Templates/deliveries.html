@@ -204,31 +204,37 @@
                     </td>
                     <td>
                       {% if delivery.status in ('Pending', 'Confirmed') %}
-                        <div class="flex items-center gap-1.5 flex-wrap">
+                        <div class="flex items-center gap-1 flex-wrap">
 
+                          <!-- Step 1: Confirm -->
                           {% if delivery.status == 'Pending' %}
-                          <!-- Confirm -->
-                          <button type="button"
-                                  onclick="openConfirmOrderModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
-                                  class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
-                                  style="background:var(--success-bg);color:var(--success-text)">Confirm</button>
-                          <form id="confirm-form-{{ delivery.delivery_id }}"
-                                action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}"
-                                method="POST" style="display:none">
-                            <input type="hidden" name="status" value="Confirmed"/>
-                          </form>
+                            <button type="button"
+                                    onclick="openConfirmOrderModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
+                                    class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
+                                    style="background:var(--success-bg);color:var(--success-text)">Confirm</button>
+                            <form id="confirm-form-{{ delivery.delivery_id }}"
+                                  action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}"
+                                  method="POST" style="display:none">
+                              <input type="hidden" name="status" value="Confirmed"/>
+                            </form>
+                          {% else %}
+                            <span class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium"
+                                  style="background:var(--success-bg);color:var(--success-text);opacity:0.45">✓ Confirmed</span>
                           {% endif %}
 
-                          <!-- Mark Delivered -->
-                          <button type="button"
-                                  onclick="openMarkDeliveredModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
-                                  class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
-                                  style="background:var(--info-bg);color:var(--info-text)">Mark Delivered</button>
-                          <form id="mark-form-{{ delivery.delivery_id }}"
-                                action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}"
-                                method="POST" style="display:none">
-                            <input type="hidden" name="status" value="Delivered"/>
-                          </form>
+                          <!-- Step 2: Mark Delivered (only shown once Confirmed) -->
+                          {% if delivery.status == 'Confirmed' %}
+                            <span style="color:var(--text-muted);font-size:0.7rem;font-weight:600">→</span>
+                            <button type="button"
+                                    onclick="openMarkDeliveredModal({{ delivery.delivery_id }}, '{{ delivery.customer.full_name if delivery.customer else 'Unknown' }}')"
+                                    class="px-3 py-1.5 rounded-lg text-[0.75rem] font-medium border-none cursor-pointer"
+                                    style="background:var(--info-bg);color:var(--info-text)">Mark Delivered</button>
+                            <form id="mark-form-{{ delivery.delivery_id }}"
+                                  action="{{ url_for('update_delivery_status', delivery_id=delivery.delivery_id) }}"
+                                  method="POST" style="display:none">
+                              <input type="hidden" name="status" value="Delivered"/>
+                            </form>
+                          {% endif %}
 
                           <!-- Cancel -->
                           <button type="button"
@@ -241,6 +247,7 @@
                             <input type="hidden" name="cancel_reason"
                                    id="cancel-reason-{{ delivery.delivery_id }}" value=""/>
                           </form>
+
                         </div>
                       {% else %}
                         <span style="color:var(--text-faint)">—</span>

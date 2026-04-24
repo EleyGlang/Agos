@@ -138,35 +138,34 @@
                 </div>
               </div>
               <div>
-                <div class="text-[0.85rem] font-semibold mb-1" style="color:var(--text-primary)">{{ customer.loyalty_points }} point{{ 's' if customer.loyalty_points != 1 }}</div>
-                <div class="text-[0.72rem] leading-relaxed" style="color:var(--text-muted)">Earn 1 point per 10 refills.<br>Points are auto-applied at checkout.</div>
+                <div class="text-[0.85rem] font-semibold mb-1" style="color:var(--text-primary)">{{ customer.loyalty_points }} free refill{{ 's' if customer.loyalty_points != 1 }} available</div>
+                <div class="text-[0.72rem] leading-relaxed" style="color:var(--text-muted)">Buy 10 refills, get 1 free.<br>Points auto-apply at checkout.</div>
               </div>
             </div>
 
-            <!-- Progress to next free refill -->
-            {% set next_reward = 10 - (customer.loyalty_points % 10) if customer.loyalty_points % 10 != 0 else 10 %}
+            <!-- Progress to next free refill — based on refills_this_cycle (0–9) -->
             <div>
               <div class="flex justify-between text-[0.72rem] mb-1" style="color:var(--text-muted)">
                 <span>Progress to next free refill</span>
-                <span>{{ 10 - next_reward }}/10</span>
+                <span>{{ refills_this_cycle }}/10</span>
               </div>
-              <!-- progress track -->
               <div class="h-2 rounded-full overflow-hidden mt-1.5" style="background:var(--accent-softer)">
-                <div class="h-full rounded-full" style="width:{{ ((10 - next_reward) / 10 * 100)|round }}%;background:linear-gradient(90deg,#d4a843,#f0c040)"></div>
+                <div class="h-full rounded-full" style="width:{{ (refills_this_cycle / 10 * 100)|round }}%;background:linear-gradient(90deg,#d4a843,#f0c040)"></div>
               </div>
               <div class="text-[0.68rem] mt-1" style="color:var(--text-muted)">
-                {{ next_reward }} more order{{ 's' if next_reward != 1 }} to earn your next free refill
+                {% set needed = 10 - refills_this_cycle %}
+                {{ needed }} more refill{{ 's' if needed != 1 }} to earn your next free one
               </div>
             </div>
 
             <!-- Redemption note -->
             {% if customer.loyalty_points > 0 %}
             <div class="rounded-xl p-2.5 text-[0.72rem]" style="background:var(--warning-bg);color:var(--warning-text);border:1px solid rgba(212,168,67,0.18)">
-              🎁 You can redeem <strong>{{ customer.loyalty_points }}</strong> free refill{{ 's' if customer.loyalty_points != 1 }} — applied automatically at checkout!
+              🎁 You have <strong>{{ customer.loyalty_points }}</strong> free refill{{ 's' if customer.loyalty_points != 1 }} to redeem — applied automatically at checkout!
             </div>
             {% else %}
             <div class="rounded-xl p-2.5 text-[0.72rem]" style="background:var(--accent-softer);color:var(--accent);border:1px solid var(--accent-border)">
-              💧 Keep ordering to earn free refills!
+              💧 {{ refills_this_cycle }}/10 refills done — keep going to earn a free one!
             </div>
             {% endif %}
           </div>

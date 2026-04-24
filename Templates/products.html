@@ -40,6 +40,9 @@
 
       <div class="grid gap-6 grid-cols-1 lg:grid-cols-[1fr_1.8fr]">
 
+        <!-- ══ LEFT COLUMN: Add Product + Add Service ══════════════════════ -->
+        <div class="flex flex-col gap-6">
+
         <!-- ══ Add Product Form ══════════════════════════════════════════════ -->
         <div class="agos-card overflow-hidden self-start">
           <div class="agos-card-header">
@@ -129,6 +132,59 @@
             </form>
           </div>
         </div>
+
+        <!-- ══ Add Service Form ══════════════════════════════════════════════ -->
+        <div class="agos-card overflow-hidden self-start">
+          <div class="agos-card-header">
+            <div class="agos-card-title">Add New Service</div>
+            <div class="agos-card-subtitle">Services are visible to customers on the order page</div>
+          </div>
+          <div class="p-5">
+            <form action="{{ url_for('new_service') }}" method="POST"
+                  class="flex flex-col gap-4"
+                  id="add-service-form"
+                  onsubmit="return openAddServiceConfirmModal(event)">
+
+              <div>
+                <label class="agos-label">Service Name <span style="color:#d32f2f">*</span></label>
+                <input type="text" name="service_name" id="svc-add-name"
+                       required placeholder="e.g. Gallon Cleaning &amp; Sanitizing" class="agos-input"/>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="agos-label">Price (₱) <span style="color:#d32f2f">*</span></label>
+                  <input type="number" name="price" id="svc-add-price"
+                         min="0" step="0.01" required placeholder="0.00" class="agos-input"/>
+                  <p class="text-[0.7rem] mt-1" style="color:var(--text-muted)">Set to 0 for free services.</p>
+                </div>
+                <div>
+                  <label class="agos-label">Unit / Label</label>
+                  <input type="text" name="unit" id="svc-add-unit" placeholder="e.g. per gallon" class="agos-input"/>
+                </div>
+              </div>
+
+              <div>
+                <label class="agos-label">Description</label>
+                <textarea name="description" id="svc-add-desc" rows="2"
+                          placeholder="Brief description shown to customers…"
+                          class="agos-input resize-none"></textarea>
+              </div>
+
+              <button type="submit" class="agos-btn-primary w-full py-3">
+                <svg class="inline-block mr-1.5 -mt-0.5" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Service
+              </button>
+            </form>
+          </div>
+        </div>
+
+        </div><!-- end left column -->
+
+        <!-- ══ RIGHT COLUMN: Product Table + Service Table ═══════════════════ -->
+        <div class="flex flex-col gap-6">
 
         <!-- ══ Product Table ═════════════════════════════════════════════════ -->
         <div class="agos-card overflow-hidden">
@@ -255,8 +311,110 @@
             </table>
           </div>
         </div>
-      </div>
-    </main>
+
+        <!-- ══ Services Table ════════════════════════════════════════════════ -->
+        <div class="agos-card overflow-hidden">
+          <div class="agos-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="agos-card-title">Services Catalog</div>
+              <div class="agos-card-subtitle">{{ services|length }} service{{ 's' if services|length != 1 }}</div>
+            </div>
+            <input type="text" id="search-services" oninput="filterServices()"
+                   placeholder="Search…" class="agos-input w-full sm:w-40"/>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="agos-table w-full border-collapse" style="min-width:520px">
+              <thead>
+                <tr>
+                  <th class="w-8">#</th>
+                  <th>Service</th>
+                  <th>Price</th>
+                  <th>Unit</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if services %}{% for svc in services %}
+                <tr class="service-row">
+                  <td style="color:var(--text-muted)">{{ loop.index }}</td>
+                  <td class="font-medium service-name" style="color:var(--text-primary)">{{ svc.service_name }}</td>
+                  <td class="font-semibold" style="color:var(--text-primary)">
+                    {% if svc.price == 0 %}
+                      <span class="agos-badge" style="background:var(--success-bg);color:var(--success-text)">Free</span>
+                    {% else %}
+                      ₱{{ "%.2f"|format(svc.price) }}
+                    {% endif %}
+                  </td>
+                  <td style="color:var(--text-secondary)">{{ svc.unit or '—' }}</td>
+                  <td style="color:var(--text-muted);max-width:200px;white-space:normal;font-size:0.75rem">
+                    {{ svc.description or '—' }}
+                  </td>
+                  <td>
+                    {% if svc.is_active %}
+                      <span class="agos-badge agos-badge-success">Active</span>
+                    {% else %}
+                      <span class="agos-badge agos-badge-danger">Inactive</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <!-- Edit -->
+                      <button onclick="openEditServiceModal(
+                                  {{ svc.service_id }},
+                                  '{{ svc.service_name|replace("'","\\'") }}',
+                                  {{ svc.price }},
+                                  '{{ svc.unit or '' }}',
+                                  '{{ (svc.description or '')|replace("'","\\'") }}'
+                                )"
+                              class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                              style="background:var(--info-bg);color:var(--info-text)">Edit</button>
+
+                      <!-- Toggle active/inactive -->
+                      <form id="svc-toggle-form-{{ svc.service_id }}"
+                            action="{{ url_for('toggle_service', service_id=svc.service_id) }}"
+                            method="POST" style="display:none"></form>
+                      <button type="button"
+                              onclick="openSvcToggleModal(
+                                {{ svc.service_id }},
+                                '{{ svc.service_name|replace("'","\\'") }}',
+                                {{ 'true' if svc.is_active else 'false' }}
+                              )"
+                              class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                              style="{% if svc.is_active %}background:var(--warning-bg);color:var(--warning-text){% else %}background:var(--success-bg);color:var(--success-text){% endif %}">
+                        {{ 'Deactivate' if svc.is_active else 'Activate' }}
+                      </button>
+
+                      {% if session.get('role') in ['Admin', 'Super Admin'] %}
+                      <form id="delete-service-form-{{ svc.service_id }}"
+                            action="{{ url_for('delete_service', service_id=svc.service_id) }}"
+                            method="POST" style="display:none"></form>
+                      <button type="button"
+                              onclick="openDeleteServiceModal(
+                                {{ svc.service_id }},
+                                '{{ svc.service_name|replace("'","\\'") }}'
+                              )"
+                              class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
+                              style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}{% else %}
+                <tr>
+                  <td colspan="7" class="text-center py-10" style="color:var(--text-faint)">
+                    No services yet. Add one using the form.
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        </div><!-- end right column -->
+      </div><!-- end main grid -->
   </div>
 </div>
 
@@ -481,6 +639,108 @@
 </div>
 
 <a data-logout-url="{{ url_for('logout') }}" style="display:none"></a>
+
+<!-- ══ ADD SERVICE CONFIRM MODAL ═════════════════════════════════════════════ -->
+<div id="add-service-confirm-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--accent-soft)">
+        <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--accent)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Confirm New Service</h3>
+      <p class="text-sm mb-5" style="color:var(--text-muted)">Please review the details below before saving.</p>
+      <div class="text-left rounded-xl overflow-hidden mb-5" style="border:1px solid var(--border-section)">
+        <div class="grid grid-cols-2 text-sm divide-y" style="border-color:var(--border-section)">
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Name</div>
+          <div class="px-4 py-2.5 font-semibold" id="svc-confirm-name" style="color:var(--text-primary)"></div>
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Price</div>
+          <div class="px-4 py-2.5 font-semibold" id="svc-confirm-price" style="color:var(--text-primary)"></div>
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Unit</div>
+          <div class="px-4 py-2.5" id="svc-confirm-unit" style="color:var(--text-secondary)"></div>
+          <div class="px-4 py-2.5 font-medium" style="color:var(--text-muted);background:var(--bg-input)">Description</div>
+          <div class="px-4 py-2.5 text-[0.78rem]" id="svc-confirm-desc" style="color:var(--text-secondary)"></div>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-center">
+        <button id="add-service-confirm-btn" class="agos-btn-primary px-7 py-2.5">Yes, Add Service</button>
+        <button onclick="closeModal('add-service-confirm-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EDIT SERVICE MODAL ══════════════════════════════════════════════════════ -->
+<div id="edit-service-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-md">
+    <div class="agos-modal-box">
+      <div class="px-6 py-4" style="border-bottom:1px solid var(--border-section)">
+        <div class="agos-card-title">Edit Service</div>
+      </div>
+      <form id="edit-service-form" method="POST" class="p-6 flex flex-col gap-4">
+        <div>
+          <label class="agos-label">Service Name</label>
+          <input type="text" id="svc-edit-name" name="service_name" required class="agos-input"/>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="agos-label">Price (₱)</label>
+            <input type="number" id="svc-edit-price" name="price" min="0" step="0.01" required class="agos-input"/>
+          </div>
+          <div>
+            <label class="agos-label">Unit / Label</label>
+            <input type="text" id="svc-edit-unit" name="unit" class="agos-input"/>
+          </div>
+        </div>
+        <div>
+          <label class="agos-label">Description</label>
+          <textarea id="svc-edit-desc" name="description" rows="2" class="agos-input resize-none"></textarea>
+        </div>
+        <div class="flex gap-3 pt-1">
+          <button type="submit" class="agos-btn-primary flex-1 py-2.5">Save Changes</button>
+          <button type="button" onclick="closeModal('edit-service-modal')" class="agos-btn-ghost flex-1 py-2.5">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SERVICE TOGGLE MODAL ══════════════════════════════════════════════════ -->
+<div id="svc-toggle-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+      <div id="svc-toggle-icon-wrap" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"></div>
+      <h3 id="svc-toggle-modal-title" class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)"></h3>
+      <p class="text-sm mb-1" id="svc-toggle-modal-name" style="color:var(--text-primary);font-weight:600"></p>
+      <p class="text-sm mb-6" id="svc-toggle-modal-desc" style="color:var(--text-muted)"></p>
+      <div class="flex gap-3 justify-center">
+        <button id="svc-toggle-confirm-btn" class="agos-btn-primary px-7 py-2.5">Confirm</button>
+        <button onclick="closeModal('svc-toggle-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DELETE SERVICE MODAL ═══════════════════════════════════════════════════ -->
+<div id="delete-service-modal" class="agos-modal-overlay">
+  <div class="p-4 w-full max-w-sm">
+    <div class="agos-modal-box p-7 text-center">
+      <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style="background:var(--danger-bg)">
+        <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color:var(--danger-text)" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+      </div>
+      <h3 class="mb-1 text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Service?</h3>
+      <p class="text-sm mb-2 font-semibold" id="delete-service-name" style="color:var(--text-primary)"></p>
+      <p class="text-sm mb-5" style="color:var(--text-muted)">This action is permanent and cannot be undone.</p>
+      <div class="flex gap-3 justify-center">
+        <button id="delete-service-confirm-btn" class="agos-btn-primary px-7 py-2.5" style="background:var(--danger-text)">Yes, Delete</button>
+        <button onclick="closeModal('delete-service-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
@@ -712,6 +972,99 @@ document.getElementById('add-confirm-modal').addEventListener('click', function 
 });
 document.getElementById('toggle-modal').addEventListener('click', function (e) {
   if (e.target === this) closeModal('toggle-modal');
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SERVICE — SEARCH
+   ══════════════════════════════════════════════════════════════════════════ */
+function filterServices() {
+  const q = document.getElementById('search-services').value.toLowerCase();
+  document.querySelectorAll('.service-row').forEach(r => {
+    r.style.display =
+      r.querySelector('.service-name').textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ADD SERVICE — CONFIRMATION MODAL
+   ══════════════════════════════════════════════════════════════════════════ */
+function openAddServiceConfirmModal(event) {
+  event.preventDefault();
+  const form  = document.getElementById('add-service-form');
+  const name  = document.getElementById('svc-add-name').value.trim();
+  const price = parseFloat(document.getElementById('svc-add-price').value);
+  const unit  = document.getElementById('svc-add-unit').value.trim();
+  const desc  = document.getElementById('svc-add-desc').value.trim();
+  if (!name || isNaN(price) || price < 0) return false;
+  document.getElementById('svc-confirm-name').textContent  = name;
+  document.getElementById('svc-confirm-price').textContent = price === 0 ? 'Free' : '₱' + price.toFixed(2);
+  document.getElementById('svc-confirm-unit').textContent  = unit || '—';
+  document.getElementById('svc-confirm-desc').textContent  = desc || '—';
+  document.getElementById('add-service-confirm-btn').onclick = function () {
+    closeModal('add-service-confirm-modal');
+    form.submit();
+  };
+  openModal('add-service-confirm-modal');
+  return false;
+}
+document.getElementById('add-service-confirm-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeModal('add-service-confirm-modal');
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EDIT SERVICE MODAL
+   ══════════════════════════════════════════════════════════════════════════ */
+function openEditServiceModal(id, name, price, unit, desc) {
+  document.getElementById('edit-service-form').action = `/services/${id}/edit`;
+  document.getElementById('svc-edit-name').value  = name;
+  document.getElementById('svc-edit-price').value = price;
+  document.getElementById('svc-edit-unit').value  = unit;
+  document.getElementById('svc-edit-desc').value  = desc;
+  openModal('edit-service-modal');
+}
+document.getElementById('edit-service-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeModal('edit-service-modal');
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SERVICE TOGGLE (ACTIVATE / DEACTIVATE) MODAL
+   ══════════════════════════════════════════════════════════════════════════ */
+function openSvcToggleModal(serviceId, serviceName, isActive) {
+  const action = isActive ? 'deactivate' : 'activate';
+  const iconWrap = document.getElementById('svc-toggle-icon-wrap');
+  iconWrap.innerHTML = TOGGLE_ICONS[action];
+  iconWrap.style.background = action === 'activate' ? 'var(--success-bg)' : 'var(--warning-bg)';
+  document.getElementById('svc-toggle-modal-title').textContent =
+    action === 'activate' ? 'Activate Service?' : 'Deactivate Service?';
+  document.getElementById('svc-toggle-modal-name').textContent = `"${serviceName}"`;
+  document.getElementById('svc-toggle-modal-desc').textContent =
+    action === 'activate'
+      ? 'This service will become visible to customers.'
+      : 'This service will be hidden from customers until reactivated.';
+  const confirmBtn = document.getElementById('svc-toggle-confirm-btn');
+  confirmBtn.style.background = action === 'activate' ? 'var(--success-text)' : '';
+  confirmBtn.textContent = action === 'activate' ? 'Yes, Activate' : 'Yes, Deactivate';
+  confirmBtn.onclick = function () {
+    closeModal('svc-toggle-modal');
+    document.getElementById('svc-toggle-form-' + serviceId).submit();
+  };
+  openModal('svc-toggle-modal');
+}
+document.getElementById('svc-toggle-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeModal('svc-toggle-modal');
+});
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DELETE SERVICE MODAL
+   ══════════════════════════════════════════════════════════════════════════ */
+function openDeleteServiceModal(id, name) {
+  document.getElementById('delete-service-name').textContent = `"${name}"`;
+  document.getElementById('delete-service-confirm-btn').onclick =
+    () => document.getElementById('delete-service-form-' + id).submit();
+  openModal('delete-service-modal');
+}
+document.getElementById('delete-service-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeModal('delete-service-modal');
 });
 </script>
 </body>

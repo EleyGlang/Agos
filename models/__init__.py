@@ -17,3 +17,4 @@ from models.return_model        import Return_Model
 from models.return_item         import ReturnItem
 from models.water_tank_log      import WaterTankLog
 from models.watertank           import WaterTank
+from models.service             import Service
