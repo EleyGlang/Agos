@@ -1783,8 +1783,7 @@ def deliveries():
         db.session.flush()
         total_amount = 0.0
         has_product = any(pid for pid in product_ids if pid)
-        has_service = any(sid for sid in service_ids if sid)
-
+        
         if not has_product and not has_service:
             flash('Please add at least one product or service.', 'error')
             return redirect(url_for('sales'))

@@ -747,6 +747,9 @@
   .shrink-0 {
     flex-shrink: 0;
   }
+  .table-auto {
+    table-layout: auto;
+  }
   .table-fixed {
     table-layout: fixed;
   }
@@ -797,6 +800,9 @@
   }
   .flex-col {
     flex-direction: column;
+  }
+  .flex-nowrap {
+    flex-wrap: nowrap;
   }
   .flex-wrap {
     flex-wrap: wrap;
@@ -1272,6 +1278,33 @@
   .text-xs {
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
+  }
+  .text-\[\.7rem\] {
+    font-size: .7rem;
+  }
+  .text-\[\.8rem\] {
+    font-size: .8rem;
+  }
+  .text-\[\.65rem\] {
+    font-size: .65rem;
+  }
+  .text-\[\.67rem\] {
+    font-size: .67rem;
+  }
+  .text-\[\.68rem\] {
+    font-size: .68rem;
+  }
+  .text-\[\.72rem\] {
+    font-size: .72rem;
+  }
+  .text-\[\.78rem\] {
+    font-size: .78rem;
+  }
+  .text-\[\.82rem\] {
+    font-size: .82rem;
+  }
+  .text-\[\.84rem\] {
+    font-size: .84rem;
   }
   .text-\[0\.6rem\] {
     font-size: 0.6rem;
@@ -1818,6 +1851,11 @@
       width: calc(var(--spacing) * 52);
     }
   }
+  .sm\:w-56 {
+    @media (width >= 40rem) {
+      width: calc(var(--spacing) * 56);
+    }
+  }
   .sm\:grid-cols-2 {
     @media (width >= 40rem) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1851,6 +1889,11 @@
   .sm\:items-center {
     @media (width >= 40rem) {
       align-items: center;
+    }
+  }
+  .sm\:items-start {
+    @media (width >= 40rem) {
+      align-items: flex-start;
     }
   }
   .sm\:px-8 {
@@ -2050,6 +2093,11 @@
   .xl\:grid-cols-6 {
     @media (width >= 80rem) {
       grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+  }
+  .xl\:grid-cols-\[310px_1fr\] {
+    @media (width >= 80rem) {
+      grid-template-columns: 310px 1fr;
     }
   }
 }

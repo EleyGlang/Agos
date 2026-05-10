@@ -9,53 +9,144 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
-    /* ── Toast notifications ── */
+
+    /* ── Toast ─────────────────────────────────────────────────────── */
     #toast-container {
-      position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999;
-      display: flex; flex-direction: column; gap: 0.5rem; pointer-events: none;
+      position:fixed; top:1.25rem; right:1.25rem; z-index:9999;
+      display:flex; flex-direction:column; gap:.5rem; pointer-events:none;
     }
     .toast {
-      pointer-events: all; min-width: 260px; max-width: 360px;
-      padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.82rem;
-      font-weight: 500; display: flex; align-items: center; gap: 0.6rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-      animation: toastIn 0.3s ease; transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events:all; min-width:260px; max-width:360px;
+      padding:.75rem 1rem; border-radius:.75rem; font-size:.82rem;
+      font-weight:500; display:flex; align-items:center; gap:.6rem;
+      box-shadow:0 4px 20px rgba(0,0,0,.25);
+      animation:toastIn .3s ease; transition:opacity .4s,transform .4s;
     }
-    .toast.hide { opacity: 0; transform: translateX(40px); }
-    .toast-success { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-text); }
-    .toast-error   { background: var(--danger-bg);  color: var(--danger-text);  border: 1px solid var(--danger-text); }
-    @keyframes toastIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+    .toast.hide { opacity:0; transform:translateX(40px); }
+    .toast-success { background:var(--success-bg); color:var(--success-text); border:1px solid var(--success-text); }
+    .toast-error   { background:var(--danger-bg);  color:var(--danger-text);  border:1px solid var(--danger-text); }
+    @keyframes toastIn { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
 
-    /* ── Search clear btn ── */
-    .search-wrap { position: relative; }
+    /* ── Search clear ──────────────────────────────────────────────── */
+    .search-wrap { position:relative; }
     .search-wrap .clear-btn {
-      position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
-      background: none; border: none; cursor: pointer; padding: 0.2rem;
-      color: var(--text-muted); font-size: 0.75rem; line-height: 1;
-      display: none;
+      position:absolute; right:.5rem; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer; padding:.2rem;
+      color:var(--text-muted); font-size:.75rem; display:none;
     }
-    .search-wrap .clear-btn.visible { display: block; }
+    .search-wrap .clear-btn.visible { display:block; }
 
-    /* ── Table: all cells vertically centred ── */
-    .agos-table td { vertical-align: middle; }
-    /* agos-theme.css already sets: th { text-align:left; padding:0.75rem 1.25rem }
-       td { padding:0.75rem 1.25rem } — no further overrides needed */
+    /* ══════════════════════════════════════════════════════════════════
+       CSS GRID "TABLE"
+       The trick: both .exp-head and every .exp-row receive the EXACT
+       same grid-template-columns string via an inline style that is
+       rendered from a single Jinja variable. One source of truth.
+       Headers and data are mathematically aligned.
+    ══════════════════════════════════════════════════════════════════ */
+    .exp-head,
+    .exp-row {
+      display: grid;
+      align-items: start;
+      /* grid-template-columns applied via inline style */
+    }
 
-    /* ── Expense description: clamp to 2 lines max ── */
-    .expense-desc-text {
+    .exp-th {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      padding: .65rem 1rem;
+      border-bottom: 1px solid var(--table-head-border);
+      white-space: nowrap;
+      background: var(--bg-card);
+    }
+
+    .exp-cell {
+      padding: .875rem 1rem;
+      font-size: .82rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--table-border);
+      transition: background .12s;
+    }
+
+    .exp-row:hover .exp-cell {
+      background: var(--bg-card-hover);
+    }
+
+    /* Description: clamp to 2 lines */
+    .exp-desc {
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      max-width: 220px;
       word-break: break-word;
     }
+
+    /* Per-category left accent strip */
+    .exp-row { border-left: 3px solid transparent; transition: border-left-color .12s; }
+    .exp-row[data-category="Utilities"]      { border-left-color: #38bdf8; }
+    .exp-row[data-category="Supplies"]       { border-left-color: #34d399; }
+    .exp-row[data-category="Maintenance"]    { border-left-color: #fbbf24; }
+    .exp-row[data-category="Salaries"]       { border-left-color: #a78bfa; }
+    .exp-row[data-category="Rent"]           { border-left-color: #f472b6; }
+    .exp-row[data-category="Transportation"] { border-left-color: #22d3ee; }
+    .exp-row[data-category="Other"],
+    .exp-row[data-category="Miscellaneous"]  { border-left-color: #94a3b8; }
+
+    /* Compact action buttons */
+    .exp-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: .3rem .75rem; border-radius: .5rem; font-size: .72rem;
+      font-weight: 600; border: none; cursor: pointer;
+      font-family: 'Outfit', sans-serif; transition: opacity .15s;
+    }
+    .exp-btn:hover { opacity: .78; }
+    .exp-btn-view   { background: var(--info-bg);   color: var(--info-text); }
+    .exp-btn-delete { background: var(--danger-bg); color: var(--danger-text); }
+
+    /* Stat card hover */
+    .stat-card { transition: transform .2s, box-shadow .2s; cursor: default; }
+    .stat-card:hover { transform: translateY(-3px); }
+
+    /* Mobile card rows */
+    .exp-mobile-row { border-left: 3px solid transparent; }
+    .exp-mobile-row[data-category="Utilities"]      { border-left-color: #38bdf8; }
+    .exp-mobile-row[data-category="Supplies"]       { border-left-color: #34d399; }
+    .exp-mobile-row[data-category="Maintenance"]    { border-left-color: #fbbf24; }
+    .exp-mobile-row[data-category="Salaries"]       { border-left-color: #a78bfa; }
+    .exp-mobile-row[data-category="Rent"]           { border-left-color: #f472b6; }
+    .exp-mobile-row[data-category="Transportation"] { border-left-color: #22d3ee; }
+    .exp-mobile-row[data-category="Other"],
+    .exp-mobile-row[data-category="Miscellaneous"]  { border-left-color: #94a3b8; }
   </style>
 </head>
 <body class="agos-body m-0 p-0">
 
-<!-- Toast container -->
 <div id="toast-container"></div>
+
+{#
+  ══ COLUMN TEMPLATE ════════════════════════════════════════════════════
+  Defined ONCE here. Both .exp-head and every .exp-row receive this
+  exact string as their inline grid-template-columns.
+  Columns:
+    36px  → row number
+    1fr   → expense description (fills remaining space)
+    150px → category badge  (fits "Miscellaneous")
+    145px → amount          (fits "₱100,000.00")
+    110px → date            (fits "Apr 23, 2026")
+    155px → actions         (fits View + Delete side-by-side)
+  ═══════════════════════════════════════════════════════════════════════
+#}
+{% if can_edit %}
+  {% set GCOLS  = "36px 1fr 150px 145px 110px 155px" %}
+  {% set MINW   = "760px" %}
+  {% set NCOLS  = 6 %}
+{% else %}
+  {% set GCOLS  = "36px 1fr 150px 145px 110px" %}
+  {% set MINW   = "580px" %}
+  {% set NCOLS  = 5 %}
+{% endif %}
 
 <div class="flex min-h-screen">
   {% include '_sidebar.html' %}
@@ -74,7 +165,9 @@
         </button>
         <div>
           <div class="text-lg md:text-2xl font-bold leading-tight"
-               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Expense Management</div>
+               style="font-family:'Inconsolata',monospace;color:var(--text-primary)">
+            Expense Management
+          </div>
           <div class="text-xs" style="color:var(--text-muted)">Track and categorize business expenses</div>
         </div>
       </div>
@@ -87,7 +180,7 @@
           </label>
         </div>
         <div class="hidden sm:block text-xs px-3 py-1 rounded-md agos-topbar-date" id="topbar-date"></div>
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white"
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
              style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)">
           {{ session['full_name'][0].upper() }}
         </div>
@@ -96,379 +189,423 @@
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
 
-      <!-- Flash messages rendered as toasts via JS -->
       {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <script>window._flashMessages = {{ messages | tojson }};</script>
-        {% endif %}
+        {% if messages %}<script>window._flashMessages = {{ messages | tojson }};</script>{% endif %}
       {% endwith %}
 
-      <!-- ══ SUMMARY STATS ══ -->
+      <!-- ══ STATS ══ -->
       {% set total_amount = expenses | sum(attribute='amount') %}
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div class="agos-card p-4 flex flex-col gap-1">
-          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Total Records</div>
-          <div class="text-2xl font-bold" style="color:var(--text-primary)">{{ expenses | length }}</div>
-          <div class="text-[0.7rem]" style="color:var(--text-muted)">All time</div>
-        </div>
-        <div class="agos-card p-4 flex flex-col gap-1">
-          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Total Spent</div>
-          <div class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--warning-text)">
-            &#x20B1;{{ "{:,.2f}".format(total_amount) }}
+      {% set exp_count    = expenses | length %}
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+
+        <!-- Records -->
+        <div class="agos-card stat-card p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:var(--accent-soft)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" style="color:var(--accent)">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+            </svg>
           </div>
-          <div class="text-[0.7rem]" style="color:var(--text-muted)">Across all records</div>
-        </div>
-        <div class="agos-card p-4 flex flex-col gap-1">
-          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Average</div>
-          <div class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--info-text)">
-            {% if expenses | length > 0 %}
-              &#x20B1;{{ "{:,.2f}".format(total_amount / (expenses | length)) }}
-            {% else %}—{% endif %}
+          <div>
+            <div class="text-[.67rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Records</div>
+            <div class="text-2xl font-bold mt-0.5"
+                 style="font-family:'Inconsolata',monospace;color:var(--text-primary)">{{ exp_count }}</div>
+            <div class="text-[.67rem]" style="color:var(--text-muted)">All time</div>
           </div>
-          <div class="text-[0.7rem]" style="color:var(--text-muted)">Per record</div>
         </div>
-        <div class="agos-card p-4 flex flex-col gap-1">
-          <div class="text-[0.68rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Largest</div>
-          <div class="text-xl font-bold" style="font-family:'Inconsolata',monospace;color:var(--danger-text)">
-            {% if expenses %}
-              &#x20B1;{{ "{:,.2f}".format(expenses | map(attribute='amount') | max) }}
-            {% else %}—{% endif %}
+
+        <!-- Total -->
+        <div class="agos-card stat-card p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:var(--danger-bg)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" style="color:var(--danger-text)">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
           </div>
-          <div class="text-[0.7rem]" style="color:var(--text-muted)">Single expense</div>
+          <div class="min-w-0">
+            <div class="text-[.67rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Total Spent</div>
+            <div class="text-lg font-bold mt-0.5 truncate"
+                 style="font-family:'Inconsolata',monospace;color:var(--danger-text)">
+              &#x20B1;{{ "{:,.2f}".format(total_amount) }}
+            </div>
+            <div class="text-[.67rem]" style="color:var(--text-muted)">Across all records</div>
+          </div>
         </div>
+
+        <!-- Average -->
+        <div class="agos-card stat-card p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:var(--info-bg)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" style="color:var(--info-text)">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[.67rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Average</div>
+            <div class="text-lg font-bold mt-0.5 truncate"
+                 style="font-family:'Inconsolata',monospace;color:var(--info-text)">
+              {% if exp_count > 0 %}&#x20B1;{{ "{:,.2f}".format(total_amount / exp_count) }}{% else %}—{% endif %}
+            </div>
+            <div class="text-[.67rem]" style="color:var(--text-muted)">Per record</div>
+          </div>
+        </div>
+
+        <!-- Largest -->
+        <div class="agos-card stat-card p-4 flex items-start gap-3">
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+               style="background:var(--warning-bg)">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" style="color:var(--warning-text)">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[.67rem] uppercase tracking-wider font-semibold" style="color:var(--text-muted)">Largest</div>
+            <div class="text-lg font-bold mt-0.5 truncate"
+                 style="font-family:'Inconsolata',monospace;color:var(--warning-text)">
+              {% if expenses %}&#x20B1;{{ "{:,.2f}".format(expenses | map(attribute='amount') | max) }}{% else %}—{% endif %}
+            </div>
+            <div class="text-[.67rem]" style="color:var(--text-muted)">Single expense</div>
+          </div>
+        </div>
+
       </div>
 
-      <!-- ══ MAIN GRID ══ -->
-      <div class="grid gap-6 grid-cols-1 {% if can_edit %}lg:grid-cols-[320px_1fr]{% endif %}">
+      <!-- ══ MAIN CONTENT ══ -->
+      <div class="grid gap-6 {% if can_edit %}grid-cols-1 xl:grid-cols-[310px_1fr]{% endif %}">
 
-        <!-- ══ LEFT: Record Expense form ══ -->
+        <!-- ── Record Expense form ── -->
         {% if can_edit %}
-        <div class="flex flex-col gap-4">
-          <div class="agos-card overflow-hidden">
-            <div class="agos-card-header">
-              <div class="agos-card-title">Record Expense</div>
-              <div class="agos-card-subtitle">Log a new business expense</div>
-            </div>
-            <div class="p-5">
-              <form id="expense-form" action="{{ url_for('expenses') }}" method="POST" class="flex flex-col gap-3">
-                <div>
-                  <label class="agos-label">Category <span style="color:#d32f2f">*</span></label>
-                  <input type="text" name="category" id="expense-category" required
-                         list="expense-categories-list"
-                         placeholder="Select or type a category…"
-                         class="agos-input"/>
-                  <datalist id="expense-categories-list">
-                    <option value="Utilities"/>
-                    <option value="Supplies"/>
-                    <option value="Maintenance"/>
-                    <option value="Salaries"/>
-                    <option value="Rent"/>
-                    <option value="Transportation"/>
-                    <option value="Other"/>
-                  </datalist>
-                </div>
-                <div>
-                  <label class="agos-label">Description <span style="color:#d32f2f">*</span></label>
-                  <input type="text" name="description" id="expense-desc" required
-                         placeholder="e.g. Monthly electric bill" class="agos-input"/>
-                </div>
-                <div>
-                  <label class="agos-label">Amount (&#x20B1;) <span style="color:#d32f2f">*</span></label>
-                  <input type="number" name="amount" id="expense-amount"
-                         min="0.01" step="0.01" required placeholder="0.00" class="agos-input"/>
-                </div>
-                <div>
-                  <label class="agos-label">Date <span style="color:#d32f2f">*</span></label>
-                  <input type="date" name="expense_date" required id="expense-date-input" class="agos-input"/>
-                </div>
-                <button type="button" onclick="openExpenseConfirm()"
-                        class="agos-btn-primary w-full py-2.5 mt-1">Review &amp; Record Expense</button>
-              </form>
-            </div>
+        <div class="agos-card overflow-hidden self-start">
+          <div class="agos-card-header">
+            <div class="agos-card-title">Record Expense</div>
+            <div class="agos-card-subtitle">Log a new business expense</div>
+          </div>
+          <div class="p-5">
+            <form id="expense-form" action="{{ url_for('expenses') }}" method="POST" class="flex flex-col gap-3">
+              <div>
+                <label class="agos-label">Category <span style="color:#e05555">*</span></label>
+                <input type="text" name="category" id="expense-category" required
+                       list="exp-cats-list" placeholder="Select or type…" class="agos-input w-full"/>
+                <datalist id="exp-cats-list">
+                  <option value="Utilities"/><option value="Supplies"/>
+                  <option value="Maintenance"/><option value="Salaries"/>
+                  <option value="Rent"/><option value="Transportation"/>
+                  <option value="Other"/>
+                </datalist>
+              </div>
+              <div>
+                <label class="agos-label">Description <span style="color:#e05555">*</span></label>
+                <input type="text" name="description" id="expense-desc" required
+                       placeholder="e.g. Monthly electric bill" class="agos-input w-full"/>
+              </div>
+              <div>
+                <label class="agos-label">Amount (&#x20B1;) <span style="color:#e05555">*</span></label>
+                <input type="number" name="amount" id="expense-amount"
+                       min="0.01" step="0.01" required placeholder="0.00" class="agos-input w-full"/>
+              </div>
+              <div>
+                <label class="agos-label">Date <span style="color:#e05555">*</span></label>
+                <input type="date" name="expense_date" required id="expense-date-input" class="agos-input w-full"/>
+              </div>
+              <button type="button" onclick="openExpenseConfirm()"
+                      class="agos-btn-primary w-full py-2.5 mt-1">
+                Review &amp; Record Expense
+              </button>
+            </form>
           </div>
         </div>
         {% endif %}
 
-        <!-- ══ RIGHT: Expense History ══ -->
-        <div class="agos-card overflow-hidden flex flex-col">
+        <!-- ── Expense History ── -->
+        <div class="agos-card overflow-hidden flex flex-col min-w-0">
 
-          <!-- Card header + filters -->
-          <div class="agos-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div class="agos-card-title">Expense History</div>
-              <div class="agos-card-subtitle" id="expense-count-label">
-                {{ expenses | length }} record{{ 's' if expenses | length != 1 }}
+          <!-- Card header -->
+          <div class="agos-card-header">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div>
+                <div class="agos-card-title">Expense History</div>
+                <div class="agos-card-subtitle" id="expense-count-label">
+                  {{ exp_count }} record{{ 's' if exp_count != 1 }}
+                </div>
               </div>
-            </div>
-            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-              <!-- Category filter pills -->
-              <div class="flex items-center gap-1 flex-wrap">
-                <button onclick="filterByCategory('all')" id="pill-all"
-                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
-                        style="background:var(--accent);color:#fff;border-color:var(--accent)">All</button>
-                <button onclick="filterByCategory('Utilities')" id="pill-Utilities"
-                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
-                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Utilities</button>
-                <button onclick="filterByCategory('Supplies')" id="pill-Supplies"
-                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
-                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Supplies</button>
-                <button onclick="filterByCategory('Maintenance')" id="pill-Maintenance"
-                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
-                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Maint.</button>
-                <button onclick="filterByCategory('Salaries')" id="pill-Salaries"
-                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
-                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Salaries</button>
-                <button onclick="filterByCategory('Other')" id="pill-Other"
-                        class="cat-pill text-[0.68rem] font-semibold px-3 py-1 rounded-full border transition-colors cursor-pointer"
-                        style="background:transparent;color:var(--text-muted);border-color:var(--border-section)">Other</button>
-              </div>
-              <!-- Search -->
-              <div class="search-wrap w-full sm:w-52">
+              <div class="search-wrap w-full sm:w-56 flex-shrink-0">
                 <input type="text" id="search-expenses" placeholder="Search description…"
                        oninput="filterRows(); toggleClearBtn()"
                        class="agos-input w-full" style="padding-right:2rem"/>
-                <button class="clear-btn" id="search-clear-btn"
-                        onclick="clearSearch()" title="Clear search">&#x2715;</button>
+                <button class="clear-btn" id="search-clear-btn" onclick="clearSearch()">&#x2715;</button>
               </div>
+            </div>
+            <!-- Filter pills -->
+            <div class="flex flex-wrap gap-1.5 mt-3">
+              {% for val, lbl in [('all','All'),('Utilities','Utilities'),('Supplies','Supplies'),
+                                   ('Maintenance','Maint.'),('Salaries','Salaries'),('Other','Other')] %}
+              <button id="pill-{{ val }}" onclick="filterByCategory('{{ val }}')"
+                      class="cat-pill text-[.68rem] font-semibold px-3 py-1 rounded-full border cursor-pointer transition-colors"
+                      style="{% if val=='all' %}background:var(--accent);color:#fff;border-color:var(--accent){% else %}background:transparent;color:var(--text-muted);border-color:var(--border-section){% endif %}">
+                {{ lbl }}
+              </button>
+              {% endfor %}
             </div>
           </div>
 
-          <!-- ── TABLE ───────────────────────────────────────────────────── -->
-          <div class="overflow-x-auto">
-            <p class="text-[0.65rem] text-center py-1 sm:hidden" style="color:var(--text-faint)">&#8592; Scroll to see all columns &#8594;</p>
+          <!-- ── DESKTOP TABLE (hidden on mobile via sm:hidden → shown sm:block) ── -->
+          <div class="hidden sm:block overflow-x-auto">
 
-            <!--
-              Percentage-based widths keep every header aligned over its data
-              column regardless of how wide the container is.
-              With actions:    # 5% | Expense 28% | Category 17% | Amount 18% | Date 15% | Actions 17%
-              Without actions: # 6% | Expense 35% | Category 20% | Amount 22% | Date 17%
-            -->
-            <table class="agos-table w-full border-collapse table-fixed" style="min-width:{% if can_edit %}760px{% else %}580px{% endif %}">
-              <colgroup>
+            {# ── HEADER ROW uses GCOLS ── #}
+            <div class="exp-head" style="grid-template-columns:{{ GCOLS }};min-width:{{ MINW }}">
+              <div class="exp-th">#</div>
+              <div class="exp-th">Expense</div>
+              <div class="exp-th">Category</div>
+              <div class="exp-th">Amount</div>
+              <div class="exp-th">Date</div>
+              {% if can_edit %}<div class="exp-th">Actions</div>{% endif %}
+            </div>
+
+            {# ── DATA ROWS — each uses the same GCOLS ── #}
+            <div id="expense-list">
+              {% for expense in expenses %}
+                {%- set cat = expense.category -%}
+                {%- set badge_cls = {
+                      'Utilities':'agos-badge-info','Supplies':'agos-badge-success',
+                      'Maintenance':'agos-badge-warning','Salaries':'agos-badge-warning',
+                      'Rent':'agos-badge-danger','Transportation':'agos-badge-info'
+                    }.get(cat,'agos-badge-info') -%}
+                {%- set av_grad = {
+                      'Utilities':'#0284c7,#38bdf8','Supplies':'#059669,#34d399',
+                      'Maintenance':'#d97706,#fbbf24','Salaries':'#7c3aed,#a855f7',
+                      'Rent':'#db2777,#f472b6','Transportation':'#0891b2,#22d3ee'
+                    }.get(cat,'#475569,#94a3b8') -%}
+
+              <div class="exp-row expense-row"
+                   data-category="{{ cat }}"
+                   data-search="{{ cat|lower }} {{ expense.description|lower }}"
+                   style="grid-template-columns:{{ GCOLS }};min-width:{{ MINW }}">
+
+                {# # #}
+                <div class="exp-cell text-[.78rem]" style="color:var(--text-muted)">
+                  {{ loop.index }}
+                </div>
+
+                {# Expense #}
+                <div class="exp-cell">
+                  <div class="flex items-start gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center
+                                text-xs font-bold text-white flex-shrink-0 mt-0.5"
+                         style="background:linear-gradient(135deg,{{ av_grad }})">
+                      {{ cat[0].upper() }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="exp-desc font-medium text-[.82rem] leading-snug"
+                           style="color:var(--text-primary)" title="{{ expense.description }}">
+                        {{ expense.description }}
+                      </div>
+                      <div class="text-[.68rem] mt-0.5 whitespace-nowrap" style="color:var(--text-muted)">
+                        Logged {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {# Category #}
+                <div class="exp-cell">
+                  <span class="agos-badge {{ badge_cls }}">{{ cat }}</span>
+                </div>
+
+                {# Amount #}
+                <div class="exp-cell">
+                  <span class="font-semibold text-[.82rem] whitespace-nowrap"
+                        style="font-family:'Inconsolata',monospace;color:var(--danger-text)">
+                    &#x20B1;{{ "{:,.2f}".format(expense.amount) }}
+                  </span>
+                </div>
+
+                {# Date #}
+                <div class="exp-cell text-[.78rem] whitespace-nowrap" style="color:var(--text-muted)">
+                  {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
+                </div>
+
+                {# Actions #}
                 {% if can_edit %}
-                <col style="width:5%"/>   <!-- # -->
-                <col style="width:28%"/>  <!-- Expense -->
-                <col style="width:17%"/>  <!-- Category -->
-                <col style="width:18%"/>  <!-- Amount -->
-                <col style="width:15%"/>  <!-- Date -->
-                <col style="width:17%"/>  <!-- Actions -->
-                {% else %}
-                <col style="width:6%"/>
-                <col style="width:35%"/>
-                <col style="width:20%"/>
-                <col style="width:22%"/>
-                <col style="width:17%"/>
-                {% endif %}
-              </colgroup>
-              <thead>
-                <tr class="expense-header-row">
-                  <td class="expense-th">#</td>
-                  <td class="expense-th">Expense</td>
-                  <td class="expense-th">Category</td>
-                  <td class="expense-th">Amount</td>
-                  <td class="expense-th">Date</td>
-                  {% if can_edit %}<td class="expense-th">Actions</td>{% endif %}
-                </tr>
-              </thead>
-              <tbody id="expense-tbody">
-
-                {% if expenses %}
-                  {% for expense in expenses %}
-                  <tr class="expense-row"
-                      data-category="{{ expense.category }}"
-                      data-search="{{ expense.category|lower }} {{ expense.description|lower }}">
-
-                    <!-- # -->
-                    <td class="text-[0.78rem]" style="color:var(--text-muted)">{{ loop.index }}</td>
-
-                    <!-- Expense: avatar + truncated description + logged-date sub-label -->
-                    <td>
-                      <div class="flex items-center gap-2.5 min-w-0">
-                        <!-- Avatar circle -->
-                        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white flex-shrink-0"
-                             style="background:linear-gradient(135deg,
-                               {%- if expense.category == 'Utilities' -%}#0284c7,#38bdf8
-                               {%- elif expense.category == 'Supplies' -%}#059669,#34d399
-                               {%- elif expense.category == 'Maintenance' -%}#d97706,#fbbf24
-                               {%- elif expense.category == 'Salaries' -%}#7c3aed,#a855f7
-                               {%- elif expense.category == 'Rent' -%}#db2777,#f472b6
-                               {%- elif expense.category == 'Transportation' -%}#0891b2,#22d3ee
-                               {%- else -%}#475569,#94a3b8
-                               {%- endif -%})">
-                          {{ expense.category[0].upper() }}
-                        </div>
-                        <!-- Text — min-w-0 on parent + overflow-hidden here prevents blowout -->
-                        <div class="min-w-0 flex-1">
-                          <div class="expense-desc-text font-medium text-[0.82rem] leading-snug"
-                               style="color:var(--text-primary)"
-                               title="{{ expense.description }}">
-                            {{ expense.description }}
-                          </div>
-                          <div class="text-[0.68rem] whitespace-nowrap" style="color:var(--text-muted)">
-                            Logged {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <!-- Category badge -->
-                    <td class="whitespace-nowrap">
-                      <span class="agos-badge
-                        {%- if expense.category == 'Utilities' %} agos-badge-info
-                        {%- elif expense.category == 'Supplies' %} agos-badge-success
-                        {%- elif expense.category == 'Maintenance' %} agos-badge-warning
-                        {%- elif expense.category == 'Salaries' %} agos-badge-warning
-                        {%- elif expense.category == 'Rent' %} agos-badge-danger
-                        {%- elif expense.category == 'Transportation' %} agos-badge-info
-                        {%- else %} agos-badge-info{%- endif %}">
-                        {{ expense.category }}
-                      </span>
-                    </td>
-
-                    <!-- Amount -->
-                    <td class="whitespace-nowrap">
-                      <span class="agos-badge agos-badge-danger"
-                            style="font-family:'Inconsolata',monospace;font-size:0.75rem">
-                        &#x20B1;{{ "{:,.2f}".format(expense.amount) }}
-                      </span>
-                    </td>
-
-                    <!-- Date -->
-                    <td class="whitespace-nowrap">
-                      <span class="text-[0.72rem]" style="color:var(--text-muted)">
-                        {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
-                      </span>
-                    </td>
-
-                    <!-- Actions -->
-                    {% if can_edit %}
-                    <td class="whitespace-nowrap">
-                      <div class="flex items-center gap-1.5">
-                        <!-- View -->
-                        <button type="button"
-                                data-eid="{{ expense.expense_id }}"
-                                data-category="{{ expense.category }}"
-                                data-desc="{{ expense.description | tojson }}"
-                                data-amount="{{ '%.2f'|format(expense.amount) }}"
-                                data-date="{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}"
-                                onclick="openViewExpenseModal(this)"
-                                class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                style="background:var(--info-bg);color:var(--info-text)">View</button>
-                        <!-- Delete form (hidden) -->
-                        <form id="delete-expense-form-{{ expense.expense_id }}"
-                              action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}"
-                              method="POST" style="display:none"></form>
-                        <!-- Delete -->
-                        <button type="button"
-                                data-eid="{{ expense.expense_id }}"
-                                data-edesc="{{ expense.description | tojson }}"
-                                onclick="openDeleteExpenseModal(this.dataset.eid, this.dataset.edesc)"
-                                class="px-2.5 py-1.5 rounded-lg text-[0.72rem] font-medium border-none cursor-pointer"
-                                style="background:var(--danger-bg);color:var(--danger-text)">Delete</button>
-                      </div>
-                    </td>
-                    {% endif %}
-
-                  </tr>
-                  {% endfor %}
+                <div class="exp-cell">
+                  <div class="flex items-center gap-1.5 flex-nowrap">
+                    <button type="button" class="exp-btn exp-btn-view"
+                            data-eid="{{ expense.expense_id }}"
+                            data-category="{{ cat }}"
+                            data-desc="{{ expense.description | tojson }}"
+                            data-amount="{{ '%.2f'|format(expense.amount) }}"
+                            data-date="{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}"
+                            onclick="openViewModal(this)">View</button>
+                    <form id="del-form-{{ expense.expense_id }}"
+                          action="{{ url_for('delete_expense', expense_id=expense.expense_id) }}"
+                          method="POST" style="display:none"></form>
+                    <button type="button" class="exp-btn exp-btn-delete"
+                            data-eid="{{ expense.expense_id }}"
+                            data-edesc="{{ expense.description | tojson }}"
+                            onclick="openDeleteModal(this.dataset.eid, this.dataset.edesc)">Delete</button>
+                  </div>
+                </div>
                 {% endif %}
 
-                <!-- No-results row -->
-                <tr id="no-results-row" style="display:none">
-                  <td colspan="{% if can_edit %}6{% else %}5{% endif %}" class="text-center py-10">
-                    <div class="flex flex-col items-center gap-2">
-                      <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                           style="color:var(--text-faint)" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-                      </svg>
-                      <span class="text-sm" style="color:var(--text-faint)">No expenses match your search.</span>
-                      <button onclick="clearSearch()" class="text-xs underline"
-                              style="color:var(--accent);background:none;border:none;cursor:pointer">Clear search</button>
-                    </div>
-                  </td>
-                </tr>
+              </div>
+              {% endfor %}
+            </div>
 
-                {% if not expenses %}
-                <tr>
-                  <td colspan="{% if can_edit %}6{% else %}5{% endif %}" class="text-center py-16">
-                    <div class="flex flex-col items-center gap-3" style="color:var(--text-faint)">
-                      <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
-                      </svg>
-                      <p class="text-sm">No expenses recorded yet.</p>
-                    </div>
-                  </td>
-                </tr>
-                {% endif %}
+            <!-- No results -->
+            <div id="no-results-msg" class="py-14 flex-col items-center gap-3" style="display:none">
+              <svg width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"
+                   viewBox="0 0 24 24" style="color:var(--text-faint)">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+              </svg>
+              <p class="text-sm mt-2" style="color:var(--text-faint)">No expenses match your filter.</p>
+              <button onclick="resetFilters()"
+                      class="text-xs underline mt-1"
+                      style="background:none;border:none;cursor:pointer;color:var(--accent)">
+                Clear filters
+              </button>
+            </div>
 
-              </tbody>
-            </table>
+            {% if not expenses %}
+            <div class="py-16 flex flex-col items-center gap-3" style="color:var(--text-faint)">
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+              </svg>
+              <p class="text-sm">No expenses recorded yet.</p>
+            </div>
+            {% endif %}
+
           </div>
-          <!-- ── END TABLE ── -->
+          <!-- end desktop table -->
 
-          <!-- Footer count bar -->
-          <div class="px-5 py-3 text-[0.72rem] border-t flex items-center justify-between"
+          <!-- ── MOBILE: stacked cards (shown below sm breakpoint) ── -->
+          <div class="sm:hidden flex flex-col" id="mobile-expense-list">
+            {% for expense in expenses %}
+              {%- set cat = expense.category -%}
+              {%- set badge_cls = {
+                    'Utilities':'agos-badge-info','Supplies':'agos-badge-success',
+                    'Maintenance':'agos-badge-warning','Salaries':'agos-badge-warning',
+                    'Rent':'agos-badge-danger','Transportation':'agos-badge-info'
+                  }.get(cat,'agos-badge-info') -%}
+              {%- set av_grad = {
+                    'Utilities':'#0284c7,#38bdf8','Supplies':'#059669,#34d399',
+                    'Maintenance':'#d97706,#fbbf24','Salaries':'#7c3aed,#a855f7',
+                    'Rent':'#db2777,#f472b6','Transportation':'#0891b2,#22d3ee'
+                  }.get(cat,'#475569,#94a3b8') -%}
+            <div class="exp-mobile-row expense-row p-4 border-b"
+                 data-category="{{ cat }}"
+                 data-search="{{ cat|lower }} {{ expense.description|lower }}"
+                 style="border-color:var(--table-border)">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-full flex items-center justify-center
+                            text-xs font-bold text-white flex-shrink-0"
+                     style="background:linear-gradient(135deg,{{ av_grad }})">
+                  {{ cat[0].upper() }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="font-medium text-[.84rem] leading-snug mb-1.5"
+                       style="color:var(--text-primary)">{{ expense.description }}</div>
+                  <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                    <span class="agos-badge {{ badge_cls }}">{{ cat }}</span>
+                    <span class="font-semibold text-[.8rem]"
+                          style="font-family:'Inconsolata',monospace;color:var(--danger-text)">
+                      &#x20B1;{{ "{:,.2f}".format(expense.amount) }}
+                    </span>
+                  </div>
+                  <div class="text-[.68rem]" style="color:var(--text-muted)">
+                    {{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}
+                  </div>
+                </div>
+                {% if can_edit %}
+                <div class="flex flex-col gap-1.5 flex-shrink-0">
+                  <button type="button" class="exp-btn exp-btn-view"
+                          data-eid="{{ expense.expense_id }}"
+                          data-category="{{ cat }}"
+                          data-desc="{{ expense.description | tojson }}"
+                          data-amount="{{ '%.2f'|format(expense.amount) }}"
+                          data-date="{{ expense.expense_date.strftime('%b %d, %Y') if expense.expense_date else '—' }}"
+                          onclick="openViewModal(this)">View</button>
+                  <button type="button" class="exp-btn exp-btn-delete"
+                          data-eid="{{ expense.expense_id }}"
+                          data-edesc="{{ expense.description | tojson }}"
+                          onclick="openDeleteModal(this.dataset.eid, this.dataset.edesc)">Delete</button>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% if not expenses %}
+            <div class="py-12 flex flex-col items-center gap-2" style="color:var(--text-faint)">
+              <p class="text-sm">No expenses recorded yet.</p>
+            </div>
+            {% endif %}
+          </div>
+          <!-- end mobile cards -->
+
+          <!-- Footer bar -->
+          <div class="px-4 py-3 flex items-center justify-between text-[.7rem] border-t"
                style="border-color:var(--border-section);color:var(--text-muted)">
             <span id="visible-count"></span>
-            <span>Use category pills or search to filter</span>
+            <span class="hidden sm:inline">Filter by category pills or search above</span>
           </div>
 
         </div>
-        <!-- end expense history card -->
+        <!-- end history card -->
 
       </div>
+      <!-- end main content -->
     </main>
   </div>
 </div>
 
-<!-- ═══════════════════════════════ MODALS ═══════════════════════════════ -->
+<!-- ═══════════════════ MODALS ═══════════════════ -->
 
-<!-- ══ VIEW EXPENSE MODAL ══ -->
+<!-- View Modal -->
 <div id="view-expense-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box overflow-hidden">
-      <!-- Gradient header -->
       <div class="px-6 py-5 flex items-center gap-4"
-           style="background:linear-gradient(135deg,#0c2340,#0c3a6e);border-bottom:1px solid var(--border-section)">
+           style="background:linear-gradient(135deg,#0c2340,#0c3a6e);
+                  border-bottom:1px solid var(--border-section)">
         <div id="vem-avatar"
              class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
              style="background:linear-gradient(135deg,#2d88b8,#5bb8e0)"></div>
         <div class="min-w-0">
           <div class="text-white font-bold text-base truncate" id="vem-category"></div>
-          <div class="text-[0.72rem] mt-0.5" style="color:rgba(147,197,253,0.80)" id="vem-date"></div>
-          <span id="vem-amount-badge"
-                class="text-[0.72rem] px-2 py-0.5 rounded-full mt-1 inline-block font-semibold"
-                style="background:rgba(239,68,68,0.20);color:#fca5a5;font-family:'Inconsolata',monospace"></span>
+          <div class="text-[.72rem] mt-0.5" style="color:rgba(147,197,253,.8)" id="vem-date-head"></div>
+          <span id="vem-amount-head"
+                class="text-[.72rem] px-2 py-0.5 rounded-full mt-1 inline-block font-semibold"
+                style="background:rgba(239,68,68,.2);color:#fca5a5;font-family:'Inconsolata',monospace"></span>
         </div>
       </div>
-      <!-- Body -->
       <div class="p-6 flex flex-col gap-3">
         <div class="p-3 rounded-xl" style="background:var(--bg-input)">
-          <div class="text-[0.65rem] uppercase tracking-wider font-semibold mb-1.5" style="color:var(--text-muted)">Description</div>
-          <div class="text-sm font-medium" style="color:var(--text-primary)" id="vem-desc"></div>
+          <div class="text-[.65rem] uppercase tracking-wider font-semibold mb-1.5" style="color:var(--text-muted)">Description</div>
+          <div class="text-sm font-medium" id="vem-desc" style="color:var(--text-primary)"></div>
         </div>
-        <div class="flex items-center justify-between text-[0.78rem]"
-             style="border-top:1px solid var(--border-section);padding-top:0.75rem">
-          <span style="color:var(--text-muted)">&#127991; Category</span>
+        <div class="flex items-center justify-between text-[.78rem] pt-3" style="border-top:1px solid var(--border-section)">
+          <span style="color:var(--text-muted)">🏷 Category</span>
           <span id="vem-cat-badge"></span>
         </div>
-        <div class="flex items-center justify-between text-[0.78rem]"
-             style="border-top:1px solid var(--border-section);padding-top:0.75rem">
-          <span style="color:var(--text-muted)">&#128197; Date Recorded</span>
-          <span class="font-medium" style="color:var(--text-primary)" id="vem-date-body"></span>
+        <div class="flex items-center justify-between text-[.78rem] pt-3" style="border-top:1px solid var(--border-section)">
+          <span style="color:var(--text-muted)">📅 Date</span>
+          <span class="font-medium" id="vem-date-body" style="color:var(--text-primary)"></span>
         </div>
-        <div class="flex items-center justify-between text-[0.78rem]"
-             style="border-top:1px solid var(--border-section);padding-top:0.75rem">
-          <span style="color:var(--text-muted)">&#128176; Amount</span>
-          <span class="font-bold text-base"
-                style="color:var(--warning-text);font-family:'Inconsolata',monospace"
-                id="vem-amount-body"></span>
+        <div class="flex items-center justify-between text-[.78rem] pt-3" style="border-top:1px solid var(--border-section)">
+          <span style="color:var(--text-muted)">💰 Amount</span>
+          <span class="font-bold text-base" id="vem-amount-body"
+                style="color:var(--warning-text);font-family:'Inconsolata',monospace"></span>
         </div>
       </div>
-      <!-- Actions -->
-      <div class="px-6 pb-5 flex gap-2 flex-wrap">
+      <div class="px-6 pb-5 flex gap-2">
         <button onclick="closeModal('view-expense-modal')" class="agos-btn-ghost flex-1 py-2.5">Close</button>
         <button id="vem-delete-btn" type="button"
                 class="flex-1 py-2.5 text-sm font-semibold rounded-xl border-none cursor-pointer"
@@ -478,14 +615,14 @@
   </div>
 </div>
 
-<!-- ══ EXPENSE CONFIRM MODAL ══ -->
+<!-- Confirm Record Modal -->
 <div id="expense-confirm-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
       <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
            style="background:var(--accent-soft)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-             style="color:var(--accent)" stroke-width="2">
+        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" style="color:var(--accent)">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
@@ -503,14 +640,14 @@
   </div>
 </div>
 
-<!-- ══ DELETE EXPENSE MODAL ══ -->
+<!-- Delete Modal -->
 <div id="delete-expense-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-sm">
     <div class="agos-modal-box p-7 text-center">
       <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
            style="background:var(--danger-bg)">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-             style="color:var(--danger-text)" stroke-width="2">
+        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" style="color:var(--danger-text)">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
         </svg>
@@ -519,8 +656,7 @@
           style="font-family:'Inconsolata',monospace;color:var(--text-primary)">Delete Expense?</h3>
       <p class="text-sm mb-5" id="delete-expense-message" style="color:var(--text-muted)"></p>
       <div class="flex gap-3 justify-center">
-        <button id="delete-expense-confirm-btn"
-                class="agos-btn-primary px-7 py-2.5"
+        <button id="delete-expense-confirm-btn" class="agos-btn-primary px-7 py-2.5"
                 style="background:var(--danger-text)">Yes, Delete</button>
         <button onclick="closeModal('delete-expense-modal')" class="agos-btn-ghost px-7 py-2.5">Cancel</button>
       </div>
@@ -528,13 +664,13 @@
   </div>
 </div>
 
-<!-- ══ LOGOUT MODAL ══ -->
+<!-- Logout Modal -->
 <div id="logout-modal" class="agos-modal-overlay">
   <div class="p-4 w-full max-w-md">
     <div class="agos-modal-box p-8 text-center">
       <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
            style="background:var(--accent-soft)">
-        <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+        <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"
              style="color:var(--accent)">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -553,151 +689,121 @@
 
 <script src="{{ url_for('static', filename='agos-theme.js') }}"></script>
 <script>
-  // ── Modal helpers (fallback) ───────────────────────────────────────────
-  if (typeof openModal === 'undefined') {
-    window.openModal  = id => document.getElementById(id)?.classList.add('open');
-    window.closeModal = id => document.getElementById(id)?.classList.remove('open');
-  }
+  if (typeof openModal  === 'undefined') window.openModal  = id => document.getElementById(id)?.classList.add('open');
+  if (typeof closeModal === 'undefined') window.closeModal = id => document.getElementById(id)?.classList.remove('open');
 
-  // ── Init ──────────────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', function () {
-    const dateInput = document.getElementById('expense-date-input');
-    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-
+  document.addEventListener('DOMContentLoaded', () => {
+    const di = document.getElementById('expense-date-input');
+    if (di) di.value = new Date().toISOString().split('T')[0];
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const lbl = document.getElementById('theme-label');
     if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
-
     filterRows();
   });
 
-  const _orig = window.toggleTheme;
+  const _origToggle = window.toggleTheme;
   window.toggleTheme = function () {
-    _orig();
+    _origToggle?.();
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const lbl = document.getElementById('theme-label');
     if (lbl) lbl.textContent = isDark ? 'Light' : 'Dark';
   };
 
-  // ── Active category state ─────────────────────────────────────────────
   let activeCategory = 'all';
 
-  // ── Category filter pills ─────────────────────────────────────────────
   function filterByCategory(cat) {
     activeCategory = cat;
     document.querySelectorAll('.cat-pill').forEach(p => {
-      p.style.background  = 'transparent';
-      p.style.color       = 'var(--text-muted)';
+      p.style.background = 'transparent';
+      p.style.color = 'var(--text-muted)';
       p.style.borderColor = 'var(--border-section)';
     });
-    const active = document.getElementById('pill-' + cat);
-    if (active) {
-      active.style.background  = 'var(--accent)';
-      active.style.color       = '#fff';
-      active.style.borderColor = 'var(--accent)';
-    }
+    const a = document.getElementById('pill-' + cat);
+    if (a) { a.style.background='var(--accent)'; a.style.color='#fff'; a.style.borderColor='var(--accent)'; }
     filterRows();
   }
 
-  // ── Combined filter ───────────────────────────────────────────────────
   function filterRows() {
-    const q    = (document.getElementById('search-expenses').value || '').toLowerCase();
+    const q = (document.getElementById('search-expenses').value || '').toLowerCase();
     const rows = document.querySelectorAll('.expense-row');
-    let vis    = 0;
+    let vis = 0;
     rows.forEach(r => {
-      const catMatch    = activeCategory === 'all' || r.dataset.category === activeCategory;
-      const searchMatch = !q || r.dataset.search.includes(q);
-      const show        = catMatch && searchMatch;
-      r.style.display   = show ? '' : 'none';
+      const show = (activeCategory === 'all' || r.dataset.category === activeCategory)
+                && (!q || r.dataset.search.includes(q));
+      r.style.display = show ? '' : 'none';
       if (show) vis++;
     });
-    const label = document.getElementById('visible-count');
-    if (label) label.textContent = `Showing ${vis} record${vis !== 1 ? 's' : ''}`;
-    const countLabel = document.getElementById('expense-count-label');
-    if (countLabel) countLabel.textContent = `${vis} record${vis !== 1 ? 's' : ''}`;
-    const noResults = document.getElementById('no-results-row');
-    if (noResults) noResults.style.display = (vis === 0 && (q || activeCategory !== 'all')) ? '' : 'none';
+    const vc = document.getElementById('visible-count');
+    if (vc) vc.textContent = `Showing ${vis} record${vis !== 1 ? 's' : ''}`;
+    const cl = document.getElementById('expense-count-label');
+    if (cl) cl.textContent = `${vis} record${vis !== 1 ? 's' : ''}`;
+    const nr = document.getElementById('no-results-msg');
+    if (nr) nr.style.display = (vis === 0 && (q || activeCategory !== 'all')) ? 'flex' : 'none';
   }
 
-  // ── Search clear button ───────────────────────────────────────────────
   function toggleClearBtn() {
-    const val = document.getElementById('search-expenses').value;
     const btn = document.getElementById('search-clear-btn');
-    if (btn) btn.classList.toggle('visible', val.length > 0);
+    if (btn) btn.classList.toggle('visible', !!document.getElementById('search-expenses').value);
   }
   function clearSearch() {
     document.getElementById('search-expenses').value = '';
-    toggleClearBtn();
-    filterRows();
+    toggleClearBtn(); filterRows();
   }
+  function resetFilters() { filterByCategory('all'); clearSearch(); }
 
-  // ── View expense modal ────────────────────────────────────────────────
-  function openViewExpenseModal(btn) {
+  const CAT_BADGE = {
+    'Utilities':'agos-badge-info','Supplies':'agos-badge-success',
+    'Maintenance':'agos-badge-warning','Salaries':'agos-badge-warning',
+    'Rent':'agos-badge-danger','Transportation':'agos-badge-info'
+  };
+
+  function openViewModal(btn) {
     const d = btn.dataset;
-
-    document.getElementById('vem-avatar').textContent      = (d.category || '?')[0].toUpperCase();
-    document.getElementById('vem-category').textContent    = d.category  || '—';
-    document.getElementById('vem-date').textContent        = d.date      || '—';
-    document.getElementById('vem-amount-badge').textContent = '₱' + (d.amount || '0.00');
-    document.getElementById('vem-desc').textContent        = d.desc      || '—';
-    document.getElementById('vem-date-body').textContent   = d.date      || '—';
-    document.getElementById('vem-amount-body').textContent = '₱' + (d.amount || '0.00');
-
-    const catBadge = document.getElementById('vem-cat-badge');
-    catBadge.textContent = d.category || '—';
-    catBadge.className = 'agos-badge ' + ({
-      'Utilities':      'agos-badge-info',
-      'Supplies':       'agos-badge-success',
-      'Maintenance':    'agos-badge-warning',
-      'Salaries':       'agos-badge-warning',
-      'Rent':           'agos-badge-danger',
-      'Transportation': 'agos-badge-info'
-    }[d.category] || 'agos-badge-info');
-
+    document.getElementById('vem-avatar').textContent       = (d.category||'?')[0].toUpperCase();
+    document.getElementById('vem-category').textContent     = d.category  || '—';
+    document.getElementById('vem-date-head').textContent    = d.date      || '—';
+    document.getElementById('vem-amount-head').textContent  = '₱' + (d.amount||'0.00');
+    document.getElementById('vem-desc').textContent         = d.desc      || '—';
+    document.getElementById('vem-date-body').textContent    = d.date      || '—';
+    document.getElementById('vem-amount-body').textContent  = '₱' + (d.amount||'0.00');
+    const cb = document.getElementById('vem-cat-badge');
+    cb.textContent = d.category || '—';
+    cb.className   = 'agos-badge ' + (CAT_BADGE[d.category] || 'agos-badge-info');
     document.getElementById('vem-delete-btn').onclick = () => {
       closeModal('view-expense-modal');
-      openDeleteExpenseModal(d.eid, d.desc);
+      openDeleteModal(d.eid, d.desc);
     };
-
     openModal('view-expense-modal');
   }
 
-  // ── Record expense confirm modal ──────────────────────────────────────
   function openExpenseConfirm() {
     const cat    = document.getElementById('expense-category').value.trim();
     const desc   = document.getElementById('expense-desc').value.trim();
     const amount = document.getElementById('expense-amount').value;
     const date   = document.getElementById('expense-date-input').value;
-    if (!cat || !desc || !amount || !date) {
-      showToast('Please fill in all required fields.', 'error'); return;
-    }
+    if (!cat || !desc || !amount || !date) { showToast('Please fill in all required fields.','error'); return; }
     document.getElementById('expense-confirm-details').innerHTML =
       `<div class="mb-1"><strong>Category:</strong> ${cat}</div>` +
       `<div class="mb-1"><strong>Description:</strong> ${desc}</div>` +
-      `<div class="mb-1"><strong>Amount:</strong> &#x20B1;${parseFloat(amount).toFixed(2)}</div>` +
+      `<div class="mb-1"><strong>Amount:</strong> ₱${parseFloat(amount).toFixed(2)}</div>` +
       `<div><strong>Date:</strong> ${date}</div>`;
     openModal('expense-confirm-modal');
   }
-  function submitExpenseForm() {
-    document.getElementById('expense-form').submit();
-  }
+  function submitExpenseForm() { document.getElementById('expense-form').submit(); }
 
-  // ── Delete expense modal ──────────────────────────────────────────────
-  function openDeleteExpenseModal(id, desc) {
+  function openDeleteModal(id, desc) {
     document.getElementById('delete-expense-message').textContent =
-      `You're about to delete "${desc}". This action cannot be undone.`;
-    document.getElementById('delete-expense-confirm-btn').onclick = function () {
-      document.getElementById('delete-expense-form-' + id).submit();
-    };
+      `You're about to delete "${desc}". This cannot be undone.`;
+    document.getElementById('delete-expense-confirm-btn').onclick = () =>
+      document.getElementById('del-form-' + id).submit();
     openModal('delete-expense-modal');
   }
 
-  // ── Toast helper ──────────────────────────────────────────────────────
-  function showToast(msg, type = 'success') {
+  function showToast(msg, type='success') {
     const tc = document.getElementById('toast-container');
     const el = document.createElement('div');
     el.className = `toast toast-${type}`;
-    el.innerHTML = (type === 'success'
+    el.innerHTML = (type==='success'
       ? '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>'
       : '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>'
     ) + `<span>${msg}</span>`;
@@ -705,10 +811,9 @@
     setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 400); }, 3500);
   }
 
-  // ── Flash messages as toasts ──────────────────────────────────────────
   if (window._flashMessages) {
     window._flashMessages.forEach(([cat, msg]) =>
-      showToast(msg, cat === 'error' ? 'error' : 'success')
+      showToast(msg, cat==='error' ? 'error' : 'success')
     );
   }
 </script>
